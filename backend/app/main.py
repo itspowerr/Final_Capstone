@@ -1,0 +1,65 @@
+from contextlib import asynccontextmanager
+
+import redis.asyncio as aioredis
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.config import settings
+from app.database import engine, Base
+from app.redis_client import init_redis, close_redis
+from app.routers import auth, jobs, contracts, disputes, uploads, proposals, users, wallet_auth
+from app.services.event_listener import start_event_listener
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.redis = aioredis.from_url(
+        settings.redis_url, decode_responses=True
+    )
+    await init_redis()
+    start_event_listener()
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    yield
+    await app.state.redis.close()
+    await close_redis()
+
+
+app = FastAPI(
+    title="FreeLedger API",
+    version="1.0.0",
+    lifespan=lifespan,
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(auth.router, prefix="/api")
+app.include_router(jobs.router, prefix="/api")
+app.include_router(contracts.router, prefix="/api")
+app.include_router(disputes.router, prefix="/api")
+app.include_router(uploads.router, prefix="/api")
+app.include_router(proposals.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+app.include_router(wallet_auth.router, prefix="/api")
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/api/health")
+async def api_health_check():
+    return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/api/event-listener/heartbeat")
+async def event_listener_heartbeat():
+    from app.services.event_listener import get_heartbeat
+    return get_heartbeat()
