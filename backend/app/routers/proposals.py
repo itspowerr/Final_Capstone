@@ -1,13 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.models import Contract, ContractMilestone, Proposal, User
+from app.models import Contract, ContractMilestone, Job, Proposal, User
 from app.routers.auth import get_current_user
-from app.schemas import ProposalResponse
+from app.schemas import ProposalCreate, ProposalResponse
 
 from app.services.blockchain_service import create_contract_on_chain, to_wei
 
@@ -141,6 +139,36 @@ async def accept_proposal(
     )
     for p in remaining.scalars().all():
         p.status = "rejected"
+
+    milestones_result = await db.execute(
+        select(ContractMilestone).where(ContractMilestone.contract_id == contract.id).order_by(ContractMilestone.index)
+    )
+    milestones = milestones_result.scalars().all()
+    if milestones:
+        freelancer = await db.get(User, proposal.freelancer_id)
+        if not freelancer or not freelancer.wallet_address:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={"code": "NO_FREELANCER_WALLET", "message": "Accepted freelancer has no wallet address"},
+            )
+
+        try:
+            on_chain = create_contract_on_chain(
+                freelancer_address=freelancer.wallet_address,
+                title=contract.title or "",
+                terms_cid=f"contract_{contract.id}",
+                total_amount_wei=to_wei(float(contract.total_amount)),
+                deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
+                milestone_descs=[m.description for m in milestones],
+                milestone_amounts=[to_wei(float(m.amount)) for m in milestones],
+            )
+            contract.on_chain_id = str(on_chain.get("on_chain_id"))
+            contract.contract_address = on_chain.get("contract_address")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"code": "BLOCKCHAIN_DEPLOY_FAILED", "message": f"Failed to deploy contract to blockchain: {exc}"},
+            ) from exc
 
     await db.commit()
     await db.refresh(proposal)
