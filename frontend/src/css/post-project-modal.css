@@ -1,0 +1,87 @@
+/* ── Post Project Modal ─────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(15,23,42,.45); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px; opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+
+.modal-box {
+  background: var(--white); border-radius: 20px;
+  width: 100%; max-width: 640px; max-height: 90vh;
+  overflow-y: auto; padding: 32px; position: relative;
+  box-shadow: 0 24px 64px rgba(0,0,0,.2);
+  transform: translateY(16px); transition: transform .25s ease;
+}
+.modal-overlay.open .modal-box { transform: translateY(0); }
+
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; color: var(--text-2);
+  transition: all .15s;
+}
+.modal-close:hover { background: var(--border); color: var(--text); }
+
+.modal-title { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+.modal-subtitle { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+
+/* ── Form elements ──────────────────────────────────────────────────────── */
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-group { margin-bottom: 14px; }
+.form-group-relative { position: relative; }
+.form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+.form-label-muted { color: var(--text-3); font-weight: 400; }
+.form-input {
+  width: 100%; padding: 10px 14px; border-radius: 8px;
+  border: 1.5px solid var(--border); font-family: inherit;
+  font-size: 14px; color: var(--text); outline: none;
+  transition: border-color .15s; background: var(--white);
+}
+.form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.1); }
+
+.form-error-msg { color: var(--red); font-size: 12px; margin-top: 4px; font-weight: 500; }
+
+/* ── Freelancer dropdown ────────────────────────────────────────────────── */
+.fl-dropdown {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 20;
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: 8px; max-height: 200px; overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0,0,0,.1); margin-top: 2px;
+}
+.fl-dropdown-item {
+  padding: 10px 14px; cursor: pointer; font-size: 14px;
+  border-bottom: 1px solid var(--surface);
+  display: flex; align-items: center; gap: 10px;
+}
+.fl-dropdown-item:last-child { border-bottom: none; }
+.fl-dropdown-item:hover { background: var(--accent-pale); }
+.fl-dropdown-empty {
+  padding: 10px 14px; color: var(--text-3); font-size: 13px;
+}
+
+/* ── Milestones ─────────────────────────────────────────────────────────── */
+.milestones-section { margin-bottom: 16px; }
+.milestones-section h3 { font-size: 14px; font-weight: 700; margin-bottom: 10px; }
+.milestone-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; margin-bottom: 10px;
+}
+.milestone-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.milestone-header span { font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; }
+.btn-remove-milestone {
+  background: none; border: 1px solid var(--red); color: var(--red);
+  font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px;
+  cursor: pointer; font-family: inherit; transition: all .15s;
+}
+.btn-remove-milestone:hover { background: #fef2f2; }
+
+@media (max-width: 900px) {
+  .form-row { grid-template-columns: 1fr; }
+}
