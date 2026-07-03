@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models import Contract, ContractStatus, ContractMilestone, MilestoneStatus, User
 from app.routers.auth import get_current_user
-from app.services.blockchain_service import create_contract_on_chain, fund_contract_on_chain, to_wei
+from app.services.blockchain_service import fund_contract_on_chain
 
 
 async def sign_contract(db: AsyncSession, contract_id: str, user_id: str) -> Contract:
