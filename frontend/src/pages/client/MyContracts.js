@@ -1,6 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Navbar from '../../components/client/Navbar';
 import api from '../../services/api.js';
+import { getContract, getSigner, ensureCorrectNetwork } from '../../services/web3.js';
+import { GIG_ESCROW_ABI } from '../../services/contractAbi.js';
+import config from '../../config';
 import '../../css/client/my-contracts.css';
 
 const STATUS_LABELS = {
@@ -17,9 +20,9 @@ const STATUS_CLASS = {
 
 const FILTER_STATUSES = {
   all: null,
-  active: ['active', 'revision_requested', 'disputed'],
+  active: ['active', 'revision_requested'],
   pending: ['pending_signatures', 'pending_funding'],
-  draft: ['draft', 'pending_review'],
+  disputed: ['disputed'],
   completed: ['completed', 'delivered', 'cancelled'],
 };
 
@@ -57,6 +60,8 @@ function formatContract(raw) {
     totalMs: ms.length,
     client_signed: raw.client_signed,
     freelancer_signed: raw.freelancer_signed,
+    on_chain_id: raw.on_chain_id,
+    contract_address: raw.contract_address,
     editable: false,
   };
 }
@@ -73,10 +78,13 @@ function ActionButtons({ contract, onSelect, onSign, onFund }) {
   }
   if (contract.status === 'pending_funding') {
     return (
-      <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onFund(contract.id); }}>Fund Contract</button>
+      <button className="btn btn-primary btn-sm" title="Requires MetaMask" onClick={(e) => { e.stopPropagation(); onFund(contract.id); }}>⚡ Fund Contract</button>
     );
   }
   if (contract.status === 'pending_signatures') {
+    if (contract.client_signed) {
+      return <span className="btn btn-outline btn-sm" style={{ opacity: 0.7, cursor: 'default' }}>Signed</span>;
+    }
     if (contract.freelancer_id) {
       return <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onSign(contract.id); }}>Sign Contract</button>;
     }
@@ -166,6 +174,19 @@ export default function MyContracts() {
   };
 
   const approveMilestone = async (contractId, index) => {
+    const c = allContracts.find(x => x.id === contractId);
+    if (c && c.on_chain_id) {
+      try {
+        await ensureCorrectNetwork();
+        const signer = await getSigner();
+        const contract = await getContract(config.contractAddress, GIG_ESCROW_ABI);
+        const tx = await contract.approveMilestone(c.on_chain_id, index);
+        await tx.wait();
+      } catch (chainErr) {
+        showToast('Blockchain approval failed: ' + (chainErr.message || chainErr), '❌');
+        return;
+      }
+    }
     await doAction(
       () => api.post(`/contracts/${contractId}/milestones/${index}/approve`),
       'Milestone approved ✅',
@@ -187,10 +208,30 @@ export default function MyContracts() {
   };
 
   const fundContract = async (contractId) => {
-    await doAction(
-      () => api.post(`/contracts/${contractId}/fund`),
-      'Contract funded ✅',
-    );
+    const c = allContracts.find(x => x.id === contractId);
+    if (!c) return;
+
+    try {
+      if (c.on_chain_id) {
+        setActionLoading(true);
+        await ensureCorrectNetwork();
+        const signer = await getSigner();
+        const contract = await getContract(config.contractAddress, GIG_ESCROW_ABI);
+        const { ethers } = await import('ethers');
+        const tx = await contract.fundContract(c.on_chain_id, {
+          value: ethers.parseEther(String(c.value)),
+        });
+        showToast('Waiting for confirmation…', '⏳');
+        await tx.wait();
+      }
+      await doAction(
+        () => api.post(`/contracts/${contractId}/fund`),
+        'Contract funded ✅',
+      );
+    } catch (chainErr) {
+      showToast('Funding failed: ' + (chainErr.message || chainErr), '❌');
+      setActionLoading(false);
+    }
   };
 
   const hireProposal = async (proposalId) => {
@@ -274,7 +315,7 @@ export default function MyContracts() {
         </div>
 
         <div className="contract-tabs">
-          {['all', 'active', 'pending', 'draft', 'completed'].map(s => (
+          {['all', 'active', 'pending', 'disputed', 'completed'].map(s => (
             <button key={s} className={`ctab${currentFilter === s ? ' active' : ''}`} onClick={() => setCurrentFilter(s)}>
               {s === 'all' ? 'All' : s === 'pending' ? 'Pending Signature' : s.charAt(0).toUpperCase() + s.slice(1)}
             </button>
@@ -453,7 +494,7 @@ export default function MyContracts() {
                     {m.backend_status === 'submitted' && (
                       <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
                         {m.deliverable_cid && (
-                          <a href={`/api/uploads/${m.deliverable_cid}`} target="_blank" rel="noopener noreferrer"
+                          <a href={`${config.ipfsGateway}/ipfs/${m.deliverable_cid}`} target="_blank" rel="noopener noreferrer"
                              className="btn btn-outline btn-sm" style={{ fontSize: 11 }}
                              onClick={e => e.stopPropagation()}>
                             View Deliverable

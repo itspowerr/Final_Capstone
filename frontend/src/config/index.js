@@ -15,6 +15,7 @@ const config = {
   rpcUrl: process.env.REACT_APP_BLOCKCHAIN_RPC || 'http://127.0.0.1:8545',
   chainId: parseInt(process.env.REACT_APP_CHAIN_ID) || 31337,
   apiUrl: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api',
+  ipfsGateway: process.env.REACT_APP_IPFS_GATEWAY || 'http://localhost:8080',
 };
 
 export default config;

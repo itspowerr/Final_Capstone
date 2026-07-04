@@ -18,6 +18,7 @@ import AdminJobs from './pages/admin/AdminJobs';
 import AdminProposals from './pages/admin/AdminProposals';
 import AdminContracts from './pages/admin/AdminContracts';
 import AdminDisputes from './pages/admin/AdminDisputes';
+import AuditLogs from './pages/admin/AuditLogs';
 import AdminNavbar from './components/admin/Navbar';
 import './css/landing.css';
 import './css/login.css';
@@ -70,6 +71,7 @@ export default function App() {
         <Route path="/proposals" element={<ProtectedRoute><AdminLayout><AdminProposals /></AdminLayout></ProtectedRoute>} />
         <Route path="/contracts" element={<ProtectedRoute><AdminLayout><AdminContracts /></AdminLayout></ProtectedRoute>} />
         <Route path="/disputes" element={<ProtectedRoute><AdminLayout><AdminDisputes /></AdminLayout></ProtectedRoute>} />
+        <Route path="/audit-logs" element={<ProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></ProtectedRoute>} />
       </Routes>
     );
   }

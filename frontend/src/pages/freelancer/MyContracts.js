@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import api from '../../services/api';
+import { uploadFile } from '../../services/ipfs';
 
 function statusGroup(status) {
   const s = (status || '').toLowerCase();
@@ -28,21 +29,10 @@ function fmtDate(iso) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-function buildStubCid(file, notes) {
-  const ts = Date.now().toString(36).slice(-6);
-  const name = file ? file.name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) : '';
-  const note = notes ? notes.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12) : '';
-  const parts = ['Qm', 'local', ts];
-  if (name) parts.push(name);
-  if (name && note) parts.push('-');
-  if (note) parts.push(note);
-  parts.push(Date.now().toString(36).slice(-4));
-  return parts.join('-');
-}
-
 export default function MyContracts() {
   const navigate = useNavigate();
   const [contracts, setContracts] = useState([]);
+
   const [users, setUsers] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -56,27 +46,35 @@ export default function MyContracts() {
 
   useEffect(() => {
     let cancelled = false;
+    let pollId;
+
+    const fetchData = () => {
+      return api.get('/contracts')
+        .then(res => {
+          if (cancelled) return;
+          const list = (res.data && res.data.contracts) || [];
+          setContracts(list);
+          setError(null);
+          const ids = [...new Set(list.flatMap(c => [c.client_id, c.freelancer_id].filter(Boolean)))];
+          if (!ids.length) return;
+          return api.get('/users', { params: { ids: ids.join(',') } }).then(uRes => {
+            if (cancelled) return;
+            const map = {};
+            (uRes.data || []).forEach(u => { map[u.id] = u; });
+            setUsers(map);
+          }).catch(() => {});
+        })
+        .catch(err => {
+          if (!cancelled) setError(err.response?.data?.detail?.message || err.message || 'Failed to load contracts');
+        });
+    };
+
     setLoading(true);
     setError(null);
-    api.get('/contracts')
-      .then(res => {
-        if (cancelled) return;
-        const list = (res.data && res.data.contracts) || [];
-        setContracts(list);
-        const ids = [...new Set(list.flatMap(c => [c.client_id, c.freelancer_id].filter(Boolean)))];
-        if (!ids.length) return;
-        return api.get('/users', { params: { ids: ids.join(',') } }).then(uRes => {
-          if (cancelled) return;
-          const map = {};
-          (uRes.data || []).forEach(u => { map[u.id] = u; });
-          setUsers(map);
-        }).catch(() => {});
-      })
-      .catch(err => {
-        if (!cancelled) setError(err.response?.data?.detail?.message || err.message || 'Failed to load contracts');
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    fetchData().finally(() => { if (!cancelled) setLoading(false); });
+
+    pollId = setInterval(fetchData, 30000);
+    return () => { cancelled = true; clearInterval(pollId); };
   }, []);
 
   const tabs = [
@@ -118,7 +116,17 @@ export default function MyContracts() {
 
   async function submitMilestone(contractId, index) {
     setSubmitting(true);
-    const cid = buildStubCid(submitFile, submitNotes);
+    let cid = null;
+    if (submitFile) {
+      try {
+        const result = await uploadFile(submitFile);
+        cid = result.cid;
+      } catch (uploadErr) {
+        showToast(uploadErr.response?.data?.detail?.message || uploadErr.message || 'Failed to upload to IPFS', '⚠️');
+        setSubmitting(false);
+        return;
+      }
+    }
     try {
       const res = await api.post(`/contracts/${contractId}/milestones/${index}/submit`, {
         deliverable_cid: cid,
@@ -144,7 +152,6 @@ export default function MyContracts() {
     try {
       await api.post(`/contracts/${contractId}/sign`);
       showToast('Contract signed ✅');
-      fetchContracts();
       setDetailId(null);
       setExpandedIdx(null);
     } catch (err) {
@@ -217,7 +224,7 @@ export default function MyContracts() {
         ) : displayed.length === 0 ? (
           <div className="empty-state">
             <div className="empty-icon">📄</div>
-            <h3>No contracts here</h3>
+            <h3>{currentTab === 'pending' ? 'No pending items' : 'No contracts here'}</h3>
             <p>Apply to jobs to start getting contracts.</p>
             <button className="btn btn-primary btn-sm" onClick={() => navigate('/freelancer/jobs')}>Browse Jobs →</button>
           </div>
@@ -260,8 +267,11 @@ export default function MyContracts() {
                     {c.status === 'active' ? (
                       <button className="btn btn-primary btn-sm" onClick={e => { e.stopPropagation(); const firstPending = c.milestones.findIndex(m => (m.status || '').toLowerCase() === 'pending'); setDetailId(c.id); setExpandedIdx(firstPending >= 0 ? firstPending : 0); }}>Submit Work</button>
                     ) : null}
-                    {c.status === 'pending_signatures' ? (
+                    {c.status === 'pending_signatures' && !c.freelancer_signed ? (
                       <button className="btn btn-primary btn-sm" onClick={e => { e.stopPropagation(); signContract(c.id); }}>Sign Contract</button>
+                    ) : null}
+                    {c.status === 'pending_signatures' && c.freelancer_signed ? (
+                      <span className="btn btn-outline btn-sm" style={{ opacity: 0.7, cursor: 'default' }}>Signed</span>
                     ) : null}
                     <button className="btn btn-outline btn-sm" onClick={e => { e.stopPropagation(); setDetailId(c.id); }}>Details</button>
                   </div>

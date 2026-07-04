@@ -7,8 +7,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
 from app.redis_client import init_redis, close_redis
-from app.routers import auth, jobs, contracts, disputes, uploads, proposals, users, wallet_auth
+from app.routers import admin, auth, contracts, disputes, ipfs, jobs, proposals, uploads, users, wallet_auth
 from app.services.event_listener import start_event_listener
+from app.services.ipfs_monitor import start_ipfs_monitor
+from app.services.repin_service import start_repin_service
 
 
 @asynccontextmanager
@@ -18,6 +20,8 @@ async def lifespan(app: FastAPI):
     )
     await init_redis()
     start_event_listener()
+    start_ipfs_monitor()
+    start_repin_service()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
@@ -47,15 +51,46 @@ app.include_router(uploads.router, prefix="/api")
 app.include_router(proposals.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(wallet_auth.router, prefix="/api")
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok", "version": "1.0.0"}
+app.include_router(admin.router, prefix="/api")
+app.include_router(ipfs.router, prefix="/api")
 
 
 @app.get("/api/health")
 async def api_health_check():
+    from app.services.health_service import (
+        check_blockchain,
+        check_database,
+        check_event_listener,
+        check_ipfs,
+        check_redis,
+    )
+
+    db = await check_database()
+    redis = await check_redis()
+    ipfs = await check_ipfs()
+    blockchain = await check_blockchain()
+    event_listener = check_event_listener()
+
+    all_ok = all(
+        s["status"] == "ok" or s["status"] == "disabled"
+        for s in [db, redis, ipfs, blockchain, event_listener]
+    )
+
+    return {
+        "status": "ok" if all_ok else "degraded",
+        "version": "1.0.0",
+        "services": {
+            "database": db,
+            "redis": redis,
+            "ipfs": ipfs,
+            "blockchain": blockchain,
+            "event_listener": event_listener,
+        },
+    }
+
+
+@app.get("/health")
+async def health_check():
     return {"status": "ok", "version": "1.0.0"}
 
 

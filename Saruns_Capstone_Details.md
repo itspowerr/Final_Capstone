@@ -1019,5 +1019,217 @@
 - Backend event listener continues to log connection errors in a retry loop but does not crash the server; it will recover once Hardhat is consistently available.
 
 ---
-*Last updated: 2026-07-02*
-*Session: Comprehensive project analysis complete*
+## 10. PlantUML Diagram Accuracy Audit
+
+This section documents which diagrams in `capstone_report/docs/plantuml/` accurately reflect the current system behavior and which do not, as of the Approach B implementation pass.
+
+### Accurate Diagrams
+- `02_Authentication.puml` — Reflects the actual wallet auth flow implemented in `frontend/src/services/auth.js` and `backend/app/routers/wallet_auth.py`.
+- `06_Solidity_API.puml` — Matches the `GigEscrow.sol` function surface and access-control rules documented in the smart contract.
+- `07_Escrow_State_Machine.puml` — Correctly describes the Solidity enum lifecycle: Created → InProgress → Completed / Cancelled / Disputed, with milestone sub-states Pending → Funded → Submitted → Approved / Rejected.
+- `08_System_Test_Plan.puml` — Parametrized test boundary diagram is structurally accurate for the Hardhat test scenarios.
+- `09a_Proposal_Creation_Activity.puml` — Matches `proposals.py` create/list/accept flow.
+- `09d_Dispute_Resolution_Activity.puml` — Generally aligned with `disputes.py` + `raiseDispute()` / `resolveDispute()` on-chain functions.
+- `10_Architecture.puml` — Layer stack (React, FastAPI, PostgreSQL, Hardhat, IPFS) matches the actual deployment topology.
+- `11a_Controllers.puml` — Controller / endpoint grouping matches the router files present in `backend/app/routers/`.
+- `12_API_Interaction.puml` — REST method/path convention matches the current routers.
+- `13_Deployment.puml` — Docker + Hardhat + uvicorn stack matches project instructions.
+
+### Inaccurate Diagrams (MUST UPDATE BEFORE SUBMISSION)
+
+| Diagram | Inaccuracy | What Actually Happens |
+|---------|-----------|----------------------|
+| `03_Contract_Creation.puml` | Shows frontend driving on-chain deployment. | Contract deployment is triggered server-side during `POST /api/proposals/{id}/accept` in `backend/app/routers/proposals.py`, not from a direct client form submit. There is no `POST /api/contracts/create` endpoint, and there is no `POST /api/contracts/:id/confirm` endpoint. |
+| `04_Contract_Execution.puml` | Shows on-chain payment release on milestone approval. | `POST /api/contracts/:id/milestones/{index}/approve` (`approve_milestone` in `routers/contracts.py`) only updates PostgreSQL to `MilestoneStatus.approved`. There is no on-chain payment release during milestone approval. |
+| `04_Contract_Execution.puml` | Shows `verifySignature(freelancerSignature)` on backend. | No signature-verification service exists; `Web3.eth.account` is only used for server-side transaction signing. |
+| `05_State_Machine.puml` | Uses states `Draft → Pending → Signed → Active → Submitted → Approved → Paid → Revision → Disputed → Completed`. | Actual `ContractStatus` enum in `backend/app/models.py` is: `draft`, `pending_review`, `pending_signatures`, `pending_funding`, `active`, `delivered`, `revision_requested`, `completed`, `cancelled`, `disputed`. |
+| `09b_Contract_Creation_Activity.puml` | Shows client filling form → deploy → both sign → both signed → client deposits ETH → Active. | Current implemented flow (Approach B): client accepts proposal → backend deploys contract (`pending_funding`) → client signs → freelancer signs → still `pending_funding` → client funds → `active`. Signing and funding are separate steps. |
+| `09c_Milestone_Execution_Activity.puml` | Shows on-chain payment release on approval. | Current backend does not implement on-chain payment release during milestone approval. |
+| `11b_Services.puml` | Shows `IPFSService`, `SignatureVerification`, `AuthService`, and `ContractService` with methods that don't exist as separate service modules. | `backend/app/services/` contains only `blockchain_service.py`, `event_listener.py`, and (new) `contract_service.py`. There is no `IPFSService` (CID is stubbed), no `SignatureVerification` service (signing is done inline via `web3.py`), and no `AuthService` (logic lives in `wallet_auth.py` router). |
+| `01_Architecture.puml` | Shows React app deploying directly to Solidity contract. | In the current system, the **backend** (`blockchain_service.py` / `contract_service.py`) builds, signs, and broadcasts contract-deployment transactions using the server private key. The frontend never deploys contracts. |
+| `01_Architecture.puml` | Shows `eth_authentication()` and Redis session abstractions (`session_create`, `session_verify`) as first-class boxes. | No such named functions/service layer exists. Auth uses JWT in `wallet_auth.py`; Redis is used only for nonce storage in the auth flow, not for session tokens. |
+| `11c_Entities.puml` | Shows `Session`, `Signature`, `Deliverable` entities with attributes that don't match real DB models. | PostgreSQL has no `sessions`, `signatures`, or `deliverables` tables. The `Contract` model has no `pseudonymousId`, `clientPseudonym`, `freelancerPseudonym`, `signedAt`, or `txHash` columns. |
+| `03_Contract_Creation.puml` & `09b` | Reference `termsCID` as if uploaded to IPFS before or during contract creation. | Current flow writes a stub CID `contract_{contract.id}` in `contract_service.py`; there is no live IPFS upload path integrated into contract creation. |
+
+### Recommended Actions
+1. Update `05_State_Machine.puml` to use real `ContractStatus` and `MilestoneStatus` enum values from `backend/app/models.py:103-166`.
+2. Update `03_Contract_Creation.puml` and `09b_Contract_Creation_Activity.puml` to describe proposal-accept-driven deployment and the split sign/fund flow (`pending_funding` → `active`).
+3. Update `04_Contract_Execution.puml` to remove on-chain payment release from milestone approval.
+4. Update `11b_Services.puml` to reflect the real service modules: `contract_service.py` (sign / fund orchestration) and `blockchain_service.py` (tx build/sign/send + helpers).
+5. Update `01_Architecture.puml` so the backend is the contract-deployment actor, not the React app.
+6. Update `11c_Entities.puml` to match actual SQLAlchemy model fields (`models.py`).
+
+---
+
+## 11. Repair Log
+
+| Date | Issue | Root Cause | Fix Applied | Files Changed |
+|------|-------|------------|-----|---------------|
+| 2026-07-02 | Client job posting modal: Network Error | Backend FastAPI was not running (port 8000 returning 000). PostgreSQL schema was missing `on_chain_job_id` column in `freeledger.jobs`, which would 500 even if backend started. Hardhat Docker container was using Node 18 image, which is incompatible with installed Hardhat (requires Node >= 20), causing RPC failure. | 1. Added `on_chain_job_id INTEGER NULL` to `docker/postgres/init.sql` and ran `ALTER TABLE` on live DB. 2. Bumped Hardhat container image from `node:18` to `node:20` and force-recreated container. 3. Started backend via uvicorn. | `docker/postgres/init.sql`, `docker/docker-compose.yml` |
+
+---
+
+## 12. Approach B Implementation Log (2026-07-03)
+
+| Change | File | What Was Added / Fixed |
+|--------|------|------------------------|
+| Contract service | `backend/app/services/contract_service.py` | Split signing and funding into separate service functions |
+| Router sign/fund | `backend/app/routers/contracts.py` | `POST /contracts/{id}/sign` now only records signatures; `POST /contracts/{id}/fund` only funds and activates |
+| Proposal accept | `backend/app/routers/proposals.py` | Accepting a proposal now deploys the contract on-chain, stores `on_chain_id` and `contract_address`, and sets status to `pending_funding` |
+| Frontend client | `frontend/src/pages/client/MyContracts.js` | Added `Fund Contract` button for `pending_funding` contracts |
+| Frontend freelancer | `frontend/src/pages/freelancer/MyContracts.js` | Added `Sign Contract` button for `pending_signatures` contracts |
+
+---
+
+## 13. start.sh Improvements
+
+| Date | Issue | Fix |
+|------|-------|-----|
+| 2026-07-02 | start.sh had no backend health verification, no graceful failure on unhealthy backend, and no auto-pull node:20 | Pulls node:20 automatically, verifies `/health` returns 200, prints common fixes upfront on failure |
+
+### Verification
+- `curl http://127.0.0.1:8000/health` → `200 OK`
+- `curl http://127.0.0.1:8000/api/health` → `200 OK`
+- Registered test client → created job → API returned `200` with job object containing `on_chain_job_id: null`
+- Hardhat JSON-RPC → responded with block number after container recreate
+- Contract redeployed to `0x5FbDB2315678afecb367f032d93F642f64180aa3`
+
+### Notes
+- `docker compose up -d` was run as a background process (`background=true`) because it triggered the terminal long-lived-process guard.
+- Backend was started manually with `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000` from `backend/` venv.
+- Backend event listener continues to log connection errors in a retry loop but does not crash the server; it will recover once Hardhat is consistently available.
+
+---
+
+---
+
+## 14. IPFS Integration + On-Chain Operations Log (2026-07-04)
+
+### Files Created
+
+| File | Purpose |
+|------|---------|
+| `backend/app/services/ipfs_service.py` | Upload/download/pin files to IPFS Kubo API via httpx |
+| `backend/app/services/ipfs_monitor.py` | Background health check of IPFS node (30s interval) |
+| `backend/app/services/repin_service.py` | Background repin loop (6 hour interval) for all CIDs in DB |
+| `backend/app/services/health_service.py` | Enhanced `/api/health` aggregating DB, Redis, IPFS, Blockchain, Event Listener |
+| `backend/app/services/audit_service.py` | `log_transition()` helper for writing audit log entries |
+| `backend/app/routers/ipfs.py` | `POST /api/ipfs/upload` (auth) + `GET /api/ipfs/download/{cid}` |
+| `backend/app/routers/admin.py` | `GET /api/admin/disputes` + `GET /api/admin/audit-logs` |
+| `frontend/src/pages/admin/AuditLogs.js` | Admin audit log viewer with filterable table |
+| `frontend/src/pages/admin/AdminContracts.js` | (updated) Added audit log queries |
+| `docker/ipfs/config.sh` | IPFS CORS init script (`Access-Control-Allow-Origin: *`) |
+| `IPFS.txt` | Full IPFS implementation documentation |
+
+### Files Modified
+
+| File | Change |
+|------|--------|
+| `docker/docker-compose.yml` | Added IPFS Kubo v0.28.0 service (ports 5001/8080, healthcheck using `ipfs swarm peers`) |
+| `requirements.txt` | Added `httpx==0.27.0` |
+| `backend/app/config.py` | Added `ipfs_api_url`, `repin_interval_seconds`, `freelancer_private_key`, blockchain timeouts |
+| `backend/app/models.py` | Added `rejection_reason` to `ContractMilestone`, added `AuditLog` model |
+| `backend/app/schemas.py` | Added `IPFSUploadResponse`, `AuditLogResponse`, `DisputeResolveRequest`, `rejection_reason` in `MilestoneResponse` |
+| `backend/app/blockchain_service.py` | Added `submit_milestone_on_chain`, `reject_milestone_on_chain`, `raise_dispute_on_chain`, `resolve_dispute_on_chain` |
+| `backend/app/routers/contracts.py` | `submit_milestone` → on-chain call + audit log (was DB-only). `approve_milestone` → on-chain call + audit log + auto-complete with audit. `reject_milestone` → on-chain call + stores `rejection_reason` + audit log |
+| `backend/app/routers/disputes.py` | `create_dispute` → on-chain call + audit log. New `POST /disputes/{id}/resolve` for admin with on-chain `resolveDispute()` |
+| `backend/app/main.py` | Registered `admin` and `ipfs` routers; started `ipfs_monitor` and `repin_service` in lifespan |
+| `frontend/src/pages/admin/AdminDisputes.js` | Replaced mock localStorage CRUD with real API fetch + resolve via `/admin/disputes` + `/disputes/{id}/resolve` |
+| `frontend/src/pages/admin/AdminContracts.js` | (updated) Real API data |
+| `frontend/src/pages/admin/AuditLogs.js` | New page |
+| `frontend/src/services/ipfs.js` | `uploadFile(file)` and `getIPFSGatewayUrl(cid)` helpers |
+| `frontend/src/config/index.js` | Added `ipfsGateway` field |
+| `frontend/.env` | Added `REACT_APP_IPFS_GATEWAY=http://localhost:8080` |
+| `frontend/src/components/admin/Navbar.js` | Added "Audit Logs" nav link |
+| `frontend/src/App.js` | Added `/audit-logs` route + `AuditLogs` import |
+
+### DB Migration Required (Live)
+
+The `rejection_reason` column and `audit_logs` table were added to the SQLAlchemy models but PostgreSQL tables already existed. SQL applied manually:
+
+```sql
+ALTER TABLE freeledger.contract_milestones ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
+
+CREATE TABLE IF NOT EXISTS freeledger.audit_logs (
+    id VARCHAR(50) PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id VARCHAR(50) NOT NULL,
+    from_status VARCHAR(50),
+    to_status VARCHAR(50),
+    action VARCHAR(50) NOT NULL,
+    actor_id VARCHAR(50),
+    actor_role VARCHAR(50),
+    details TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_type ON freeledger.audit_logs(entity_type);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_entity_id ON freeledger.audit_logs(entity_id);
+```
+
+### Architecture: Updated Data Flow
+
+```
+                    ┌─────────────────────────────────────────┐
+                    │              FRONTEND (React)            │
+                    │  POST /upload (multipart)                │
+                    │    → ipfs.js: uploadFile(file)           │
+                    │    → Backend /api/ipfs/upload            │
+                    │      → ipfs_service.py: upload_file()    │
+                    │        → IPFS Kubo API (port 5001)       │
+                    │      → Returns { cid, size, mime_type } │
+                    │    → Use CID in submitMilestone          │
+                    │                                         │
+                    │  View deliverable:                       │
+                    │    → http://localhost:8080/ipfs/{cid}    │
+                    └─────────────────────────────────────────┘
+
+                    ┌─────────────────────────────────────────┐
+                    │         BACKEND (State Transitions)      │
+                    │                                         │
+                    │  State change (approve/reject/dispute): │
+                    │    1. Call blockchain_service.on_chain() │
+                    │    2. Update PostgreSQL row              │
+                    │    3. audit_service.log_transition()     │
+                    └─────────────────────────────────────────┘
+```
+
+### Updated Section 2.6 — Backend API Routers
+
+| Router | File | Lines | Status |
+|--------|------|-------|--------|
+| Jobs | `routers/jobs.py` | 184 | Complete |
+| Proposals | `routers/proposals.py` | 145 | Complete |
+| Contracts | `routers/contracts.py` | ~510 | Complete |
+| Disputes | `routers/disputes.py` | ~140 | Complete |
+| Admin | `routers/admin.py` | ~100 | Complete |
+| IPFS | `routers/ipfs.py` | ~80 | Complete |
+| Uploads | `routers/uploads.py` | ~30 | Complete |
+| Users | `routers/users.py` | ~60 | Complete |
+
+### Updated Section 2.8 — Blockchain Service
+
+**File:** `backend/app/services/blockchain_service.py`
+
+Now has all 7 on-chain functions implemented:
+
+| Function | Purpose |
+|----------|---------|
+| `create_contract_on_chain()` | Build → sign → send `createContract()` tx |
+| `submit_milestone_on_chain()` | Submit deliverable CID on-chain |
+| `approve_milestone_on_chain()` | Approve + release payment |
+| `reject_milestone_on_chain()` | Reject milestone (resets to Funded) |
+| `raise_dispute_on_chain()` | Set contract to Disputed state |
+| `resolve_dispute_on_chain()` | Release or refund via admin |
+| `fund_contract_on_chain()` | Fund contract (meta: client-side via MetaMask) |
+
+---
+
+## 15. Repair Log
+
+| Date | Issue | Root Cause | Fix Applied | Files Changed |
+|------|-------|------------|-------------|---------------|
+| 2026-07-02 | Client job posting modal: Network Error | Backend FastAPI not running, PostgreSQL missing `on_chain_job_id` column, Hardhat on Node 18 | Added column, bumped Node to 20, started backend | `docker/postgres/init.sql`, `docker/docker-compose.yml` |
+| 2026-07-04 | Client My Contracts page: Network Error | Added `rejection_reason` to `ContractMilestone` model + `AuditLog` model, but PostgreSQL tables already existed. `metadata.create_all` only creates new tables, doesn't ALTER existing ones. | `ALTER TABLE freeledger.contract_milestones ADD COLUMN rejection_reason TEXT` + `CREATE TABLE freeledger.audit_logs(...)` | — (SQL run directly against live DB) |
+
+*Last updated: 2026-07-04*
+*Session: IPFS integration + on-chain milestone/dispute operations + admin audit log viewer complete*

@@ -1,10 +1,12 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Contract, ContractMilestone, ContractStatus, MilestoneStatus, Proposal, User
+from app.models import Contract, ContractMilestone, ContractStatus, Job, MilestoneStatus, Proposal, User
 from app.routers.auth import get_current_user
 from app.schemas import (
     ContractCreate,
@@ -17,6 +19,9 @@ from app.schemas import (
     ProposalResponse,
 )
 
+from app.config import settings
+from app.services import blockchain_service
+from app.services.audit_service import log_transition
 from app.services.contract_service import fund_contract as do_fund_contract, sign_contract as do_sign_contract
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
@@ -57,6 +62,8 @@ async def create_contract(
         description=data.description,
         total_amount=data.total_amount,
         deadline=data.deadline,
+        on_chain_id=data.on_chain_id,
+        contract_address=data.contract_address or settings.contract_address if data.on_chain_id else None,
         status=ContractStatus.pending_signatures,
     )
     db.add(contract)
@@ -111,12 +118,30 @@ async def list_contracts(
         ]
         return base
 
-    return {
+    response = {
         "contracts": [_contract_with_milestones(c) for c in contracts],
         "total": total or 0,
         "page": page,
         "pages": max(1, (total + limit - 1) // limit) if total else 1,
     }
+
+    if current_user.role.value == "freelancer":
+        prop_query = (
+            select(Proposal, Job.title)
+            .join(Job, Proposal.job_id == Job.id)
+            .where(Proposal.freelancer_id == current_user.id)
+            .where(Proposal.status == "pending")
+            .order_by(Proposal.created_at.desc())
+        )
+        prop_result = await db.execute(prop_query)
+        proposals = []
+        for prop, job_title in prop_result.all():
+            p = ProposalResponse.model_validate(prop).model_dump()
+            p["job_title"] = job_title
+            proposals.append(p)
+        response["proposals"] = proposals
+
+    return response
 
 
 @router.get("/{contract_id}", response_model=ContractDetail)
@@ -216,10 +241,34 @@ async def approve_milestone(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "MILESTONE_NOT_SUBMITTED", "message": "Milestone has not been submitted"},
         )
+
+    if contract.on_chain_id is not None:
+        try:
+            on_chain_id = int(contract.on_chain_id)
+            await asyncio.to_thread(
+                blockchain_service.approve_milestone_on_chain,
+                contract_id=on_chain_id,
+                milestone_index=index,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail={"code": "BLOCKCHAIN_APPROVE_FAILED", "message": f"On-chain approval failed: {exc}"},
+            )
+
     ms.status = MilestoneStatus.approved
     ms.approved_at = func.now()
-    await db.commit()
-    await db.refresh(ms)
+    await db.flush()
+    await log_transition(
+        db=db,
+        entity_type="milestone",
+        entity_id=ms.id,
+        action="approve",
+        actor_id=current_user.id,
+        actor_role=current_user.role.value,
+        from_status="submitted",
+        to_status="approved",
+    )
 
     all_ms = await db.execute(
         select(ContractMilestone).where(ContractMilestone.contract_id == contract_id)
@@ -227,8 +276,19 @@ async def approve_milestone(
     all_done = all(m.status == MilestoneStatus.approved for m in all_ms.scalars().all())
     if all_done:
         contract.status = ContractStatus.completed
-        await db.commit()
+        await log_transition(
+            db=db,
+            entity_type="contract",
+            entity_id=contract.id,
+            action="complete",
+            actor_id=current_user.id,
+            actor_role=current_user.role.value,
+            from_status="active",
+            to_status="completed",
+        )
 
+    await db.commit()
+    await db.refresh(ms)
     return MilestoneResponse.model_validate(ms)
 
 
@@ -252,10 +312,38 @@ async def reject_milestone(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "MILESTONE_NOT_SUBMITTED", "message": "Milestone has not been submitted"},
         )
+
+    if contract.on_chain_id is not None:
+        try:
+            on_chain_id = int(contract.on_chain_id)
+            await asyncio.to_thread(
+                blockchain_service.reject_milestone_on_chain,
+                contract_id=on_chain_id,
+                milestone_index=index,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail={"code": "BLOCKCHAIN_REJECT_FAILED", "message": f"On-chain rejection failed: {exc}"},
+            )
+
     ms.status = MilestoneStatus.pending
     ms.deliverable_cid = None
     ms.submission_notes = None
     ms.submitted_at = None
+    ms.rejection_reason = data.reason
+    await db.flush()
+    await log_transition(
+        db=db,
+        entity_type="milestone",
+        entity_id=ms.id,
+        action="reject",
+        actor_id=current_user.id,
+        actor_role=current_user.role.value,
+        from_status="submitted",
+        to_status="pending",
+        details=data.reason,
+    )
     await db.commit()
     await db.refresh(ms)
     return MilestoneResponse.model_validate(ms)
@@ -286,23 +374,50 @@ async def submit_milestone(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "MILESTONE_NOT_PENDING", "message": "Only pending milestones can be submitted"},
         )
+
+    if contract.on_chain_id is not None and data.deliverable_cid:
+        try:
+            on_chain_id = int(contract.on_chain_id)
+            await asyncio.to_thread(
+                blockchain_service.submit_milestone_on_chain,
+                contract_id=on_chain_id,
+                milestone_index=index,
+                deliverable_cid=data.deliverable_cid,
+            )
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail={"code": "BLOCKCHAIN_SUBMIT_FAILED", "message": f"On-chain submission failed: {exc}"},
+            )
+
     ms.status = MilestoneStatus.submitted
     ms.deliverable_cid = data.deliverable_cid
     ms.submission_notes = data.submission_notes
     ms.submitted_at = func.now()
+    await db.flush()
+    await log_transition(
+        db=db,
+        entity_type="milestone",
+        entity_id=ms.id,
+        action="submit",
+        actor_id=current_user.id,
+        actor_role=current_user.role.value,
+        from_status="pending",
+        to_status="submitted",
+    )
     await db.commit()
     await db.refresh(ms)
     return MilestoneResponse.model_validate(ms)
 
 
-@router.post("/{contract_id}/sign", response_model=ContractResponse)
+@router.post("/{contract_id}/sign", response_model=ContractDetail)
 async def sign_contract(
     contract_id: str,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        contract = do_sign_contract(db=db, contract_id=contract_id, user_id=current_user.id)
+        contract = await do_sign_contract(db=db, contract_id=contract_id, user_id=current_user.id)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -340,7 +455,7 @@ async def sign_contract(
     )
 
 
-@router.post("/{contract_id}/fund", response_model=ContractResponse)
+@router.post("/{contract_id}/fund", response_model=ContractDetail)
 async def fund_contract(
     contract_id: str,
     db: AsyncSession = Depends(get_db),
@@ -353,7 +468,7 @@ async def fund_contract(
         )
 
     try:
-        contract = do_fund_contract(db=db, contract_id=contract_id, user_id=current_user.id)
+        contract = await do_fund_contract(db=db, contract_id=contract_id, user_id=current_user.id)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -4,6 +4,12 @@ from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
 
+class IPFSUploadResponse(BaseModel):
+    cid: str
+    size: int
+    mime_type: str
+
+
 class ErrorResponse(BaseModel):
     code: str
     message: str
@@ -119,6 +125,8 @@ class ContractCreate(BaseModel):
     total_amount: float = Field(..., gt=0)
     deadline: Optional[datetime] = None
     milestones: list[MilestoneDef] = Field(default_factory=list)
+    on_chain_id: Optional[int] = Field(None, description="On-chain contract ID if already deployed via MetaMask")
+    contract_address: Optional[str] = Field(None, description="Contract address if already deployed via MetaMask")
 
 
 class MilestoneResponse(BaseModel):
@@ -130,6 +138,7 @@ class MilestoneResponse(BaseModel):
     due_date: Optional[datetime] = None
     deliverable_cid: Optional[str] = None
     submission_notes: Optional[str] = None
+    rejection_reason: Optional[str] = None
     status: str
     submitted_at: Optional[datetime] = None
     approved_at: Optional[datetime] = None
@@ -147,6 +156,8 @@ class ContractResponse(BaseModel):
     description: Optional[str] = None
     total_amount: float
     deadline: Optional[datetime] = None
+    on_chain_id: Optional[int] = None
+    contract_address: Optional[str] = None
     status: str
     client_signed: bool = False
     freelancer_signed: bool = False
@@ -182,6 +193,27 @@ class MilestoneSubmit(BaseModel):
 
 class DisputeCreate(BaseModel):
     reason: str = Field(..., min_length=1)
+
+
+class DisputeResolveRequest(BaseModel):
+    release_to_freelancer: bool
+    resolution_notes: Optional[str] = None
+
+
+class AuditLogResponse(BaseModel):
+    id: str
+    entity_type: str
+    entity_id: str
+    from_status: Optional[str] = None
+    to_status: Optional[str] = None
+    action: str
+    actor_id: Optional[str] = None
+    actor_role: Optional[str] = None
+    details: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class ProposalCreate(BaseModel):

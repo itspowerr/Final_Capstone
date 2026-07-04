@@ -1,0 +1,230 @@
+================================================================================
+                   IPFS INTEGRATION — COMPLETE IMPLEMENTATION
+================================================================================
+
+TABLE OF CONTENTS
+  1. File Structure (all 17 files involved)
+  2. Complete Data Flow
+  3. Docker IPFS Service Configuration
+  4. Backend Config Changes
+  5. Key Design Decisions
+
+================================================================================
+1. FILE STRUCTURE
+================================================================================
+
+docker/
+├── docker-compose.yml               # [MODIFY] add ipfs service
+└── ipfs/
+    └── config.sh                     # [CREATE] CORS init script for Kubo
+
+backend/app/
+├── config.py                         # [MODIFY] add IPFS settings
+├── models.py                         # (no change — already has deliverable_cid, terms_cid, etc.)
+├── schemas.py                        # [MODIFY] add IPFSUploadResponse
+├── main.py                           # [MODIFY] register ipfs router, start monitors
+├── requirements.txt                  # [MODIFY] add httpx
+├── routers/
+│   └── ipfs.py                       # [CREATE] POST /upload, GET /download/{cid}
+├── services/
+│   ├── ipfs_service.py               # [CREATE] upload/download/pin helpers
+│   ├── ipfs_monitor.py               # [CREATE] health-check background loop
+│   ├── repin_service.py              # [CREATE] periodic CID-repin background loop
+│   └── health_service.py             # [CREATE] enhanced /api/health with IPFS checks
+└── utils/
+    ├── error_codes.py                # [MODIFY] add IPFS_UPLOAD_FAILED, IPFS_DOWNLOAD_FAILED
+    └── exceptions.py                 # [MODIFY] add IPFSError class
+
+frontend/
+├── .env                              # [MODIFY] add REACT_APP_IPFS_GATEWAY
+├── src/
+│   ├── config/
+│   │   └── index.js                  # [MODIFY] add ipfsGateway
+│   ├── services/
+│   │   └── ipfs.js                   # [CREATE] uploadFile(), getIPFSGatewayUrl()
+│   └── pages/
+│       ├── freelancer/
+│       │   └── MyContracts.js         # [MODIFY] replace buildStubCid -> real IPFS upload
+│       └── client/
+│           └── MyContracts.js         # [MODIFY] View Deliverable -> IPFS gateway URL
+
+Total: 17 files — 8 new, 9 modified.
+
+
+================================================================================
+2. COMPLETE DATA FLOW
+================================================================================
+
+A. FREELANCER SUBMITS DELIVERABLE (HAPPY PATH)
+===============================================
+
+  Freelancer selects file + writes notes on Submit modal
+         |
+         v
+  1. Frontend (MyContracts.js)
+     - Reads file bytes from <input type="file">
+     - Calls:  import { uploadFile } from '../../services/ipfs';
+                const result = await uploadFile(file);
+     - This POSTs file as multipart/form-data to:
+           POST /api/ipfs/upload
+           Headers: { Content-Type: multipart/form-data, Authorization: Bearer <token> }
+     - Backend router (ipfs.py) receives the UploadFile
+         |
+         v
+  2. Backend (routers/ipfs.py -> services/ipfs_service.py)
+     - Reads all bytes from UploadFile
+     - Calls ipfs_service.upload_file_bytes(contents, filename)
+         |
+         v
+  3. ipfs_service.py
+     - Writes bytes to a tempfile
+     - Opens tempfile as BinaryIO
+     - POSTs to Kubo API:  POST http://ipfs:5001/api/v0/add
+       (multipart/form-data with file attached)
+     - Kubo returns JSON:  { "Hash": "QmX...", "Size": 12345 }
+         |
+         v
+  4. ipfs_service.py returns  { "cid": "QmX...", "size": 12345 }
+         |
+         v
+  5. ipfs.py router:
+     - Calls ipfs_service.pin_file(cid) -> POST /api/v0/pin/add?arg=QmX...
+       (ensures IPFS node keeps the data pinned)
+     - Guesses mime type from filename
+     - Returns IPFSUploadResponse(cid, size, mime_type)
+         |
+         v
+  6. Frontend receives:  { cid: "QmX...", size: 12345, mime_type: "application/pdf" }
+     - Now calls:  api.post(`/contracts/${contractId}/milestones/${index}/submit`,
+                            { deliverable_cid: cid, submission_notes: notes })
+         |
+         v
+  7. Backend (contracts.py / contract_service.py)
+     - Stores deliverable_cid + submission_notes in contract_milestones row
+     - Returns updated MilestoneResponse
+         |
+         v
+  8. Frontend updates local state, shows toast "Deliverable submitted!"
+
+
+B. CLIENT VIEWS DELIVERABLE
+============================
+
+  Client opens MyContracts page, sees a milestone with deliverable_cid set
+         |
+         v
+  "View Deliverable" link renders:
+      <a href="http://localhost:8080/ipfs/{cid}" target="_blank">
+    - Opens IPFS gateway directly (port 8080 on the host)
+         |
+         v
+  Kubo gateway (docker port 8080) serves the file:
+      GET http://localhost:8080/ipfs/QmX...
+    - Browser downloads or displays the file
+
+
+C. BACKGROUND SERVICES (STARTUP)
+=================================
+
+  Backend starts (lifespan in main.py):
+  +-> init_db()
+  +-> init_redis()
+  +-> start_event_listener()         # existing
+  +-> start_repin_service()          # NEW — background task
+  |   +-> Every 6 hours:
+  |       +-> Query DB for all CIDs (terms_cid, deliverable_cid, avatar_cid, portfolio_cids)
+  |       +-> For each CID: pin_file(cid) to keep it alive on the IPFS node
+  +-> start_ipfs_monitor()           # NEW — background task
+      +-> Every 30 seconds:
+          +-> POST /api/v0/version on Kubo
+          +-> Track consecutive failures
+          +-> Maintain get_ipfs_health() for /api/health endpoint
+
+
+D. HEALTH CHECK (ENHANCED)
+============================
+
+  GET /api/health
+  {
+    "status": "ok",
+    "version": "1.0.0",
+    "services": {
+      "database":       { "status": "ok" },
+      "redis":          { "status": "ok" },
+      "ipfs":           { "status": "ok", "version": "0.28.0", "last_checked": "...", "consecutive_failures": 0 },
+      "blockchain":     { "status": "ok", "chain_id": 31337, "block_number": 42 },
+      "event_listener": { "status": "ok", "detail": "active" }
+    }
+  }
+
+
+================================================================================
+3. DOCKER IPFS SERVICE CONFIGURATION
+================================================================================
+
+docker-compose.yml addition:
+
+  ipfs:
+    image: ipfs/kubo:v0.28.0
+    container_name: freeledger-ipfs
+    ports:
+      - "5001:5001"    # API (backend uses this)
+      - "8080:8080"    # Gateway (frontend uses this)
+    volumes:
+      - ipfs_data:/data/ipfs
+      - ./docker/ipfs/config.sh:/container-init.d/config.sh
+    environment:
+      IPFS_PROFILE: server
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:5001/api/v0/version > /dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+docker/ipfs/config.sh:
+
+  #!/bin/sh
+  ipfs config --json API.HTTPHeaders.Access-Control-Allow-Origin '["*"]'
+  ipfs config --json API.HTTPHeaders.Access-Control-Allow-Methods '["PUT", "POST", "GET"]'
+
+volumes section (add to existing volumes):
+  ipfs_data:
+
+
+================================================================================
+4. BACKEND CONFIG CHANGES
+================================================================================
+
+config.py — new settings to add to Settings class:
+
+  ipfs_api_url: str = "http://127.0.0.1:5001"
+  repin_interval_seconds: int = 21600          # 6 hours
+  ipfs_monitor_interval: int = 30              # seconds between health checks
+  ipfs_degraded_threshold: int = 2
+  ipfs_down_threshold: int = 4
+
+Note: In docker-compose, the backend uses "http://ipfs:5001" (Docker DNS).
+When running locally with uvicorn, it uses "http://127.0.0.1:5001".
+The .env file controls which hostname is used.
+
+
+================================================================================
+5. KEY DESIGN DECISIONS
+================================================================================
+
+  +--------------------------------------+----------------------------------------------------+
+  | Decision                             | Rationale                                          |
+  +--------------------------------------+----------------------------------------------------+
+  | Backend talks to Kubo API (5001)     | API supports pinning; gateway (8080) is read-only  |
+  | Frontend access via gateway (8080)   | Simple URL, no auth needed for public IPFS content |
+  | Files always pinned on upload        | Prevents GC from removing deliverables             |
+  | httpx.AsyncClient for IPFS calls     | Non-blocking, matches FastAPI async model          |
+  | Repin runs every 6 hours             | Keeps CIDs alive across Kubo restarts              |
+  | IPFS monitor runs every 30 seconds   | Quick detection of IPFS node failure               |
+  | Existing uploads.py router stays     | Local disk uploads remain separate from IPFS       |
+  +--------------------------------------+----------------------------------------------------+

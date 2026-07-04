@@ -52,9 +52,11 @@ def get_contract_state(on_chain_id: int) -> dict:
         "client": details[0],
         "freelancer": details[1],
         "title": details[2],
-        "status": details[5],
-        "milestone_count": details[6],
-        "completed_milestones": details[7],
+        "total_amount": details[4],
+        "deadline": details[5],
+        "status": details[6],
+        "milestone_count": details[7],
+        "completed_milestones": details[8],
     }
 
 
@@ -85,7 +87,7 @@ def build_contract_tx(fn, address: str, gas: int = 200000, value: int = 0) -> di
 def sign_and_send(tx: dict, private_key: str) -> str:
     w3 = get_web3()
     signed = w3.eth.account.sign_transaction(tx, private_key)
-    tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+    tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=settings.blockchain_tx_timeout)
     if receipt.status != 1:
         raise RuntimeError("Transaction reverted")
@@ -131,6 +133,85 @@ def create_contract_on_chain(freelancer_address: str, title: str, terms_cid: str
         "tx_hash": tx_hash,
         "contract_address": settings.contract_address,
     }
+
+
+def set_freelancer_on_chain(contract_id: int, freelancer_address: str, client_private_key: str | None = None) -> str | None:
+    pk = client_private_key or settings.client_private_key
+    if not pk:
+        raise ValueError("Server private key not configured")
+    w3 = get_web3()
+    contract = get_contract()
+    account = w3.eth.account.from_key(pk)
+    freelancer_address = Web3.to_checksum_address(freelancer_address)
+
+    current_freelancer = contract.functions.getContractDetails(int(contract_id)).call()[1]
+    if current_freelancer.lower() == freelancer_address.lower():
+        logger.info("Freelancer %s already set for on-chain contract %s — skipping", freelancer_address, contract_id)
+        return None
+
+    fn = contract.functions.setFreelancer(int(contract_id), freelancer_address)
+    tx = build_contract_tx(fn, account.address)
+    return sign_and_send(tx, pk)
+
+
+def approve_milestone_on_chain(contract_id: int, milestone_index: int, client_private_key: str | None = None) -> str:
+    pk = client_private_key or settings.client_private_key
+    if not pk:
+        raise ValueError("Server private key not configured")
+    w3 = get_web3()
+    contract = get_contract()
+    account = w3.eth.account.from_key(pk)
+    fn = contract.functions.approveMilestone(int(contract_id), int(milestone_index))
+    tx = build_contract_tx(fn, account.address)
+    return sign_and_send(tx, pk)
+
+
+def submit_milestone_on_chain(contract_id: int, milestone_index: int, deliverable_cid: str, freelancer_private_key: str | None = None) -> str:
+    pk = freelancer_private_key or settings.freelancer_private_key or settings.client_private_key
+    if not pk:
+        raise ValueError("Server private key not configured")
+    w3 = get_web3()
+    contract = get_contract()
+    account = w3.eth.account.from_key(pk)
+    fn = contract.functions.submitMilestone(int(contract_id), int(milestone_index), deliverable_cid)
+    tx = build_contract_tx(fn, account.address)
+    return sign_and_send(tx, pk)
+
+
+def reject_milestone_on_chain(contract_id: int, milestone_index: int, client_private_key: str | None = None) -> str:
+    pk = client_private_key or settings.client_private_key
+    if not pk:
+        raise ValueError("Server private key not configured")
+    w3 = get_web3()
+    contract = get_contract()
+    account = w3.eth.account.from_key(pk)
+    fn = contract.functions.rejectMilestone(int(contract_id), int(milestone_index))
+    tx = build_contract_tx(fn, account.address)
+    return sign_and_send(tx, pk)
+
+
+def raise_dispute_on_chain(contract_id: int, party_private_key: str | None = None) -> str:
+    pk = party_private_key or settings.client_private_key
+    if not pk:
+        raise ValueError("Server private key not configured")
+    w3 = get_web3()
+    contract = get_contract()
+    account = w3.eth.account.from_key(pk)
+    fn = contract.functions.raiseDispute(int(contract_id))
+    tx = build_contract_tx(fn, account.address)
+    return sign_and_send(tx, pk)
+
+
+def resolve_dispute_on_chain(contract_id: int, release_to_freelancer: bool, admin_private_key: str | None = None) -> str:
+    pk = admin_private_key or settings.client_private_key
+    if not pk:
+        raise ValueError("Server private key not configured")
+    w3 = get_web3()
+    contract = get_contract()
+    account = w3.eth.account.from_key(pk)
+    fn = contract.functions.resolveDispute(int(contract_id), release_to_freelancer)
+    tx = build_contract_tx(fn, account.address)
+    return sign_and_send(tx, pk)
 
 
 def fund_contract_on_chain(on_chain_id: int, amount_wei: int, client_private_key: str | None = None) -> str:

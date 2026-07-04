@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -7,7 +9,7 @@ from app.models import Contract, ContractMilestone, Job, Proposal, User
 from app.routers.auth import get_current_user
 from app.schemas import ProposalCreate, ProposalResponse
 
-from app.services.blockchain_service import create_contract_on_chain, to_wei
+from app.services.blockchain_service import create_contract_on_chain, set_freelancer_on_chain, to_wei
 
 router = APIRouter(prefix="/proposals", tags=["proposals"])
 
@@ -153,17 +155,26 @@ async def accept_proposal(
             )
 
         try:
-            on_chain = create_contract_on_chain(
-                freelancer_address=freelancer.wallet_address,
-                title=contract.title or "",
-                terms_cid=f"contract_{contract.id}",
-                total_amount_wei=to_wei(float(contract.total_amount)),
-                deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
-                milestone_descs=[m.description for m in milestones],
-                milestone_amounts=[to_wei(float(m.amount)) for m in milestones],
-            )
-            contract.on_chain_id = str(on_chain.get("on_chain_id"))
-            contract.contract_address = on_chain.get("contract_address")
+            if contract.on_chain_id is not None:
+                await asyncio.to_thread(
+                    set_freelancer_on_chain,
+                    contract_id=contract.on_chain_id,
+                    freelancer_address=freelancer.wallet_address,
+                )
+            else:
+                on_chain = await asyncio.to_thread(
+                    create_contract_on_chain,
+                    freelancer_address=freelancer.wallet_address,
+                    title=contract.title or "",
+                    terms_cid=f"contract_{contract.id}",
+                    total_amount_wei=to_wei(float(contract.total_amount)),
+                    deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
+                    milestone_descs=[m.description for m in milestones],
+                    milestone_amounts=[to_wei(float(m.amount)) for m in milestones],
+                )
+                if on_chain.get("on_chain_id") is not None:
+                    contract.on_chain_id = int(on_chain["on_chain_id"])
+                contract.contract_address = on_chain.get("contract_address")
         except Exception as exc:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -161,6 +161,7 @@ class ContractMilestone(Base):
     due_date = Column(DateTime(timezone=True), nullable=True)
     deliverable_cid = Column(String, nullable=True)
     submission_notes = Column(Text, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
     status = Column(Enum(MilestoneStatus, name="milestone_status", schema="freeledger"), default=MilestoneStatus.pending)
     submitted_at = Column(DateTime(timezone=True), nullable=True)
     approved_at = Column(DateTime(timezone=True), nullable=True)
@@ -199,4 +200,20 @@ class AdminAccount(Base):
     id = Column(String(50), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(50), ForeignKey("freeledger.users.id"), unique=True, nullable=False)
     role = Column(String(50), default="admin")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    __table_args__ = {"schema": "freeledger"}
+
+    id = Column(String(50), primary_key=True, default=lambda: generate_pseudonymous_id("aud"))
+    entity_type = Column(String(50), nullable=False, index=True)
+    entity_id = Column(String(50), nullable=False, index=True)
+    from_status = Column(String(50), nullable=True)
+    to_status = Column(String(50), nullable=True)
+    action = Column(String(50), nullable=False)
+    actor_id = Column(String(50), nullable=True)
+    actor_role = Column(String(50), nullable=True)
+    details = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -8,6 +8,7 @@ const links = [
   { path: '/proposals',  label: 'Proposals' },
   { path: '/contracts',  label: 'Contracts' },
   { path: '/disputes',   label: 'Disputes' },
+  { path: '/audit-logs', label: 'Audit Logs' },
 ];
 
 export default function Navbar() {

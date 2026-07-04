@@ -122,17 +122,19 @@ export default function PostProjectModal({ isOpen, onClose }) {
     if (!form.title.trim()) errs.title = 'Title is required.';
     if (!form.description.trim()) errs.description = 'Description is required.';
     if (!form.budget) errs.budget = 'Budget is required.';
+    let hasValidMilestone = false;
     form.milestones.forEach((m, i) => {
       if (!m.description.trim() && !m.amount && !m.dueDate) return;
       if (!m.description.trim()) errs[`ms_desc_${i}`] = true;
       if (!m.amount) errs[`ms_amt_${i}`] = true;
+      if (m.description.trim() && m.amount) hasValidMilestone = true;
     });
+    if (!hasValidMilestone) errs.milestones = 'At least one milestone with description and amount is required.';
     setFormErrors(errs);
     if (Object.keys(errs).length > 0) return;
 
     setPosting(true);
 
-    console.log('[POST_PROJECT] form valid, starting');
     const skills = form.skills.split(',').map(s => s.trim()).filter(Boolean);
     const budget = parseFloat(form.budget);
     const validMilestones = form.milestones
@@ -143,10 +145,58 @@ export default function PostProjectModal({ isOpen, onClose }) {
         due_date: m.dueDate ? new Date(m.dueDate).toISOString() : null,
       }));
     const totalAmount = validMilestones.reduce((sum, m) => sum + m.amount, 0);
-    console.log('[POST_PROJECT] api payload ready', {budget, totalAmount, msCount: validMilestones.length});
 
+    // Step 1: Deploy to blockchain FIRST (mandatory — user must confirm in MetaMask)
+    let onChainJobId = null;
     try {
-      console.log('[POST_PROJECT] creating job');
+      setPostError('Deploying to blockchain — please confirm the transaction in MetaMask.');
+      await ensureCorrectNetwork();
+      const signer = await getSigner();
+      const contract = await getContract(config.contractAddress, GIG_ESCROW_ABI);
+
+      const deadlineUnix = Math.floor(Date.now() / 1000) + 30 * 86400;
+      const milestoneDescriptions = validMilestones.map(m => m.description);
+      const milestoneAmountsWei = validMilestones.map(m => parseEther(m.amount.toString()));
+      const totalAmountWei = parseEther(budget.toString());
+
+      // freelancer is set to zero address; updated on-chain when proposal is accepted
+      const tx = await contract.createContract(
+        '0x0000000000000000000000000000000000000000',
+        form.title.trim(),
+        '',
+        totalAmountWei,
+        deadlineUnix,
+        milestoneDescriptions,
+        milestoneAmountsWei,
+      );
+
+      const receipt = await tx.wait();
+
+      for (const log of receipt.logs) {
+        try {
+          const parsed = contract.interface.parseLog(log);
+          if (parsed && parsed.name === 'ContractCreated') {
+            onChainJobId = Number(parsed.args.contractId);
+            break;
+          }
+        } catch {
+          // skip non-matching logs
+        }
+      }
+
+      if (onChainJobId === null) {
+        throw new Error('Contract was deployed but no ContractCreated event was found in the receipt.');
+      }
+    } catch (chainErr) {
+      const msg = chainErr?.message || chainErr?.toString?.() || 'Unknown blockchain error';
+      setPostError(`Blockchain deployment failed: ${msg}`);
+      setPosting(false);
+      return; // STOP — do not create job/contract without on-chain binding
+    }
+
+    // Step 2: Save job + contract in backend (only reached if blockchain succeeded)
+    try {
+      setPostError('Saving to database...');
       const jobResp = await api.post('/jobs', {
         title: form.title.trim(),
         category: form.category,
@@ -156,7 +206,6 @@ export default function PostProjectModal({ isOpen, onClose }) {
         duration_days: 30,
       });
       const jobId = jobResp.data.id;
-      console.log('[POST_PROJECT] job created', jobId);
 
       const freelancerId = form.freelancerId.trim();
       const contractPayload = {
@@ -166,60 +215,9 @@ export default function PostProjectModal({ isOpen, onClose }) {
         description: form.description.trim(),
         total_amount: totalAmount > 0 ? totalAmount : budget,
         milestones: validMilestones,
+        on_chain_id: onChainJobId,
+        contract_address: config.contractAddress,
       };
-
-      try {
-        setPostError('Posting to blockchain... Please confirm in MetaMask.');
-        console.log('[BLOCKCHAIN] ensuring network');
-        await ensureCorrectNetwork();
-        console.log('[BLOCKCHAIN] getting signer');
-        const signer = await getSigner();
-        const walletAddress = await signer.getAddress();
-        console.log('[BLOCKCHAIN] signer address', walletAddress);
-        const contract = await getContract(config.contractAddress, GIG_ESCROW_ABI);
-        console.log('[BLOCKCHAIN] contract instance', contract ? 'ok' : 'missing');
-
-        const deadlineUnix = Math.floor(Date.now() / 1000) + 30 * 86400;
-
-        const milestoneDescriptions = validMilestones.map(m => m.description);
-        const milestoneAmountsWei = validMilestones.map(m => parseEther(m.amount.toString()));
-
-        const totalAmountWei = parseEther(budget.toString());
-        const freelancerAddress = '0x0000000000000000000000000000000000000000';
-
-        const tx = await contract.createContract(
-          freelancerAddress,
-          form.title.trim(),
-          '',
-          totalAmountWei,
-          deadlineUnix,
-          milestoneDescriptions,
-          milestoneAmountsWei,
-        );
-
-        const receipt = await tx.wait();
-
-        let onChainJobId = null;
-        for (const log of receipt.logs) {
-          try {
-            const parsed = contract.interface.parseLog(log);
-            if (parsed && parsed.name === 'ContractCreated') {
-              onChainJobId = Number(parsed.args.contractId);
-              break;
-            }
-          } catch {
-            // skip non-matching logs
-          }
-        }
-
-        if (onChainJobId) {
-          await api.put(`/jobs/${jobId}/on-chain-id`, { on_chain_job_id: onChainJobId });
-        }
-      } catch (chainErr) {
-        const chainMsg = typeof chainErr === 'string' ? chainErr : (chainErr.message || chainErr.toString?.() || 'Unknown blockchain error');
-        console.warn('Blockchain posting failed, saving backend contract anyway:', chainErr);
-        setPostError(prev => prev ? `${prev} | Blockchain note: ${chainMsg}` : `Blockchain note: ${chainMsg}`);
-      }
 
       await api.post('/contracts', contractPayload);
 
@@ -227,7 +225,6 @@ export default function PostProjectModal({ isOpen, onClose }) {
       onClose();
       window.alert('Project posted successfully!');
     } catch (err) {
-      console.log('=== POST PROJECT ERROR ===', err);
       const msg = err.response?.data?.detail?.message || err.response?.data?.detail || err.message || 'Failed to post project';
       setPostError(typeof msg === 'string' ? msg : JSON.stringify(msg));
     } finally {
@@ -310,7 +307,8 @@ export default function PostProjectModal({ isOpen, onClose }) {
           </div>
 
           <div className="milestones-section">
-            <h3>Milestones</h3>
+            <h3>Milestones <span className="form-label-muted">(required)</span></h3>
+            {formErrors.milestones && <div className="form-error-msg" style={{ marginBottom: 8 }}>{formErrors.milestones}</div>}
             {form.milestones.map((ms, i) => (
               <div key={i} className="milestone-card">
                 <div className="milestone-header">
