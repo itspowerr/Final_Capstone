@@ -71,7 +71,7 @@ services:
       - "5001:5001"
       - "8080:8080"
     volumes:
-      - ipfs_data:/data/ipfs
+      - ./ipfs/data:/data/ipfs
       - ./ipfs/config.sh:/container-init.d/config.sh
     environment:
       IPFS_PROFILE: server

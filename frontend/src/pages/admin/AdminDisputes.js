@@ -119,7 +119,7 @@ export default function AdminDisputes() {
               </button>
             </div>
           )}
-          {d.status === 'resolved' && (
+              {d.status === 'resolved' && (
             <div>
               <span className="s-badge" style={{ background: '#ecfdf5', color: '#059669' }}>
                 Decision: {d.decision}
@@ -129,6 +129,17 @@ export default function AdminDisputes() {
                   Notes: {d.resolution_notes}
                 </p>
               )}
+              <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
+                <button className="btn btn-sm btn-danger" onClick={async () => {
+                  if (window.confirm('Permanently delete this dispute?')) {
+                    try {
+                      await api.delete(`/admin/disputes/${d.id}`);
+                      show('Dispute deleted', 'success');
+                      fetchDisputes();
+                    } catch (err) { show(err.response?.data?.detail?.message || 'Failed to delete', 'error'); }
+                  }
+                }}>Delete</button>
+              </div>
             </div>
           )}
         </div>

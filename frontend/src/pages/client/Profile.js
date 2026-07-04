@@ -2,20 +2,55 @@ import { useState, useEffect } from 'react';
 import Navbar from '../../components/client/Navbar';
 import { getProvider } from '../../services/web3.js';
 import { useApp } from '../../context/AppContext';
+import api from '../../services/api';
 import '../../css/client/profile.css';
-
-const PROFILE_KEY = 'client_profile';
 
 const quickSkills = ['React', 'Node.js', 'Solidity', 'Web3.js', 'Figma', 'Python', 'TypeScript', 'UI/UX', 'Marketing', 'Writing'];
 
 export default function ClientProfile() {
-  const { walletAddress, connectWallet, disconnectWallet } = useApp();
-  const [user, setUser] = useState({ name: '—', email: '' });
+  const { walletAddress, user, setUser, connectWallet, disconnectWallet } = useApp();
   const [walletError, setWalletError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    bio: '',
+    skills: [],
+    hourlyRate: '',
+    github: '',
+    linkedin: '',
+    portfolio: '',
+    emailNotifications: true,
+    twoFactor: false,
+  });
+  const [skillInput, setSkillInput] = useState('');
+  const [toast, setToast] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem('demoUser');
-    if (raw) setUser(JSON.parse(raw));
+    (async () => {
+      try {
+        const { data } = await api.get('/users/me');
+        setForm({
+          name: data.username || '',
+          email: data.email || '',
+          bio: data.bio || '',
+          skills: data.skills || [],
+          hourlyRate: data.hourly_rate || '',
+          github: '',
+          linkedin: '',
+          portfolio: '',
+          emailNotifications: true,
+          twoFactor: false,
+        });
+      } catch {
+        const saved = JSON.parse(localStorage.getItem('client_profile') || '{}');
+        setForm(f => ({ ...f, ...saved }));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const handleConnectWallet = async () => {
@@ -30,31 +65,6 @@ export default function ClientProfile() {
       setWalletError(e.message || 'Failed to connect wallet');
     }
   };
-
-  const saved = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-
-  const [form, setForm] = useState({
-    name: saved.name || user.name || '',
-    email: user.email || saved.email || '',
-    bio: saved.bio || '',
-    skills: saved.skills || [],
-    hourlyRate: saved.hourlyRate || '',
-    github: saved.github || '',
-    linkedin: saved.linkedin || '',
-    portfolio: saved.portfolio || '',
-    emailNotifications: saved.emailNotifications !== undefined ? saved.emailNotifications : true,
-    twoFactor: saved.twoFactor !== undefined ? saved.twoFactor : false,
-  });
-  const [skillInput, setSkillInput] = useState('');
-  const [toast, setToast] = useState(null);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    if (form.name && user.name !== form.name) {
-      const updated = { ...user, name: form.name };
-      localStorage.setItem('demoUser', JSON.stringify(updated));
-    }
-  }, [form.name, user]);
 
   const showToast = (msg, icon) => {
     setToast({ msg, icon: icon || '✅' });
@@ -80,23 +90,43 @@ export default function ClientProfile() {
     setForm({ ...form, skills: form.skills.filter(s => s !== skill) });
   };
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     setSaving(true);
-    const p = {
-      name: form.name, email: form.email, bio: form.bio, skills: form.skills,
-      hourlyRate: form.hourlyRate, github: form.github, linkedin: form.linkedin,
-      portfolio: form.portfolio, emailNotifications: form.emailNotifications,
-      twoFactor: form.twoFactor,
-    };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-    setTimeout(() => {
+    try {
+      const { data } = await api.put('/users/me', {
+        username: form.name || undefined,
+        email: form.email || undefined,
+        bio: form.bio || undefined,
+        skills: form.skills.length > 0 ? form.skills : undefined,
+        hourly_rate: form.hourlyRate ? parseFloat(form.hourlyRate) : undefined,
+      });
+      setUser(data);
+      showToast('Profile saved to server!');
+    } catch (e) {
+      const p = {
+        name: form.name, email: form.email, bio: form.bio, skills: form.skills,
+        hourlyRate: form.hourlyRate, github: form.github, linkedin: form.linkedin,
+        portfolio: form.portfolio, emailNotifications: form.emailNotifications,
+        twoFactor: form.twoFactor,
+      };
+      localStorage.setItem('client_profile', JSON.stringify(p));
+      showToast('Saved locally (server unavailable)', '⚠️');
+    } finally {
       setSaving(false);
-      showToast('Profile saved!');
-    }, 300);
+    }
   };
 
-  const initials = form.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
+  const initials = (form.name || '?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || '?';
   const stats = { contracts: 5, spent: 12400, rating: 4.9 };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar activePage="profile" />
+        <div className="dash-body"><p style={{ padding: 40, color: 'var(--text-3)' }}>Loading profile...</p></div>
+      </>
+    );
+  }
 
   return (
     <>

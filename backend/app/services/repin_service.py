@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+import re
 
 from sqlalchemy import text
 
@@ -8,6 +10,12 @@ from app.database import async_session_factory
 from app.services.ipfs_service import pin_file
 
 logger = logging.getLogger("freeledger.repin_service")
+
+
+def is_valid_cid(cid: str) -> bool:
+    if not cid or not isinstance(cid, str):
+        return False
+    return bool(re.match(r'^(Qm[a-zA-Z0-9]{44}|b[a-km-zA-HJ-NP-Z1-9]{58,})$', cid))
 
 
 async def _collect_cids() -> set[str]:
@@ -40,7 +48,6 @@ async def _collect_cids() -> set[str]:
         ))
         for row in result:
             if row[0]:
-                import json
                 try:
                     for c in json.loads(row[0]):
                         if c:
@@ -57,8 +64,12 @@ async def _repin_loop():
     while True:
         try:
             cids = await _collect_cids()
-            logger.info("Repinning %d CIDs", len(cids))
-            for cid in cids:
+            valid = {c for c in cids if is_valid_cid(c)}
+            skipped = cids - valid
+            if skipped:
+                logger.warning("Skipping %d invalid CIDs: %s", len(skipped), skipped)
+            logger.info("Repinning %d CIDs", len(valid))
+            for cid in sorted(valid):
                 try:
                     ok = await pin_file(cid)
                     if ok:

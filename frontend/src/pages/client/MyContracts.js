@@ -71,7 +71,6 @@ function ActionButtons({ contract, onSelect, onSign, onFund }) {
   if (contract.status === 'active') {
     return (
       <>
-        <button className="btn btn-outline btn-sm" title="Requires MetaMask" disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}>Release Payment</button>
         <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onSelect(contract.id); }}>View Details</button>
       </>
     );

@@ -1233,3 +1233,34 @@ Now has all 7 on-chain functions implemented:
 
 *Last updated: 2026-07-04*
 *Session: IPFS integration + on-chain milestone/dispute operations + admin audit log viewer complete*
+
+---
+
+## 16. Profile → Backend API + Admin Pages → Real API (2026-07-04)
+
+### Backend Changes
+
+| File | Change |
+|------|--------|
+| `backend/app/schemas.py` | Added `UserUpdate` schema for profile updates |
+| `backend/app/routers/users.py` | Added `GET /users/me` (current user profile) + `PUT /users/me` (update profile) |
+| `backend/app/routers/admin.py` | Complete rewrite: added `GET /admin/dashboard` (aggregate stats), `GET /admin/users` (list/search/suspend), `PUT /admin/users/{id}` (update), `DELETE /admin/users/{id}` (soft-deactivate), `GET /admin/jobs` (list/search/close/reopen), `PUT /admin/jobs/{id}` (update), `DELETE /admin/jobs/{id}` (cancel), `GET /admin/proposals` (list/search), `PUT /admin/proposals/{id}` (update), `DELETE /admin/proposals/{id}` (withdraw), `GET /admin/contracts` (list/search), `PUT /admin/contracts/{id}` (update), `DELETE /admin/contracts/{id}` (cancel) |
+
+### Frontend Changes
+
+| File | Change |
+|------|--------|
+| `frontend/src/pages/client/Profile.js` | Rewritten: load from `GET /users/me` on mount, save to `PUT /users/me`, falls back to localStorage if server unavailable. Maps: `name→username`, `bio→bio`, `skills→skills`, `hourlyRate→hourly_rate` |
+| `frontend/src/pages/freelancer/MyProfile.js` | Rewritten: same pattern. Maps: `fullName→username`, `title→headline`, `bio→bio`, `skills→skills`, `hourlyRate→hourly_rate`, `experience→experience_level`, `availability→is_available` |
+| `frontend/src/pages/admin/Dashboard.js` | Rewritten: fetches live stats from `GET /admin/dashboard` (users, jobs, contracts, disputes counts, volume, fees, recent users) |
+| `frontend/src/pages/admin/AdminUsers.js` | Rewritten: `GET /admin/users` with pagination + search + role filter, `PUT /admin/users/{id}` for suspend/activate, `DELETE /admin/users/{id}` for soft-deactivate. Uses `window.confirm` for destructive actions |
+| `frontend/src/pages/admin/AdminJobs.js` | Rewritten: `GET /admin/jobs` with pagination + search + status filter, `PUT /admin/jobs/{id}` for close/reopen, `DELETE /admin/jobs/{id}` for cancel |
+| `frontend/src/pages/admin/AdminProposals.js` | Rewritten: `GET /admin/proposals` with pagination + search + status filter, `PUT /admin/proposals/{id}` for reject, `DELETE /admin/proposals/{id}` for withdraw |
+| `frontend/src/pages/admin/AdminContracts.js` | Rewritten: `GET /admin/contracts` with pagination + search + status filter, `PUT /admin/contracts/{id}` for complete/cancel, `DELETE /admin/contracts/{id}` for cancel |
+
+### Key Decisions
+- All destructive actions (suspend, deactivate, cancel, withdraw) use soft-deletes (status changes) instead of hard deletes, preserving referential integrity
+- Profile pages fall back to localStorage if backend is unavailable, maintaining offline resilience
+- All admin pages use the existing `api.js` axios interceptor which auto-attaches JWT + auto-refreshes on 401
+- GitHub/LinkedIn/Portfolio URL fields kept in the UI but not persisted to backend (no columns in User model)
+- AdminDisputes and AuditLogs pages were already using real API from the previous session and were not modified

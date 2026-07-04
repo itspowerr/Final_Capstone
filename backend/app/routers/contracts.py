@@ -80,6 +80,16 @@ async def create_contract(
         )
         db.add(milestone)
 
+    await log_transition(
+        db=db,
+        entity_type="contract",
+        entity_id=contract.id,
+        action="create",
+        actor_id=current_user.id,
+        actor_role=current_user.role.value,
+        from_status=None,
+        to_status="pending_signatures",
+    )
     await db.commit()
     await db.refresh(contract)
     return _enrich_contract(contract)
@@ -416,6 +426,10 @@ async def sign_contract(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    old_result = await db.execute(select(Contract).where(Contract.id == contract_id))
+    old_contract = old_result.scalar_one_or_none()
+    old_status = old_contract.status.value if old_contract else None
+
     try:
         contract = await do_sign_contract(db=db, contract_id=contract_id, user_id=current_user.id)
     except ValueError as exc:
@@ -423,6 +437,19 @@ async def sign_contract(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "SIGN_ERROR", "message": str(exc)},
         ) from exc
+
+    await log_transition(
+        db=db,
+        entity_type="contract",
+        entity_id=contract_id,
+        action="sign",
+        actor_id=current_user.id,
+        actor_role=current_user.role.value,
+        from_status=old_status,
+        to_status=contract.status.value,
+        details=f"{current_user.role.value} signed",
+    )
+    await db.commit()
 
     result = await db.execute(
         select(Contract).options(selectinload(Contract.dispute)).where(Contract.id == contract_id)
@@ -467,6 +494,10 @@ async def fund_contract(
             detail={"code": "CLIENT_ONLY", "message": "Only the client can fund the contract"},
         )
 
+    old_result = await db.execute(select(Contract).where(Contract.id == contract_id))
+    old_contract = old_result.scalar_one_or_none()
+    old_status = old_contract.status.value if old_contract else None
+
     try:
         contract = await do_fund_contract(db=db, contract_id=contract_id, user_id=current_user.id)
     except ValueError as exc:
@@ -474,6 +505,18 @@ async def fund_contract(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "FUND_ERROR", "message": str(exc)},
         ) from exc
+
+    await log_transition(
+        db=db,
+        entity_type="contract",
+        entity_id=contract_id,
+        action="fund",
+        actor_id=current_user.id,
+        actor_role=current_user.role.value,
+        from_status=old_status,
+        to_status=contract.status.value,
+    )
+    await db.commit()
 
     result = await db.execute(
         select(Contract).options(selectinload(Contract.dispute)).where(Contract.id == contract_id)

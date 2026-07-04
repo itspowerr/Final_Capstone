@@ -5,9 +5,35 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import User
 from app.routers.auth import get_current_user
-from app.schemas import UserResponse
+from app.schemas import UserResponse, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_my_profile(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    return UserResponse.model_validate(current_user)
+
+
+@router.put("/me", response_model=UserResponse)
+async def update_my_profile(
+    data: UserUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    update_data = data.model_dump(exclude_unset=True)
+    if not update_data:
+        return UserResponse.model_validate(current_user)
+
+    for field, value in update_data.items():
+        setattr(current_user, field, value)
+
+    await db.commit()
+    await db.refresh(current_user)
+    return UserResponse.model_validate(current_user)
 
 
 @router.get("/lookup", response_model=UserResponse)

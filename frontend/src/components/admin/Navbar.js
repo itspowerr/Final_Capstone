@@ -28,7 +28,6 @@ export default function Navbar() {
         </div>
       </div>
       <div className="admin-topbar-right">
-        <span style={{ fontSize: 12, opacity: 0.7 }}>Admin</span>
         <button className="btn btn-outline btn-sm" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); navigate('/login'); }}>Logout</button>
       </div>
     </div>

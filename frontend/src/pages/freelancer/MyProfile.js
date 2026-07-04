@@ -1,28 +1,58 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
+import api from '../../services/api';
 
 export default function MyProfile() {
   const navigate = useNavigate();
-  const PROFILE_KEY = 'fl_freelancer_profile';
-  const saved = JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}');
-
-  const [profile, setProfile] = useState(saved);
   const [toast, setToast] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [fullName, setFullName] = useState(profile.fullName || '');
-  const [title, setTitle] = useState(profile.title || '');
-  const [bio, setBio] = useState(profile.bio || '');
-  const [location, setLocation] = useState(profile.location || '');
-  const [github, setGithub] = useState(profile.github || '');
-  const [portfolio, setPortfolio] = useState(profile.portfolio || '');
-  const [linkedin, setLinkedin] = useState(profile.linkedin || '');
-  const [hourlyRate, setHourlyRate] = useState(profile.hourlyRate || '');
-  const [experience, setExperience] = useState(profile.experience || 'Intermediate');
-  const [availability, setAvailability] = useState(profile.availability || 'available');
-  const [skills, setSkills] = useState(profile.skills || []);
-  const [wallet, setWallet] = useState(profile.wallet || '');
+  const [fullName, setFullName] = useState('');
+  const [title, setTitle] = useState('');
+  const [bio, setBio] = useState('');
+  const [location, setLocation] = useState('');
+  const [github, setGithub] = useState('');
+  const [portfolio, setPortfolio] = useState('');
+  const [linkedin, setLinkedin] = useState('');
+  const [hourlyRate, setHourlyRate] = useState('');
+  const [experience, setExperience] = useState('mid');
+  const [availability, setAvailability] = useState('available');
+  const [skills, setSkills] = useState([]);
+  const [wallet, setWallet] = useState('');
   const [skillInput, setSkillInput] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await api.get('/users/me');
+        setFullName(data.username || '');
+        setTitle(data.headline || '');
+        setBio(data.bio || '');
+        setSkills(data.skills || []);
+        setHourlyRate(data.hourly_rate || '');
+        setExperience(data.experience_level || 'mid');
+        setAvailability(data.is_available ? 'available' : 'busy');
+        setWallet(data.wallet_address || '');
+      } catch {
+        const saved = JSON.parse(localStorage.getItem('fl_freelancer_profile') || '{}');
+        setFullName(saved.fullName || '');
+        setTitle(saved.title || '');
+        setBio(saved.bio || '');
+        setLocation(saved.location || '');
+        setGithub(saved.github || '');
+        setPortfolio(saved.portfolio || '');
+        setLinkedin(saved.linkedin || '');
+        setHourlyRate(saved.hourlyRate || '');
+        setExperience(saved.experience || 'mid');
+        setAvailability(saved.availability || 'available');
+        setSkills(saved.skills || []);
+        setWallet(saved.wallet || '');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   function showToast(msg, icon) {
     setToast({ msg, icon: icon || '✅' });
@@ -48,15 +78,26 @@ export default function MyProfile() {
     setSkills(skills.filter(s => s !== skill));
   }
 
-  function saveProfile() {
-    const p = {
-      fullName: fullName || profile.fullName,
-      title, bio, location, github, portfolio, linkedin,
-      hourlyRate, experience, availability, skills, wallet
-    };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-    setProfile(p);
-    showToast('Profile saved!');
+  async function saveProfile() {
+    try {
+      await api.put('/users/me', {
+        username: fullName || undefined,
+        headline: title || undefined,
+        bio: bio || undefined,
+        skills: skills.length > 0 ? skills : undefined,
+        hourly_rate: hourlyRate ? parseFloat(hourlyRate) : undefined,
+        experience_level: experience || undefined,
+        is_available: availability === 'available',
+      });
+      showToast('Profile saved to server!');
+    } catch {
+      const p = {
+        fullName, title, bio, location, github, portfolio, linkedin,
+        hourlyRate, experience, availability, skills, wallet,
+      };
+      localStorage.setItem('fl_freelancer_profile', JSON.stringify(p));
+      showToast('Saved locally (server unavailable)', '⚠️');
+    }
   }
 
   async function connectMetaMask() {
@@ -81,13 +122,24 @@ export default function MyProfile() {
     part: { label: '🟡 Part-time', bg: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' },
   }[availability] || { label: '✅ Available', bg: 'var(--accent-pale)', color: 'var(--accent)', border: '1px solid var(--accent-border)' };
 
-  const nameDisplay = fullName || profile.fullName || 'Unnamed';
+  const nameDisplay = fullName || 'Unnamed';
   const initials = nameDisplay.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-
   const walletDisplay = wallet ? wallet.slice(0, 8) + '…' + wallet.slice(-6) : 'No wallet connected';
   const rating = completed.length > 0 ? (3.5 + completed.length * 0.3).toFixed(1) : '—';
 
   const quickSkills = ['Solidity', 'React', 'Web3.js', 'Ethers.js', 'Figma', 'Node.js', 'TypeScript', 'IPFS', 'Hardhat', 'Python', 'Vue.js', 'PostgreSQL'];
+
+  const expLevels = ['junior', 'mid', 'senior', 'lead'];
+  const expLabels = { junior: 'Entry Level', mid: 'Intermediate', senior: 'Senior', lead: 'Lead' };
+
+  if (loading) {
+    return (
+      <div>
+        <Navbar activePage="profile" />
+        <div className="page-body"><p style={{ padding: 40, color: 'var(--text-3)' }}>Loading profile...</p></div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -161,9 +213,9 @@ export default function MyProfile() {
                 <div className="form-group">
                   <label className="form-label">Experience Level</label>
                   <select className="form-input" value={experience} onChange={e => setExperience(e.target.value)}>
-                    <option>Entry Level</option>
-                    <option>Intermediate</option>
-                    <option>Expert</option>
+                    {expLevels.map(l => (
+                      <option key={l} value={l}>{expLabels[l]}</option>
+                    ))}
                   </select>
                 </div>
               </div>

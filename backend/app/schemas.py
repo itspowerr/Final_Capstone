@@ -39,6 +39,20 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    bio: Optional[str] = None
+    skills: Optional[list[str]] = None
+    hourly_rate: Optional[float] = None
+    headline: Optional[str] = None
+    experience_level: Optional[str] = None
+    is_available: Optional[bool] = None
+    industries: Optional[list[str]] = None
+    portfolio_cids: Optional[list[str]] = None
+    avatar_cid: Optional[str] = None
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -236,6 +250,44 @@ class ProposalResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class AdminUserCreate(BaseModel):
+    username: str = Field(..., min_length=1, max_length=100)
+    email: str = Field(...)
+    password: str = Field(..., min_length=8, max_length=128)
+    role: str = "freelancer"
+
+
+class AdminJobCreate(BaseModel):
+    client_id: str
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    budget: float = Field(..., gt=0)
+    category: Optional[str] = None
+    skills: list[str] = []
+    duration_days: Optional[int] = None
+    status: str = "open"
+
+
+class AdminProposalCreate(BaseModel):
+    job_id: str
+    freelancer_id: str
+    bid_amount: float = Field(..., gt=0)
+    cover_letter: Optional[str] = None
+    estimated_days: Optional[int] = None
+    status: str = "pending"
+
+
+class AdminContractCreate(BaseModel):
+    job_id: str
+    client_id: str
+    freelancer_id: str
+    title: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = None
+    total_amount: float = Field(..., gt=0)
+    deadline: Optional[datetime] = None
+    status: str = "draft"
 
 
 class ContractDetail(BaseModel):
