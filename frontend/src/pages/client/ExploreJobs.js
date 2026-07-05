@@ -20,7 +20,7 @@ function formatJob(job) {
     title: job.title,
     category: job.category || 'General',
     budget: job.budget,
-    budgetDisplay: `${(job.budget).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+    budgetDisplay: `${(job.budget).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ETH`,
     desc: job.description || '',
     skills: job.skills || [],
     client: job.client_id,
@@ -73,10 +73,10 @@ export default function ExploreJobs() {
   };
 
   const checkBudget = (b, range) => {
-    if (range === '0-500') return b < 500;
-    if (range === '500-2000') return b >= 500 && b < 2000;
-    if (range === '2000-5000') return b >= 2000 && b < 5000;
-    if (range === '5000+') return b >= 5000;
+    if (range === '0-5') return b < 5;
+    if (range === '5-20') return b >= 5 && b < 20;
+    if (range === '20-50') return b >= 20 && b < 50;
+    if (range === '50+') return b >= 50;
     return true;
   };
 
@@ -141,10 +141,10 @@ export default function ExploreJobs() {
           </select>
           <select className="filter-select" value={filters.budget} onChange={(e) => setFilters((prev) => ({ ...prev, budget: e.target.value }))}>
             <option value="">Any Budget</option>
-            <option value="0-500">Under $500</option>
-            <option value="500-2000">$500 – $2,000</option>
-            <option value="2000-5000">$2,000 – $5,000</option>
-            <option value="5000+">$5,000+</option>
+            <option value="0-5">Under 5 ETH</option>
+            <option value="5-20">5 – 20 ETH</option>
+            <option value="20-50">20 – 50 ETH</option>
+            <option value="50+">50+ ETH</option>
           </select>
           <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear</button>
         </div>
@@ -283,7 +283,7 @@ export default function ExploreJobs() {
                       fontSize: 14,
                     }}>
                       <span>{m.description}</span>
-                      <span style={{ fontWeight: 700, color: 'var(--accent)' }}>${parseFloat(m.amount).toLocaleString()}</span>
+                      <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{parseFloat(m.amount).toLocaleString()} ETH</span>
                     </div>
                   ))}
                 </div>

@@ -189,7 +189,7 @@ export default function MyContracts() {
             <div className="s-top"><span className="s-label">Total Earned</span>
               <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg></div>
             </div>
-            <div className="s-val">{stats.earned > 0 ? '$' + stats.earned.toLocaleString() : '$0'}</div>
+            <div className="s-val">{stats.earned > 0 ? stats.earned.toLocaleString() + ' ETH' : '0 ETH'}</div>
             <div style={{ fontSize: 12, color: 'var(--accent)', marginTop: 4, fontWeight: 600 }}>Via Escrow</div>
           </div>
           <div className="stat-card">
@@ -197,7 +197,7 @@ export default function MyContracts() {
               <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg></div>
             </div>
             <div className="s-val">{stats.completed}</div>
-            <div className="s-sub">{stats.completed > 0 ? '$' + stats.earned.toLocaleString() + ' paid' : '–'}</div>
+            <div className="s-sub">{stats.completed > 0 ? stats.earned.toLocaleString() + ' ETH paid' : '–'}</div>
           </div>
         </div>
 
@@ -261,7 +261,7 @@ export default function MyContracts() {
                   ) : null}
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)' }}>${Number(c.total_amount || 0).toLocaleString()}</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)' }}>{Number(c.total_amount || 0).toLocaleString()} ETH</div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Contract value</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
                     {c.status === 'active' ? (
@@ -303,7 +303,7 @@ export default function MyContracts() {
             </div>
             <div style={{ background: 'linear-gradient(135deg,#064e3b,#065f46)', borderRadius: 12, padding: 20, color: '#fff', marginBottom: 20 }}>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase' }}>Escrow Amount</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#6ee7b7' }}>${Number(detail.total_amount || 0).toLocaleString()}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: '#6ee7b7' }}>{Number(detail.total_amount || 0).toLocaleString()} ETH</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,.4)', marginTop: 2 }}>Released per milestone</div>
             </div>
             {detail.status === 'active' ? (
@@ -329,7 +329,7 @@ export default function MyContracts() {
                         {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' ? 'Rejected' : 'Pending'}
                       </div>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)' }}>${Number(m.amount || 0).toLocaleString()}</div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)' }}>{Number(m.amount || 0).toLocaleString()} ETH</div>
                     <button className="btn btn-outline btn-sm" onClick={e => { e.stopPropagation(); toggleExpand(i); }} style={{ padding: '4px 10px', minHeight: 'auto' }}>
                       {isOpen ? 'Hide' : 'Details'}
                     </button>

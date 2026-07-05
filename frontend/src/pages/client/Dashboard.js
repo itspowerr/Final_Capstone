@@ -171,7 +171,7 @@ export default function ClientDashboard() {
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               </div>
             </div>
-            <div className="s-val">${stats.budget.toLocaleString()}</div>
+            <div className="s-val">{stats.budget.toLocaleString()} ETH</div>
             <div style={{ fontSize: 12, color: 'var(--green)', marginTop: 4, fontWeight: 600 }}>Escrow Active</div>
           </div>
         </div>
@@ -231,7 +231,7 @@ export default function ClientDashboard() {
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                            <div className="fl-rating">${f.proposal?.bid_amount || '—'}</div>
+                            <div className="fl-rating">{f.proposal?.bid_amount ? f.proposal.bid_amount.toLocaleString() + ' ETH' : '—'}</div>
                             <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{f.proposal?.status === 'accepted' ? 'Accepted' : f.proposal?.status === 'rejected' ? 'Rejected' : 'Pending'}</div>
                           </div>
                           {f.proposal?.status === 'pending' ? (

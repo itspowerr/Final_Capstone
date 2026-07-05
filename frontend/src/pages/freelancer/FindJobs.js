@@ -6,7 +6,7 @@ function loadArray(key) {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
 }
 function formatCurrency(n) {
-  try { return '$' + Number(n || 0).toLocaleString(); } catch (e) { return '$0'; }
+  try { return Number(n || 0).toLocaleString() + ' ETH'; } catch (e) { return '0 ETH'; }
 }
 function relativeDate(dt) {
   const diff = Date.now() - new Date(dt).getTime();
@@ -102,10 +102,10 @@ export default function FindJobs() {
   }, [mySkills, matchCount]);
 
   function parseBudgetRange(range) {
-    if (range === '0-500') return [0, 500];
-    if (range === '500-2000') return [500, 2000];
-    if (range === '2000-5000') return [2000, 5000];
-    if (range === '5000+') return [5000, Infinity];
+    if (range === '0-5') return [0, 5];
+    if (range === '5-20') return [5, 20];
+    if (range === '20-50') return [20, 50];
+    if (range === '50+') return [50, Infinity];
     return null;
   }
 
@@ -246,10 +246,10 @@ export default function FindJobs() {
           </select>
           <select className="filter-select" value={fBudget} onChange={e => setFBudget(e.target.value)}>
             <option value="">Any Budget</option>
-            <option value="0-500">Under $500</option>
-            <option value="500-2000">$500–$2,000</option>
-            <option value="2000-5000">$2,000–$5,000</option>
-            <option value="5000+">$5,000+</option>
+            <option value="0-5">Under 5 ETH</option>
+            <option value="5-20">5–20 ETH</option>
+            <option value="20-50">20–50 ETH</option>
+            <option value="50+">50+ ETH</option>
           </select>
           <select className="filter-select" value={fMatch} onChange={e => setFMatch(e.target.value)}>
             <option value="">All Jobs</option>

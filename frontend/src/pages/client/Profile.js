@@ -151,7 +151,7 @@ export default function ClientProfile() {
               <span className="role-badge client" style={{ marginBottom: 16 }}>Client</span>
               <div className="profile-stats">
                 <div className="pstat"><div className="val">{stats.contracts}</div><div className="lbl">Contracts</div></div>
-                <div className="pstat"><div className="val">${stats.spent.toLocaleString()}</div><div className="lbl">Spent</div></div>
+                <div className="pstat"><div className="val">{stats.spent.toLocaleString()} ETH</div><div className="lbl">Spent</div></div>
                 <div className="pstat"><div className="val">{form.skills.length}</div><div className="lbl">Skills</div></div>
                 <div className="pstat"><div className="val">{stats.rating}</div><div className="lbl">Rating</div></div>
               </div>

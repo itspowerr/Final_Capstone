@@ -165,7 +165,7 @@ export default function MyProfile() {
               <div className="fl-profile-wallet">{walletDisplay}</div>
               <div className="fl-profile-stats">
                 <div className="fl-pstat"><div className="val">{contracts.length}</div><div className="lbl">Contracts</div></div>
-                <div className="fl-pstat"><div className="val">{earned > 0 ? '$' + earned.toLocaleString() : '$0'}</div><div className="lbl">Earned</div></div>
+                <div className="fl-pstat"><div className="val">{earned > 0 ? earned.toLocaleString() + ' ETH' : '0 ETH'}</div><div className="lbl">Earned</div></div>
                 <div className="fl-pstat"><div className="val">{skills.length}</div><div className="lbl">Skills</div></div>
                 <div className="fl-pstat"><div className="val">{rating}</div><div className="lbl">Rating</div></div>
               </div>

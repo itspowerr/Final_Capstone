@@ -60,6 +60,8 @@ async def _collect_cids() -> set[str]:
 
 async def _repin_loop():
     interval = settings.repin_interval_seconds
+    # Delay first cycle to let IPFS node initialize
+    await asyncio.sleep(300)
     logger.info("IPFS repin service started (interval=%ss)", interval)
     while True:
         try:

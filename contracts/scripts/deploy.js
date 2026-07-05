@@ -36,6 +36,14 @@ async function main() {
   fs.copyFileSync(artifactsPath, path.join(targetDir, "GigEscrow.json"));
   console.log("ABI copied to backend/app/contracts/\n");
 
+  const sharedAddressPath = "/app/.contract-address";
+  try {
+    fs.writeFileSync(sharedAddressPath, address);
+    console.log("Contract address written to .contract-address\n");
+  } catch (err) {
+    console.warn("WARNING: could not write .contract-address:", err.message);
+  }
+
   const infoPath = path.resolve(__dirname, "contract-address.txt");
   const info = [
     `Contract: ${address}`,

@@ -6,8 +6,8 @@ import '../../css/freelancer/dashboard.css';
 
 function fmtCurrency(n) {
   const v = Number(n || 0);
-  if (!v) return '$0';
-  return '$' + v.toLocaleString();
+  if (!v) return '0 ETH';
+  return v.toLocaleString() + ' ETH';
 }
 
 export default function FreelancerDashboard() {

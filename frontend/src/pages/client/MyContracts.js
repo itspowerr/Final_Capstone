@@ -301,7 +301,7 @@ export default function MyContracts() {
             <div className="s-top"><span className="s-label">Total Value Locked</span>
               <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
             </div>
-            <div className="s-val">${stats.locked.toLocaleString()}</div>
+            <div className="s-val">{stats.locked.toLocaleString()} ETH</div>
             <div style={{ fontSize: 12, color: 'var(--green)', marginTop: 4, fontWeight: 600 }}>Escrow Active</div>
           </div>
           <div className="stat-card">
@@ -309,7 +309,7 @@ export default function MyContracts() {
               <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg></div>
             </div>
             <div className="s-val">{stats.completedCount}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{stats.completedCount > 0 ? '$' + stats.completedValue.toLocaleString() + ' paid out' : '—'}</div>
+            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{stats.completedCount > 0 ? stats.completedValue.toLocaleString() + ' ETH paid out' : '—'}</div>
           </div>
         </div>
 
@@ -366,7 +366,7 @@ export default function MyContracts() {
                     <div key={i} className="milestone-row">
                       <div className={`ms-dot ms-${m.status}`}></div>
                       <span className="ms-label">{m.label}</span>
-                      <span className="ms-amount">${m.amount.toLocaleString()}</span>
+                      <span className="ms-amount">{m.amount.toLocaleString()} ETH</span>
                     </div>
                   ))}
                   {c.milestones.length > 3 ? <div style={{ fontSize: 12, color: 'var(--text-3)', marginLeft: 18 }}>+{c.milestones.length - 3} more</div> : null}
@@ -379,7 +379,7 @@ export default function MyContracts() {
                 ) : null}
               </div>
               <div className="contract-right">
-                <div className="contract-value">${c.value.toLocaleString()}</div>
+                <div className="contract-value">{c.value.toLocaleString()} ETH</div>
                 <div className="contract-value-sub">Contract value</div>
                 <div className="contract-actions">
                   <ActionButtons contract={c} onSelect={openContractModal} onSign={signContract} onFund={fundContract} />
@@ -432,7 +432,7 @@ export default function MyContracts() {
                       {selectedProposal.cover_letter || 'No cover letter provided.'}
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderTop: '1px solid var(--border)', background: '#fafafa' }}>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--blue)' }}>${selectedProposal.bid_amount.toLocaleString()}</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--blue)' }}>{selectedProposal.bid_amount.toLocaleString()} ETH</div>
                       <button className="btn btn-primary btn-sm" onClick={() => hireProposal(selectedProposal.id)} disabled={actionLoading}>
                         {actionLoading ? 'Hiring…' : 'Hire Freelancer'}
                       </button>
@@ -447,7 +447,7 @@ export default function MyContracts() {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 10 }}>
                             <div style={{ flex: 1 }}>
                               <div className="tl-title">{users[p.freelancer_id]?.username || p.freelancer_id?.slice(0, 12) || 'Freelancer'}</div>
-                              <div className="tl-amount">${p.bid_amount.toLocaleString()}</div>
+                              <div className="tl-amount">{p.bid_amount.toLocaleString()} ETH</div>
                               <div className="tl-status">Bid · {p.estimated_days ? p.estimated_days + ' days' : ''}</div>
                             </div>
                             <span style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 4 }}>View profile →</span>
@@ -466,7 +466,7 @@ export default function MyContracts() {
             )}
             <div className="escrow-box">
               <h4>Total Escrow Amount</h4>
-              <div className="escrow-amount">${modalContract.value.toLocaleString()}</div>
+              <div className="escrow-amount">{modalContract.value.toLocaleString()} ETH</div>
               <div className="escrow-sub">Released per milestone · MetaMask required to fund</div>
             </div>
             {modalContract.status === 'active' && (
@@ -484,7 +484,7 @@ export default function MyContracts() {
                   <div className={`tl-icon tl-${m.status}`}>{m.status === 'done' ? '✓' : m.status === 'active' || m.backend_status === 'submitted' ? '▶' : '○'}</div>
                   <div className="tl-body">
                     <div className="tl-title">{m.label}</div>
-                    <div className="tl-amount">${m.amount.toLocaleString()}</div>
+                    <div className="tl-amount">{m.amount.toLocaleString()} ETH</div>
                     <div className="tl-status">
                       {m.backend_status === 'approved' ? 'Completed & paid' :
                        m.backend_status === 'submitted' ? 'Submitted for review' :

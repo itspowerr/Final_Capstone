@@ -146,6 +146,12 @@ export default function PostProjectModal({ isOpen, onClose }) {
       }));
     const totalAmount = validMilestones.reduce((sum, m) => sum + m.amount, 0);
 
+    if (Math.abs(totalAmount - budget) > 0.001) {
+      setPostError(`Milestone amounts (${totalAmount.toFixed(4)} ETH) must sum to total budget (${budget.toFixed(4)} ETH).`);
+      setPosting(false);
+      return;
+    }
+
     // Step 1: Deploy to blockchain FIRST (mandatory — user must confirm in MetaMask)
     let onChainJobId = null;
     try {
@@ -171,6 +177,10 @@ export default function PostProjectModal({ isOpen, onClose }) {
       );
 
       const receipt = await tx.wait();
+
+      if (receipt.status === 0) {
+        throw new Error('Transaction reverted on-chain. Check that milestone amounts sum to the total budget.');
+      }
 
       for (const log of receipt.logs) {
         try {
@@ -213,7 +223,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
         ...(freelancerId ? { freelancer_id: freelancerId } : {}),
         title: form.title.trim(),
         description: form.description.trim(),
-        total_amount: totalAmount > 0 ? totalAmount : budget,
+        total_amount: budget,
         milestones: validMilestones,
         on_chain_id: onChainJobId,
         contract_address: config.contractAddress,
@@ -250,14 +260,13 @@ export default function PostProjectModal({ isOpen, onClose }) {
 
         {walletStatus === 'disconnected' && (
           <div className="form-warning" style={{ marginBottom: 12, padding: '12px 16px', background: '#fff3cd', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <span>⚠️</span>
             <span style={{ flex: 1 }}>Connect your wallet to post projects on-chain.</span>
             <button className="btn btn-sm btn-primary" onClick={connectWallet}>Connect Wallet</button>
           </div>
         )}
         {walletStatus === 'no-wallet' && (
           <div className="form-warning" style={{ marginBottom: 12, padding: '12px 16px', background: '#f8d7da', borderRadius: 8, fontSize: 13 }}>
-            ⚠️ MetaMask not detected. Please install the MetaMask browser extension.
+            MetaMask not detected. Please install the MetaMask browser extension.
           </div>
         )}
 
@@ -284,8 +293,8 @@ export default function PostProjectModal({ isOpen, onClose }) {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Budget ($)</label>
-              <input className="form-input" type="number" placeholder="e.g. 2000" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
+              <label className="form-label">Budget (ETH)</label>
+              <input className="form-input" type="number" step="0.01" placeholder="e.g. 10" value={form.budget} onChange={(e) => setForm({ ...form, budget: e.target.value })} />
               {formErrors.budget && <div className="form-error-msg">{formErrors.budget}</div>}
             </div>
             <div className="form-group">
@@ -324,7 +333,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
                 <div className="form-row">
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label">Amount (ETH)</label>
-                    <input className="form-input" type="number" placeholder="e.g. 500" value={ms.amount} onChange={(e) => updateMilestone(i, 'amount', e.target.value)} />
+                    <input className="form-input" type="number" step="0.01" placeholder="e.g. 5" value={ms.amount} onChange={(e) => updateMilestone(i, 'amount', e.target.value)} />
                   </div>
                   <div className="form-group" style={{ marginBottom: 0 }}>
                     <label className="form-label">Due Date</label>
