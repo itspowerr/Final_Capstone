@@ -180,9 +180,24 @@ fi
 
 if [ -f requirements.txt ]; then
   step "Installing Python dependencies..."
-  pip install -r requirements.txt 2>&1 | tee -a "$LOG_FILE"
-  if [ ${PIPESTATUS[0]} -ne 0 ]; then
-    fail "pip install failed"
+  PIP_OUT=$(pip install -r requirements.txt 2>&1) || true
+  echo "$PIP_OUT" >> "$LOG_FILE"
+
+  while IFS= read -r line; do
+    # Extract package name from lines like "Requirement already satisfied: fastapi==0.109.0 in ..."
+    if echo "$line" | grep -q "Requirement already satisfied:"; then
+      PKG=$(echo "$line" | sed 's/Requirement already satisfied: \([^= ]*\).*/\1/')
+      log "  ${GREEN}[OK]${NC} $PKG"
+    elif echo "$line" | grep -q "^Successfully installed"; then
+      log "  ${GREEN}[OK]${NC} (newly installed: $(echo "$line" | sed 's/Successfully installed //'))"
+    elif echo "$line" | grep -qiE "error|failed|could not"; then
+      log "  ${RED}[FAILED]${NC} $line"
+    fi
+  done <<< "$PIP_OUT"
+
+  # Check if pip actually failed
+  if echo "$PIP_OUT" | grep -qiE "^error:|^failed to install"; then
+    fail "pip install failed — see log: $LOG_FILE"
     stop_on_failure
   fi
   ok "Python dependencies installed"
