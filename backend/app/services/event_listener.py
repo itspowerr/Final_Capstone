@@ -76,19 +76,20 @@ async def poll_events():
                 continue
 
             last_block = await _get_last_block(redis)
-            w3 = get_web3()
-            current_block = w3.eth.block_number
+            w3 = await asyncio.to_thread(get_web3)
+            current_block = await asyncio.to_thread(lambda: w3.eth.block_number)
 
             if current_block <= last_block:
                 await _update_heartbeat()
                 await asyncio.sleep(POLL_INTERVAL)
                 continue
 
-            contract = get_contract()
+            contract = await asyncio.to_thread(get_contract)
             from_block = last_block + 1
 
-            created_events = contract.events.ContractCreated.get_logs(
-                fromBlock=from_block, toBlock=current_block
+            created_events = await asyncio.to_thread(
+                contract.events.ContractCreated.get_logs,
+                fromBlock=from_block, toBlock=current_block,
             )
 
             if created_events:

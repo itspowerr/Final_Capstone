@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+build/
+dist/
+*.egg-info/
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker
+docker/data/
+docker/ipfs/data/
+
+# Contract artifacts (regenerated)
+contracts/.contract-address
+
+# Coverage
+coverage/
+htmlcov/
+
+# Misc
+*.tgz
+npm-debug.log*
