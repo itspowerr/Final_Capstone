@@ -37,8 +37,20 @@ async def update_my_profile(
                     User.id != current_user.id,
                 )
             )
-            if existing.scalar_one_or_none():
-                del update_data["wallet_address"]
+            others = existing.scalars().all()
+            my_role = getattr(current_user, "role", None)
+            other_roles = [getattr(u, "role", None) for u in others]
+
+            if len(others) >= 2:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Wallet is connected to the maximum number of accounts",
+                )
+            if my_role in other_roles:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"This wallet is already connected to another {my_role} account",
+                )
 
     for field, value in update_data.items():
         setattr(current_user, field, value)

@@ -109,11 +109,14 @@ export default function MyProfile() {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const addr = accounts[0];
-        setWallet(addr);
         try {
-          await api.put('/users/me', { wallet_address: addr });
-        } catch { /* wallet saved locally at minimum */ }
-        showToast('Wallet connected: ' + addr.slice(0, 6) + '…' + addr.slice(-4));
+          const { data } = await api.put('/users/me', { wallet_address: addr });
+          setWallet(data.wallet_address);
+          showToast('Wallet connected: ' + addr.slice(0, 6) + '…' + addr.slice(-4));
+        } catch (err) {
+          const msg = err.response?.data?.detail || 'This wallet is already connected';
+          showToast(msg, '⚠️');
+        }
       } catch (_) { showToast('MetaMask cancelled.', '❌'); }
     } else {
       showToast('MetaMask not found. Install at metamask.io', '⚠️');

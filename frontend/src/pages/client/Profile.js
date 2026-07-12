@@ -59,10 +59,13 @@ export default function ClientProfile() {
       const provider = getProvider();
       const accounts = await provider.send('eth_requestAccounts', []);
       if (accounts.length > 0) {
-        connectWallet(accounts[0]);
         try {
-          await api.put('/users/me', { wallet_address: accounts[0] });
-        } catch { /* saved in context at minimum */ }
+          const { data } = await api.put('/users/me', { wallet_address: accounts[0] });
+          connectWallet(data.wallet_address);
+        } catch (err) {
+          const msg = err.response?.data?.detail || 'This wallet is already connected';
+          setWalletError(msg);
+        }
       }
     } catch (e) {
       setWalletError(e.message || 'Failed to connect wallet');
