@@ -28,6 +28,18 @@ async def update_my_profile(
     if not update_data:
         return UserResponse.model_validate(current_user)
 
+    if "wallet_address" in update_data:
+        addr = update_data["wallet_address"]
+        if addr:
+            existing = await db.execute(
+                select(User).where(
+                    User.wallet_address == addr,
+                    User.id != current_user.id,
+                )
+            )
+            if existing.scalar_one_or_none():
+                del update_data["wallet_address"]
+
     for field, value in update_data.items():
         setattr(current_user, field, value)
 
