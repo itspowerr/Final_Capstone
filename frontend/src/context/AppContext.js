@@ -47,6 +47,14 @@ export function AppProvider({ children }) {
 
   const connectWalletAction = (addr) => {
     setWalletAddress(addr);
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        u.wallet_address = addr;
+        localStorage.setItem('user', JSON.stringify(u));
+      }
+    } catch {}
   };
 
   const disconnectWallet = () => {
@@ -61,6 +69,14 @@ export function AppProvider({ children }) {
     setUser(userData);
     if (userData?.wallet_address) {
       setWalletAddress(userData.wallet_address);
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          u.wallet_address = userData.wallet_address;
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch {}
     }
   };
 
