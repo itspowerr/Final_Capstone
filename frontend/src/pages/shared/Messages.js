@@ -2,6 +2,39 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
+const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#c026d3'];
+
+function getAvatarColor(id) {
+  let hash = 0;
+  for (let i = 0; i < (id || '').length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function formatTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'now';
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d`;
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function formatFullTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const now = new Date();
+  const isToday = d.toDateString() === now.toDateString();
+  const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  if (isToday) return time;
+  return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${time}`;
+}
+
 export default function Messages({ NavbarComponent }) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -14,6 +47,8 @@ export default function Messages({ NavbarComponent }) {
   const [connected, setConnected] = useState(false);
   const wsRef = useRef(null);
   const messagesRef = useRef([]);
+  const threadMessagesEndRef = useRef(null);
+  const inputRef = useRef(null);
 
   const currentUser = (() => {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
@@ -98,6 +133,7 @@ export default function Messages({ NavbarComponent }) {
         partnerId,
         messages: msgs,
         lastMessage: msgs[msgs.length - 1],
+        unread: msgs.filter(m => m.receiver_id === myId && !m.read).length,
       }))
       .sort((a, b) => (b.lastMessage.created_at || '').localeCompare(a.lastMessage.created_at || ''));
   }
@@ -118,7 +154,7 @@ export default function Messages({ NavbarComponent }) {
       });
       setReplyText('');
     } catch {
-      showToast('Failed to send', '⚠️');
+      showToast('Failed to send', '!');
     }
     setSending(false);
   }
@@ -138,16 +174,14 @@ export default function Messages({ NavbarComponent }) {
       });
       showToast('Job accepted!');
     } catch (err) {
-      showToast(err.response?.data?.detail || 'Failed to accept', '⚠️');
+      showToast(err.response?.data?.detail || 'Failed to accept', '!');
     }
   }
 
   function showToast(msg, icon) {
-    setToast({ msg, icon: icon || '✅' });
+    setToast({ msg, icon: icon || '+' });
     setTimeout(() => setToast(null), 2500);
   }
-
-  const threadMessagesEndRef = useRef(null);
 
   useEffect(() => {
     if (activeThread && threadMessagesEndRef.current) {
@@ -164,179 +198,343 @@ export default function Messages({ NavbarComponent }) {
     }
   }, [messages]);
 
+  useEffect(() => {
+    if (activeThread && inputRef.current) inputRef.current.focus();
+  }, [activeThread]);
+
   return (
-    <div>
+    <div style={{ minHeight: '100vh', background: 'var(--surface)' }}>
       <NavbarComponent activePage="messages" />
-      <div className="page-body">
-        <div className="page-header">
-          <div>
-            <h1 className="page-title">Messages</h1>
-            <p className="page-sub">
-              Conversations with other users
+
+      <style>{`
+        .msg-layout { display: flex; height: calc(100vh - 80px); max-width: 1200px; margin: 0 auto; }
+        .msg-sidebar {
+          width: 320px; flex-shrink: 0; border-right: 1px solid var(--border);
+          display: flex; flex-direction: column; background: var(--white);
+        }
+        .msg-sidebar-header {
+          padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+        }
+        .msg-sidebar-header h2 {
+          font-size: 20px; font-weight: 800; letter-spacing: -.4px; margin-bottom: 2px;
+        }
+        .msg-sidebar-header p { font-size: 13px; color: var(--text-3); }
+        .msg-list { flex: 1; overflow-y: auto; }
+        .msg-thread {
+          display: flex; align-items: center; gap: 12px;
+          padding: 14px 20px; cursor: pointer; transition: background .15s;
+          border-bottom: 1px solid #f1f5f9; position: relative;
+        }
+        .msg-thread:hover { background: #f8fafc; }
+        .msg-thread.active { background: var(--accent-pale); }
+        .msg-thread-avatar {
+          width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 15px; font-weight: 700; color: #fff;
+        }
+        .msg-thread-info { flex: 1; min-width: 0; }
+        .msg-thread-name {
+          font-size: 13.5px; font-weight: 600; color: var(--text); margin-bottom: 2px;
+          display: flex; align-items: center; gap: 6px;
+        }
+        .msg-thread-preview {
+          font-size: 12.5px; color: var(--text-3); white-space: nowrap;
+          overflow: hidden; text-overflow: ellipsis;
+        }
+        .msg-thread-meta { text-align: right; flex-shrink: 0; }
+        .msg-thread-time { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+        .msg-unread-badge {
+          display: inline-flex; align-items: center; justify-content: center;
+          min-width: 18px; height: 18px; border-radius: 9px;
+          background: var(--accent); color: #fff; font-size: 10px; font-weight: 700;
+          padding: 0 5px;
+        }
+        .msg-chat { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        .msg-chat-header {
+          padding: 16px 24px; border-bottom: 1px solid var(--border);
+          display: flex; align-items: center; gap: 12px; background: var(--white);
+        }
+        .msg-chat-header-avatar {
+          width: 36px; height: 36px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 14px; font-weight: 700; color: #fff;
+        }
+        .msg-chat-header-info h3 { font-size: 14px; font-weight: 700; }
+        .msg-chat-header-info p { font-size: 12px; color: var(--text-3); }
+        .msg-chat-messages {
+          flex: 1; overflow-y: auto; padding: 20px 24px;
+          display: flex; flex-direction: column; gap: 6px;
+          background: #f8fafc;
+        }
+        .msg-bubble-row { display: flex; }
+        .msg-bubble-row.me { justify-content: flex-end; }
+        .msg-bubble-row.them { justify-content: flex-start; }
+        .msg-bubble {
+          max-width: 65%; padding: 10px 14px; border-radius: 16px;
+          font-size: 13.5px; line-height: 1.55; position: relative;
+        }
+        .msg-bubble.me {
+          background: var(--accent); color: #fff;
+          border-bottom-right-radius: 4px;
+        }
+        .msg-bubble.them {
+          background: var(--white); color: var(--text);
+          border: 1px solid var(--border); border-bottom-left-radius: 4px;
+        }
+        .msg-bubble-time {
+          font-size: 10.5px; margin-top: 4px; opacity: .55;
+        }
+        .msg-bubble.me .msg-bubble-time { text-align: right; }
+        .msg-job-card {
+          padding: 8px 12px; border-radius: 8px; margin-bottom: 6;
+          font-size: 12px; background: rgba(255,255,255,.15);
+        }
+        .msg-bubble.them .msg-job-card { background: var(--surface); }
+        .msg-job-card-title { font-weight: 700; margin-bottom: 2px; }
+        .msg-job-card-title span {
+          cursor: pointer; text-decoration: underline;
+        }
+        .msg-job-card-meta { opacity: .8; font-size: 11px; }
+        .msg-invite-card {
+          background: var(--white); border: 1px solid var(--accent-border);
+          border-radius: 12px; padding: 16px; margin-bottom: 10px;
+        }
+        .msg-invite-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+        .msg-invite-card p { font-size: 12px; color: var(--text-3); margin-bottom: 12px; }
+        .msg-invite-card .btn-accept {
+          width: 100%; padding: 10px; border-radius: 8px; font-size: 13px;
+          font-weight: 600; border: none; cursor: pointer; font-family: inherit;
+          background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+          color: #fff; transition: all .18s;
+        }
+        .msg-invite-card .btn-accept:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 16px rgba(37,99,235,.35);
+        }
+        .msg-input-bar {
+          padding: 16px 24px; border-top: 1px solid var(--border);
+          display: flex; gap: 10px; align-items: center; background: var(--white);
+        }
+        .msg-input-bar input {
+          flex: 1; padding: 11px 16px; border-radius: 10px;
+          border: 1px solid var(--border); font-size: 13.5px;
+          font-family: inherit; outline: none; transition: border .15s;
+          background: var(--surface);
+        }
+        .msg-input-bar input:focus { border-color: var(--accent); }
+        .msg-send-btn {
+          width: 40px; height: 40px; border-radius: 10px; border: none;
+          background: var(--accent); color: #fff; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: all .18s; flex-shrink: 0;
+        }
+        .msg-send-btn:hover:not(:disabled) {
+          background: var(--accent-dark);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(37,99,235,.3);
+        }
+        .msg-send-btn:disabled { opacity: .4; cursor: default; }
+        .msg-empty {
+          flex: 1; display: flex; flex-direction: column; align-items: center;
+          justify-content: center; color: var(--text-3); padding: 60px;
+        }
+        .msg-empty-icon { font-size: 48px; margin-bottom: 16px; opacity: .3; }
+        .msg-empty h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text-2); }
+        .msg-empty p { font-size: 13px; }
+        .msg-loading {
+          flex: 1; display: flex; align-items: center; justify-content: center;
+          color: var(--text-3); font-size: 14px;
+        }
+        .msg-date-sep {
+          text-align: center; font-size: 11px; font-weight: 600;
+          color: var(--text-3); padding: 8px 0; letter-spacing: .3px;
+        }
+        @media (max-width: 768px) {
+          .msg-sidebar { width: 100%; }
+          .msg-chat { display: none; }
+          .msg-chat.visible { display: flex; position: fixed; inset: 0; z-index: 100; }
+          .msg-back-btn { display: flex !important; }
+        }
+      `}</style>
+
+      <div className="msg-layout">
+        {/* Sidebar */}
+        <div className="msg-sidebar">
+          <div className="msg-sidebar-header">
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2>Messages</h2>
               <span style={{
-                marginLeft: 8,
-                fontSize: 11,
-                padding: '2px 8px',
-                borderRadius: 10,
-                background: connected ? '#10b98133' : '#ef444433',
-                color: connected ? '#10b981' : '#ef4444',
-                fontWeight: 600,
+                fontSize: 11, padding: '3px 10px', borderRadius: 12, fontWeight: 600,
+                background: connected ? '#ecfdf5' : '#fef2f2',
+                color: connected ? '#059669' : '#dc2626',
+                border: `1px solid ${connected ? '#a7f3d0' : '#fecaca'}`,
               }}>
-                {connected ? 'Live' : 'Offline'}
+                {connected ? 'Online' : 'Offline'}
               </span>
-            </p>
+            </div>
+            <p>{threads.length} conversation{threads.length !== 1 ? 's' : ''}</p>
+          </div>
+          <div className="msg-list">
+            {threads.map(t => (
+              <div
+                key={t.partnerId}
+                className={`msg-thread ${activeThread?.partnerId === t.partnerId ? 'active' : ''}`}
+                onClick={() => { setActiveThread(t); setReplyText(''); }}
+              >
+                <div className="msg-thread-avatar" style={{ background: getAvatarColor(t.partnerId) }}>
+                  {(t.partnerId || '?')[0].toUpperCase()}
+                </div>
+                <div className="msg-thread-info">
+                  <div className="msg-thread-name">
+                    {(t.partnerId || '').slice(0, 18)}
+                  </div>
+                  <div className="msg-thread-preview">
+                    {t.lastMessage.sender_id === myId ? 'You: ' : ''}
+                    {t.lastMessage.content?.slice(0, 45)}
+                  </div>
+                </div>
+                <div className="msg-thread-meta">
+                  <div className="msg-thread-time">{formatTime(t.lastMessage.created_at)}</div>
+                  {t.unread > 0 && <div className="msg-unread-badge">{t.unread}</div>}
+                </div>
+              </div>
+            ))}
+            {threads.length === 0 && !loading && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-3)', fontSize: 13 }}>
+                No conversations yet
+              </div>
+            )}
           </div>
         </div>
 
-        {loading ? (
-          <p style={{ padding: 40, color: 'var(--text-3)' }}>Loading...</p>
-        ) : threads.length === 0 ? (
-          <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-3)' }}>
-            <p style={{ fontSize: 18, marginBottom: 8 }}>No messages yet</p>
-            <p style={{ fontSize: 13 }}>Invitations and messages will appear here.</p>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 16, maxWidth: 900 }}>
-            <div style={{ width: 260, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: 1 }}>
-                Conversations
+        {/* Chat area */}
+        <div className={`msg-chat ${activeThread ? 'visible' : ''}`}>
+          {loading ? (
+            <div className="msg-loading">Loading messages...</div>
+          ) : !activeThread ? (
+            <div className="msg-empty">
+              <div className="msg-empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
               </div>
-              {threads.map(t => (
-                <div
-                  key={t.partnerId}
-                  onClick={() => { setActiveThread(t); setReplyText(''); }}
+              <h3>Select a conversation</h3>
+              <p>Choose a thread from the sidebar to start messaging</p>
+            </div>
+          ) : (
+            <>
+              {/* Chat header */}
+              <div className="msg-chat-header">
+                <button
+                  className="msg-back-btn"
+                  onClick={() => setActiveThread(null)}
                   style={{
-                    padding: '10px 14px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    background: activeThread?.partnerId === t.partnerId ? 'var(--accent-pale)' : 'var(--surface)',
-                    border: activeThread?.partnerId === t.partnerId ? '1px solid var(--accent-border)' : '1px solid var(--border)',
+                    display: 'none', border: 'none', background: 'none',
+                    fontSize: 20, cursor: 'pointer', color: 'var(--text-2)', padding: '0 8px 0 0',
                   }}
                 >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-1)' }}>{t.partnerId}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>
-                    {t.lastMessage.content?.slice(0, 40)}...
-                  </div>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <div className="msg-chat-header-avatar" style={{ background: getAvatarColor(activeThread.partnerId) }}>
+                  {(activeThread.partnerId || '?')[0].toUpperCase()}
                 </div>
-              ))}
-            </div>
+                <div className="msg-chat-header-info">
+                  <h3>{activeThread.partnerId}</h3>
+                  <p>{activeThread.messages.length} message{activeThread.messages.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
 
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {activeThread ? (
-                <div>
-                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, color: 'var(--text-1)' }}>
-                    Conversation with {activeThread.partnerId}
-                  </div>
+              {/* Messages */}
+              <div className="msg-chat-messages">
+                {activeThread.messages.map((msg, i) => {
+                  const isMe = msg.sender_id === myId;
+                  const job = msg.job_id ? jobCache[msg.job_id] : null;
+                  const prevMsg = activeThread.messages[i - 1];
+                  const showDate = !prevMsg || new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto', padding: '4px 0', marginBottom: 16 }}>
-                    {activeThread.messages.map(msg => {
-                      const isMe = msg.sender_id === myId;
-                      const job = msg.job_id ? jobCache[msg.job_id] : null;
-                      return (
-                        <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                          <div style={{
-                            maxWidth: '80%',
-                            padding: '10px 14px',
-                            borderRadius: 12,
-                            background: isMe ? 'var(--accent)' : 'var(--surface)',
-                            color: isMe ? '#fff' : 'var(--text-1)',
-                            border: isMe ? 'none' : '1px solid var(--border)',
-                          }}>
-                            {job && (
-                              <div style={{
-                                padding: '6px 10px',
-                                borderRadius: 6,
-                                background: isMe ? 'rgba(255,255,255,0.15)' : 'var(--bg)',
-                                marginBottom: 6,
-                                fontSize: 12,
-                              }}>
-                                <div style={{ fontWeight: 700 }}>
-                                  <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(isMe ? '/client/my-contracts' : '/freelancer/jobs')}>
-                                    {job.title}
-                                  </span>
-                                </div>
-                                <div style={{ opacity: 0.8, marginTop: 2 }}>
-                                  Budget: {job.budget} ETH · Status: {job.status}
-                                </div>
-                              </div>
-                            )}
-                            <div style={{ fontSize: 13, lineHeight: 1.5 }}>{msg.content}</div>
-                            <div style={{ fontSize: 10, opacity: 0.6, marginTop: 4, textAlign: 'right' }}>
-                              {msg.created_at ? new Date(msg.created_at).toLocaleString() : ''}
-                            </div>
-                          </div>
+                  return (
+                    <div key={msg.id}>
+                      {showDate && (
+                        <div className="msg-date-sep">
+                          {new Date(msg.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </div>
-                      );
-                    })}
-                    <div ref={threadMessagesEndRef} />
-                  </div>
-
-                  {activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !activeThread.messages.some(
-                    r => r.sender_id === myId && r.job_id === m.job_id && r.content?.includes('accepted')
-                  )) && (
-                    <div style={{ marginBottom: 12 }}>
-                      {(() => {
-                        const inviteJobIds = [...new Set(
-                          activeThread.messages
-                            .filter(m => m.job_id && m.sender_id !== myId)
-                            .map(m => m.job_id)
-                        )];
-                        return inviteJobIds.map(jid => {
-                          const job = jobCache[jid];
-                          const alreadyAccepted = activeThread.messages.some(
-                            m => m.sender_id === myId && m.job_id === jid && m.content?.toLowerCase().includes('accepted')
-                          );
-                          if (alreadyAccepted || !job) return null;
-                          return (
-                            <div key={jid} style={{
-                              padding: '10px 14px',
-                              background: 'var(--surface)',
-                              border: '1px solid var(--border)',
-                              borderRadius: 8,
-                              marginBottom: 8,
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                            }}>
-                              <div>
-                                <div style={{ fontSize: 13, fontWeight: 700 }}>{job.title}</div>
-                                <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Budget: {job.budget} ETH</div>
+                      )}
+                      <div className={`msg-bubble-row ${isMe ? 'me' : 'them'}`}>
+                        <div className={`msg-bubble ${isMe ? 'me' : 'them'}`}>
+                          {job && (
+                            <div className="msg-job-card">
+                              <div className="msg-job-card-title">
+                                <span onClick={() => navigate(isMe ? '/client/my-contracts' : '/freelancer/jobs')}>
+                                  {job.title}
+                                </span>
                               </div>
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => acceptJob(jid, activeThread.partnerId)}
-                              >
-                                Accept Invitation
-                              </button>
+                              <div className="msg-job-card-meta">
+                                Budget: {job.budget} ETH &middot; {job.status}
+                              </div>
                             </div>
-                          );
-                        });
-                      })()}
+                          )}
+                          <div>{msg.content}</div>
+                          <div className="msg-bubble-time">{formatFullTime(msg.created_at)}</div>
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  );
+                })}
+                <div ref={threadMessagesEndRef} />
+              </div>
 
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      className="form-input"
-                      placeholder="Type a reply..."
-                      value={replyText}
-                      onChange={e => setReplyText(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(activeThread.partnerId); } }}
-                      style={{ flex: 1 }}
-                    />
-                    <button className="btn btn-primary btn-sm" onClick={() => sendReply(activeThread.partnerId)} disabled={sending || !replyText.trim()}>
-                      {sending ? '...' : 'Send'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-3)' }}>
-                  Select a conversation to view messages
+              {/* Job invitation cards */}
+              {activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !activeThread.messages.some(
+                r => r.sender_id === myId && r.job_id === m.job_id && r.content?.includes('accepted')
+              )) && (
+                <div style={{ padding: '0 24px' }}>
+                  {[...new Set(
+                    activeThread.messages.filter(m => m.job_id && m.sender_id !== myId).map(m => m.job_id)
+                  )].map(jid => {
+                    const job = jobCache[jid];
+                    const alreadyAccepted = activeThread.messages.some(
+                      m => m.sender_id === myId && m.job_id === jid && m.content?.toLowerCase().includes('accepted')
+                    );
+                    if (alreadyAccepted || !job) return null;
+                    return (
+                      <div className="msg-invite-card" key={jid}>
+                        <h4>{job.title}</h4>
+                        <p>Budget: {job.budget} ETH &middot; Duration: {job.duration_days || 30} days</p>
+                        <button className="btn-accept" onClick={() => acceptJob(jid, activeThread.partnerId)}>
+                          Accept Invitation
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
-            </div>
-          </div>
-        )}
+
+              {/* Input */}
+              <div className="msg-input-bar">
+                <input
+                  ref={inputRef}
+                  placeholder="Type a message..."
+                  value={replyText}
+                  onChange={e => setReplyText(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(activeThread.partnerId); } }}
+                />
+                <button
+                  className="msg-send-btn"
+                  onClick={() => sendReply(activeThread.partnerId)}
+                  disabled={sending || !replyText.trim()}
+                  title="Send"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="22" y1="2" x2="11" y2="13"/>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                  </svg>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {toast && (
