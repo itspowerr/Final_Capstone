@@ -152,59 +152,8 @@ export default function PostProjectModal({ isOpen, onClose }) {
       return;
     }
 
-    // Step 1: Deploy to blockchain FIRST (mandatory — user must confirm in MetaMask)
-    let onChainJobId = null;
-    try {
-      setPostError('Deploying to blockchain — please confirm the transaction in MetaMask.');
-      await ensureCorrectNetwork();
-      const signer = await getSigner();
-      const contract = await getContract(config.contractAddress, GIG_ESCROW_ABI);
-
-      const deadlineUnix = Math.floor(Date.now() / 1000) + 30 * 86400;
-      const milestoneDescriptions = validMilestones.map(m => m.description);
-      const milestoneAmountsWei = validMilestones.map(m => parseEther(m.amount.toString()));
-      const totalAmountWei = parseEther(budget.toString());
-
-      // freelancer is set to zero address; updated on-chain when proposal is accepted
-      const tx = await contract.createContract(
-        '0x0000000000000000000000000000000000000000',
-        form.title.trim(),
-        '',
-        totalAmountWei,
-        deadlineUnix,
-        milestoneDescriptions,
-        milestoneAmountsWei,
-      );
-
-      const receipt = await tx.wait();
-
-      if (receipt.status === 0) {
-        throw new Error('Transaction reverted on-chain. Check that milestone amounts sum to the total budget.');
-      }
-
-      for (const log of receipt.logs) {
-        try {
-          const parsed = contract.interface.parseLog(log);
-          if (parsed && parsed.name === 'ContractCreated') {
-            onChainJobId = Number(parsed.args.contractId);
-            break;
-          }
-        } catch {
-          // skip non-matching logs
-        }
-      }
-
-      if (onChainJobId === null) {
-        throw new Error('Contract was deployed but no ContractCreated event was found in the receipt.');
-      }
-    } catch (chainErr) {
-      const msg = chainErr?.message || chainErr?.toString?.() || 'Unknown blockchain error';
-      setPostError(`Blockchain deployment failed: ${msg}`);
-      setPosting(false);
-      return; // STOP — do not create job/contract without on-chain binding
-    }
-
-    // Step 2: Save job + contract in backend (only reached if blockchain succeeded)
+    // Step 1: Save job + contract in backend (backend deploys on-chain)
+    let jobId = null;
     try {
       setPostError('Saving to database...');
       const jobResp = await api.post('/jobs', {
@@ -215,7 +164,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
         skills: skills,
         duration_days: 30,
       });
-      const jobId = jobResp.data.id;
+      jobId = jobResp.data.id;
 
       const freelancerId = form.freelancerId.trim();
       const contractPayload = {
@@ -225,8 +174,6 @@ export default function PostProjectModal({ isOpen, onClose }) {
         description: form.description.trim(),
         total_amount: budget,
         milestones: validMilestones,
-        on_chain_id: onChainJobId,
-        contract_address: config.contractAddress,
       };
 
       await api.post('/contracts', contractPayload);

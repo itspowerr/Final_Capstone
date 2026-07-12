@@ -22,6 +22,7 @@ from app.schemas import (
 from app.config import settings
 from app.services import blockchain_service
 from app.services.audit_service import log_transition
+from app.services.blockchain_service import create_contract_on_chain, to_wei
 from app.services.contract_service import fund_contract as do_fund_contract, sign_contract as do_sign_contract
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
@@ -62,8 +63,8 @@ async def create_contract(
         description=data.description,
         total_amount=data.total_amount,
         deadline=data.deadline,
-        on_chain_id=data.on_chain_id,
-        contract_address=data.contract_address or settings.contract_address if data.on_chain_id else None,
+        on_chain_id=None,
+        contract_address=None,
         status=ContractStatus.pending_signatures,
     )
     db.add(contract)
@@ -79,6 +80,32 @@ async def create_contract(
             status=MilestoneStatus.pending,
         )
         db.add(milestone)
+
+    # Deploy on-chain using backend key so the client on-chain matches the backend
+    try:
+        freelancer_addr = data.freelancer_id if data.freelancer_id else "0x0000000000000000000000000000000000000000"
+        # Look up freelancer wallet if ID is provided
+        if data.freelancer_id:
+            fl_user = await db.get(User, data.freelancer_id)
+            if fl_user and fl_user.wallet_address:
+                freelancer_addr = fl_user.wallet_address
+
+        deadline_ts = int(data.deadline.timestamp()) if data.deadline else 0
+        on_chain = await asyncio.to_thread(
+            create_contract_on_chain,
+            freelancer_address=freelancer_addr,
+            title=data.title or "",
+            terms_cid=f"contract_{contract.id}",
+            total_amount_wei=to_wei(float(data.total_amount)),
+            deadline=deadline_ts,
+            milestone_descs=[m.description for m in data.milestones],
+            milestone_amounts=[to_wei(float(m.amount)) for m in data.milestones],
+        )
+        if on_chain.get("on_chain_id") is not None:
+            contract.on_chain_id = int(on_chain["on_chain_id"])
+            contract.contract_address = on_chain.get("contract_address")
+    except Exception:
+        pass  # Contract saved in DB even if blockchain fails
 
     await log_transition(
         db=db,
