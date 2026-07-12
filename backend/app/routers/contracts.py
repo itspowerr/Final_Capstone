@@ -90,6 +90,8 @@ async def create_contract(
             if fl_user and fl_user.wallet_address:
                 freelancer_addr = fl_user.wallet_address
 
+        client_wallet = current_user.wallet_address
+
         deadline_ts = int(data.deadline.timestamp()) if data.deadline else 0
         on_chain = await asyncio.to_thread(
             create_contract_on_chain,
@@ -100,6 +102,7 @@ async def create_contract(
             deadline=deadline_ts,
             milestone_descs=[m.description for m in data.milestones],
             milestone_amounts=[to_wei(float(m.amount)) for m in data.milestones],
+            client_address=client_wallet,
         )
         if on_chain.get("on_chain_id") is not None:
             contract.on_chain_id = int(on_chain["on_chain_id"])

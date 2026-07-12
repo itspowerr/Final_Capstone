@@ -1,6 +1,7 @@
 export const GIG_ESCROW_ABI = [
   {
     "inputs": [
+      {"internalType": "address", "name": "_client", "type": "address"},
       {"internalType": "address", "name": "_freelancer", "type": "address"},
       {"internalType": "string", "name": "_title", "type": "string"},
       {"internalType": "string", "name": "_termsCID", "type": "string"},

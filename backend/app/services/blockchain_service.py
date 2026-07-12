@@ -100,7 +100,7 @@ def sign_and_send(tx: dict, private_key: str) -> str:
     return receipt.transactionHash.hex()
 
 
-def create_contract_on_chain(freelancer_address: str, title: str, terms_cid: str, total_amount_wei: int, deadline: int, milestone_descs: list[str], milestone_amounts: list[int], client_private_key: str | None = None) -> dict:
+def create_contract_on_chain(freelancer_address: str, title: str, terms_cid: str, total_amount_wei: int, deadline: int, milestone_descs: list[str], milestone_amounts: list[int], client_private_key: str | None = None, client_address: str | None = None) -> dict:
     w3 = get_web3()
     contract = get_contract()
     pk = client_private_key or settings.client_private_key
@@ -113,7 +113,13 @@ def create_contract_on_chain(freelancer_address: str, title: str, terms_cid: str
     account = w3.eth.account.from_key(pk)
     freelancer_address = Web3.to_checksum_address(freelancer_address)
 
+    if client_address:
+        client_address = Web3.to_checksum_address(client_address)
+    else:
+        client_address = account.address
+
     fn = contract.functions.createContract(
+        client_address,
         freelancer_address,
         title,
         terms_cid,

@@ -48,6 +48,28 @@ async def lifespan(app: FastAPI):
                 'ALTER TABLE freeledger.messages ADD COLUMN IF NOT EXISTS job_id VARCHAR(50)'
             )
         )
+        # One-time: clear stale on_chain_id after GigEscrow contract redeployed with _client param
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                'CREATE TABLE IF NOT EXISTS freeledger.schema_migrations (id SERIAL PRIMARY KEY, name VARCHAR(100) UNIQUE NOT NULL, applied_at TIMESTAMP DEFAULT NOW())'
+            )
+        )
+        migration_check = await conn.execute(
+            __import__("sqlalchemy").text(
+                "SELECT 1 FROM freeledger.schema_migrations WHERE name = 'clear_stale_onchain_ids'"
+            )
+        )
+        if not migration_check.fetchone():
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    'UPDATE freeledger.contracts SET on_chain_id = NULL, contract_address = NULL WHERE on_chain_id IS NOT NULL'
+                )
+            )
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    "INSERT INTO freeledger.schema_migrations (name) VALUES ('clear_stale_onchain_ids')"
+                )
+            )
     yield
     await app.state.redis.close()
     await close_redis()

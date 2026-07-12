@@ -62,7 +62,11 @@ contract GigEscrow is ReentrancyGuard, Ownable {
     }
 
     modifier onlyClient(uint256 _contractId) {
-        require(msg.sender == contracts[_contractId].client, "Only client");
+        require(
+            msg.sender == contracts[_contractId].client ||
+            msg.sender == owner(),
+            "Only client"
+        );
         _;
     }
 
@@ -77,6 +81,7 @@ contract GigEscrow is ReentrancyGuard, Ownable {
     }
 
     function createContract(
+        address _client,
         address _freelancer,
         string memory _title,
         string memory _termsCID,
@@ -85,7 +90,8 @@ contract GigEscrow is ReentrancyGuard, Ownable {
         string[] memory _milestoneDescriptions,
         uint256[] memory _milestoneAmounts
     ) external returns (uint256) {
-        require(msg.sender != _freelancer, "Cannot contract yourself");
+        require(_client != address(0), "Invalid client address");
+        require(_client != _freelancer, "Cannot contract yourself");
         require(_milestoneDescriptions.length > 0, "Need at least 1 milestone");
         require(_milestoneDescriptions.length == _milestoneAmounts.length, "Arrays length mismatch");
 
@@ -99,7 +105,7 @@ contract GigEscrow is ReentrancyGuard, Ownable {
         uint256 contractId = contractCounter;
 
         EscrowContract storage escrow = contracts[contractId];
-        escrow.client = msg.sender;
+        escrow.client = _client;
         escrow.freelancer = _freelancer;
         escrow.title = _title;
         escrow.termsCID = _termsCID;
@@ -121,12 +127,12 @@ contract GigEscrow is ReentrancyGuard, Ownable {
         }
 
         contractExists[contractId] = true;
-        clientContracts[msg.sender].push(contractId);
+        clientContracts[_client].push(contractId);
         if (_freelancer != address(0)) {
             freelancerContracts[_freelancer].push(contractId);
         }
 
-        emit ContractCreated(contractId, msg.sender, _freelancer, _totalAmount);
+        emit ContractCreated(contractId, _client, _freelancer, _totalAmount);
         return contractId;
     }
 
