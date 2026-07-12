@@ -1,171 +1,40 @@
-#!/usr/bin/env python3
-"""
-FreeLedger — Admin account manager
-Add or delete admin accounts from the database.
-Run: ./admin.sh
-"""
+#!/usr/bin/env bash
+# FreeLedger — Admin account manager
+# Add or delete admin accounts from the database.
+# Run: ./admin.sh
 
-import asyncio
-import getpass
-import uuid
-import sys
+set -e
 
-try:
-    import asyncpg
-except ImportError:
-    print("Installing asyncpg...")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "asyncpg", "-q"])
-    import asyncpg
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-try:
-    import bcrypt
-except ImportError:
-    print("Installing bcrypt...")
-    import subprocess
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "bcrypt", "-q"])
-    import bcrypt
-
-DB_URL = "postgresql://freeledger:freeledger_dev@localhost:5432/freeledger"
-
-GREEN  = "\033[0;32m"
-RED    = "\033[0;31m"
-YELLOW = "\033[0;33m"
-CYAN   = "\033[0;36m"
-BOLD   = "\033[1m"
-NC     = "\033[0m"
-
-
-def hash_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-
-async def add_admin():
-    print(f"\n{CYAN}--- Add Admin Account ---{NC}\n")
-
-    username = input("Username: ").strip()
-    if not username:
-        print(f"{RED}Username cannot be empty.{NC}")
-        return
-
-    password = getpass.getpass("Password: ")
-    if not password:
-        print(f"{RED}Password cannot be empty.{NC}")
-        return
-
-    confirm = getpass.getpass("Confirm password: ")
-    if password != confirm:
-        print(f"{RED}Passwords do not match.{NC}")
-        return
-
-    conn = await asyncpg.connect(DB_URL)
-    try:
-        existing = await conn.fetchval(
-            "SELECT id FROM freeledger.users WHERE username = $1", username
-        )
-        if existing:
-            print(f"{RED}Error: Username '{username}' already exists.{NC}")
+# Find the backend venv Python (works on macOS, Linux, Windows Git Bash)
+find_python() {
+    for candidate in \
+        "$ROOT_DIR/backend/venv/bin/python3" \
+        "$ROOT_DIR/backend/venv/bin/python" \
+        "$ROOT_DIR/backend/.venv/bin/python3" \
+        "$ROOT_DIR/backend/.venv/bin/python" \
+        "$ROOT_DIR/backend/venv/Scripts/python.exe" \
+        "$ROOT_DIR/backend/.venv/Scripts/python.exe"; do
+        if [ -x "$candidate" ]; then
+            echo "$candidate"
             return
+        fi
+    done
+    # Fall back to system python3
+    if command -v python3 &>/dev/null; then
+        echo "python3"
+    elif command -v python &>/dev/null; then
+        echo "python"
+    else
+        echo ""
+    fi
+}
 
-        print(f"\n{YELLOW}Hashing password...{NC}")
-        pw_hash = hash_password(password)
+PYTHON_BIN=$(find_python)
+if [ -z "$PYTHON_BIN" ]; then
+    echo "Error: No Python found. Install Python 3.10+ first."
+    exit 1
+fi
 
-        user_id = f"usr_{uuid.uuid4().hex[:12]}"
-        admin_id = str(uuid.uuid4())
-
-        print(f"{YELLOW}Inserting into database...{NC}")
-
-        await conn.execute(
-            """INSERT INTO freeledger.users (id, username, password_hash, auth_method, role, is_active)
-               VALUES ($1, $2, $3, 'email', 'admin', true)""",
-            user_id, username, pw_hash,
-        )
-
-        await conn.execute(
-            """INSERT INTO freeledger.admin_accounts (id, user_id, role)
-               VALUES ($1, $2, 'admin')""",
-            admin_id, user_id,
-        )
-
-        print(f"\n{GREEN}Admin account created successfully!{NC}")
-        print(f"  Username: {BOLD}{username}{NC}")
-        print(f"  User ID:  {user_id}\n")
-
-    except Exception as e:
-        print(f"{RED}Error: {e}{NC}")
-    finally:
-        await conn.close()
-
-
-async def delete_admin():
-    print(f"\n{CYAN}--- Delete Admin Account ---{NC}\n")
-
-    conn = await asyncpg.connect(DB_URL)
-    try:
-        rows = await conn.fetch(
-            """SELECT u.id, u.username
-               FROM freeledger.users u
-               WHERE u.role = 'admin'
-               ORDER BY u.created_at"""
-        )
-
-        if not rows:
-            print(f"{YELLOW}No admin accounts found.{NC}")
-            return
-
-        print("Admin accounts:\n")
-        for i, row in enumerate(rows, 1):
-            print(f"  {i}) {row['username']} ({row['id']})")
-
-        print()
-        choice = input(f"Choose account to delete [1-{len(rows)}]: ").strip()
-
-        if not choice.isdigit() or int(choice) < 1 or int(choice) > len(rows):
-            print(f"{RED}Invalid selection.{NC}")
-            return
-
-        chosen = rows[int(choice) - 1]
-        print()
-        confirm = input(f"Delete '{chosen['username']}'? This cannot be undone. [y/N]: ").strip()
-
-        if confirm.lower() != "y":
-            print(f"{YELLOW}Cancelled.{NC}")
-            return
-
-        await conn.execute(
-            "DELETE FROM freeledger.admin_accounts WHERE user_id = $1",
-            chosen["id"],
-        )
-        await conn.execute(
-            "DELETE FROM freeledger.users WHERE id = $1",
-            chosen["id"],
-        )
-
-        print(f"\n{GREEN}Admin account '{chosen['username']}' deleted.{NC}\n")
-
-    except Exception as e:
-        print(f"{RED}Error: {e}{NC}")
-    finally:
-        await conn.close()
-
-
-async def main():
-    print(f"\n{BOLD}FreeLedger Admin Manager{NC}")
-    print("=" * 30)
-    print(f"\nWhat would you like to do?\n")
-    print("  1) Add admin account")
-    print("  2) Delete admin account\n")
-
-    choice = input("Choose [1/2]: ").strip()
-
-    if choice == "1":
-        await add_admin()
-    elif choice == "2":
-        await delete_admin()
-    else:
-        print(f"{RED}Invalid choice.{NC}")
-        sys.exit(1)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+exec "$PYTHON_BIN" "$ROOT_DIR/admin.py" "$@"
