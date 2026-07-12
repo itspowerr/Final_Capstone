@@ -33,6 +33,7 @@ Logs are saved to `logs/` on each run.
 CapstoneV3-main/
 ├── start.sh                  # One-command startup (macOS/Linux/Windows)
 ├── admin.sh                  # Admin account manager (add/delete/list)
+├── fund.sh                   # Fund test wallets with ETH
 ├── backend/
 │   ├── app/
 │   │   ├── main.py           # FastAPI app, CORS, startup migrations
@@ -99,10 +100,14 @@ REACT_APP_API_URL=http://localhost:8000/api
 ## Fund Test Wallets
 
 ```bash
-node scripts/fund-wallet.js 0xYourAddress 1000
+./fund.sh
 ```
 
-Sends 1000 test ETH from Hardhat pre-funded accounts.
+Interactive script to send test ETH to any wallet:
+
+- Enter your MetaMask wallet address
+- Choose amount (100, 500, 1000 ETH or custom)
+- ETH sent from Hardhat pre-funded accounts
 
 ## Management Scripts
 
