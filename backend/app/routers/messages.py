@@ -1,14 +1,51 @@
+import json
 import uuid
+from typing import Dict, Set
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import Base, get_db
+from app.database import Base, async_session_factory, get_db
 from app.routers.auth import get_current_user
 from app.models import User
 
 router = APIRouter(prefix="/messages", tags=["messages"])
+
+
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: Dict[str, Set[WebSocket]] = {}
+
+    async def connect(self, websocket: WebSocket, user_id: str):
+        await websocket.accept()
+        if user_id not in self.active_connections:
+            self.active_connections[user_id] = set()
+        self.active_connections[user_id].add(websocket)
+
+    def disconnect(self, websocket: WebSocket, user_id: str):
+        if user_id in self.active_connections:
+            self.active_connections[user_id].discard(websocket)
+            if not self.active_connections[user_id]:
+                del self.active_connections[user_id]
+
+    async def send_to_user(self, user_id: str, message: dict):
+        if user_id in self.active_connections:
+            dead = []
+            for ws in self.active_connections[user_id]:
+                try:
+                    await ws.send_json(message)
+                except Exception:
+                    dead.append(ws)
+            for ws in dead:
+                self.active_connections[user_id].discard(ws)
+
+    async def broadcast_to_both(self, sender_id: str, receiver_id: str, message: dict):
+        await self.send_to_user(sender_id, message)
+        await self.send_to_user(receiver_id, message)
+
+
+manager = ConnectionManager()
 
 
 class Message(Base):
@@ -22,6 +59,16 @@ class Message(Base):
     job_id = Column(String(50), nullable=True)
     read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: str):
+    await manager.connect(websocket, user_id)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket, user_id)
 
 
 @router.post("/send")
@@ -47,6 +94,21 @@ async def send_message(
     )
     db.add(msg)
     await db.commit()
+
+    message_data = {
+        "type": "new_message",
+        "message": {
+            "id": msg.id,
+            "sender_id": msg.sender_id,
+            "receiver_id": msg.receiver_id,
+            "content": msg.content,
+            "job_id": msg.job_id,
+            "read": False,
+            "created_at": msg.created_at.isoformat() if msg.created_at else None,
+        },
+    }
+    await manager.broadcast_to_both(current_user.id, receiver_id, message_data)
+
     return {"status": "sent", "message_id": msg.id}
 
 
@@ -93,6 +155,10 @@ async def mark_read(
     if msg:
         msg.read = True
         await db.commit()
+        await manager.send_to_user(msg.sender_id, {
+            "type": "message_read",
+            "message_id": msg.id,
+        })
     return {"status": "ok"}
 
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 
@@ -11,18 +11,20 @@ export default function Messages({ NavbarComponent }) {
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(null);
   const [jobCache, setJobCache] = useState({});
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef(null);
+  const messagesRef = useRef([]);
 
   const currentUser = (() => {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   })();
   const myId = currentUser.id;
 
-  useEffect(() => { loadMessages(); }, []);
-
-  async function loadMessages() {
+  const loadMessages = useCallback(async () => {
     try {
       const { data } = await api.get('/messages/inbox');
       setMessages(data);
+      messagesRef.current = data;
       const jobIds = [...new Set(data.filter(m => m.job_id).map(m => m.job_id))];
       const cache = {};
       await Promise.all(jobIds.map(async id => {
@@ -36,10 +38,53 @@ export default function Messages({ NavbarComponent }) {
           } catch {}
         }
       }));
-      setJobCache(cache);
+      setJobCache(prev => ({ ...prev, ...cache }));
     } catch { }
     setLoading(false);
-  }
+  }, []);
+
+  useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  useEffect(() => {
+    if (!myId) return;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.hostname}:8000/api/messages/ws/${myId}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => {
+      setConnected(false);
+      setTimeout(() => {
+        if (wsRef.current === ws) {
+          const newWs = new WebSocket(wsUrl);
+          wsRef.current = newWs;
+        }
+      }, 3000);
+    };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'new_message') {
+          setMessages(prev => {
+            if (prev.some(m => m.id === data.message.id)) return prev;
+            const updated = [...prev, data.message];
+            messagesRef.current = updated;
+            return updated;
+          });
+        } else if (data.type === 'message_read') {
+          setMessages(prev => {
+            const updated = prev.map(m => m.id === data.message_id ? { ...m, read: true } : m);
+            messagesRef.current = updated;
+            return updated;
+          });
+        }
+      } catch {}
+    };
+
+    return () => { ws.close(); wsRef.current = null; };
+  }, [myId]);
 
   function getThreads() {
     const threadMap = {};
@@ -72,7 +117,6 @@ export default function Messages({ NavbarComponent }) {
         content: replyText.trim(),
       });
       setReplyText('');
-      loadMessages();
     } catch {
       showToast('Failed to send', '⚠️');
     }
@@ -93,7 +137,6 @@ export default function Messages({ NavbarComponent }) {
         content: 'I accepted the invitation! Looking forward to working on this.',
       });
       showToast('Job accepted!');
-      loadMessages();
     } catch (err) {
       showToast(err.response?.data?.detail || 'Failed to accept', '⚠️');
     }
@@ -104,7 +147,22 @@ export default function Messages({ NavbarComponent }) {
     setTimeout(() => setToast(null), 2500);
   }
 
+  const threadMessagesEndRef = useRef(null);
+
+  useEffect(() => {
+    if (activeThread && threadMessagesEndRef.current) {
+      threadMessagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, activeThread]);
+
   const threads = getThreads();
+
+  useEffect(() => {
+    if (activeThread) {
+      const updated = threads.find(t => t.partnerId === activeThread.partnerId);
+      if (updated) setActiveThread(updated);
+    }
+  }, [messages]);
 
   return (
     <div>
@@ -113,7 +171,20 @@ export default function Messages({ NavbarComponent }) {
         <div className="page-header">
           <div>
             <h1 className="page-title">Messages</h1>
-            <p className="page-sub">Conversations with other users</p>
+            <p className="page-sub">
+              Conversations with other users
+              <span style={{
+                marginLeft: 8,
+                fontSize: 11,
+                padding: '2px 8px',
+                borderRadius: 10,
+                background: connected ? '#10b98133' : '#ef444433',
+                color: connected ? '#10b981' : '#ef4444',
+                fontWeight: 600,
+              }}>
+                {connected ? 'Live' : 'Offline'}
+              </span>
+            </p>
           </div>
         </div>
 
@@ -197,6 +268,7 @@ export default function Messages({ NavbarComponent }) {
                         </div>
                       );
                     })}
+                    <div ref={threadMessagesEndRef} />
                   </div>
 
                   {activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !activeThread.messages.some(
