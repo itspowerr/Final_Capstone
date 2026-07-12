@@ -113,7 +113,12 @@ Sends 1000 test ETH from Hardhat pre-funded accounts.
 ./admin.sh
 ```
 
-Add or delete admin accounts. Prompts for username/password, hashes with bcrypt, and inserts into the database.
+Interactive menu to manage admin accounts:
+
+- **List** — shows all admins with username, email, status, and ID
+- **Add** — create a new admin with username and password (bcrypt hashed)
+- **Delete** — select an admin from the list to remove
+- **Back** — exit the script (option 0)
 
 ### User Manager
 
@@ -121,11 +126,12 @@ Add or delete admin accounts. Prompts for username/password, hashes with bcrypt,
 ./user.sh
 ```
 
-Manage freelancer and client accounts:
+Interactive menu to manage freelancer and client accounts:
 
-- **List** — shows all users with username, email, role, wallet address, and status
-- **Add** — create a new freelancer or client with username, password, email, and optional MetaMask wallet
+- **List** — shows all users with username, email, role, MetaMask wallet address, and status
+- **Add** — create a new freelancer or client with username, password, email, and optional wallet
 - **Delete** — select a user from the list to remove
+- **Back** — exit the script (option 0)
 
 ## API Docs
 

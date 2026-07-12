@@ -44,6 +44,10 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
+def clear():
+    os.system("cls" if sys.platform == "win32" else "clear")
+
+
 async def list_users():
     conn = await asyncpg.connect(DB_URL)
     try:
@@ -210,24 +214,28 @@ async def delete_user():
 
 
 async def main():
-    print(f"\n{BOLD}FreeLedger User Manager{NC}")
-    print("=" * 30)
-    print(f"\nWhat would you like to do?\n")
-    print("  1) List all users")
-    print("  2) Add user")
-    print("  3) Delete user\n")
+    while True:
+        print(f"\n{BOLD}FreeLedger User Manager{NC}")
+        print("=" * 30)
+        print(f"\nWhat would you like to do?\n")
+        print("  1) List all users")
+        print("  2) Add user")
+        print("  3) Delete user")
+        print(f"\n  {DIM}0) Back / Quit{NC}\n")
 
-    choice = input("Choose [1/2/3]: ").strip()
+        choice = input("Choose [0-3]: ").strip()
 
-    if choice == "1":
-        await list_users()
-    elif choice == "2":
-        await add_user()
-    elif choice == "3":
-        await delete_user()
-    else:
-        print(f"{RED}Invalid choice.{NC}")
-        sys.exit(1)
+        if choice == "0":
+            print()
+            break
+        elif choice == "1":
+            await list_users()
+        elif choice == "2":
+            await add_user()
+        elif choice == "3":
+            await delete_user()
+        else:
+            print(f"{RED}Invalid choice.{NC}")
 
 
 if __name__ == "__main__":

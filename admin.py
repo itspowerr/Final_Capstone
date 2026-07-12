@@ -1,6 +1,6 @@
 """
 FreeLedger — Admin account manager
-Add or delete admin accounts from the database.
+Add, delete, or list admin accounts from the database.
 Run: ./admin.sh
 """
 
@@ -25,8 +25,6 @@ DB_URL = os.environ.get(
     "DATABASE_URL",
     "postgresql://freeledger:freeledger_dev@localhost:5432/freeledger",
 )
-
-# Strip asyncpg+ prefix if present (we use plain postgres:// for asyncpg)
 if DB_URL.startswith("postgresql+asyncpg://"):
     DB_URL = DB_URL.replace("postgresql+asyncpg://", "postgresql://", 1)
 
@@ -37,13 +35,42 @@ CYAN   = "\033[0;36m"
 BOLD   = "\033[1m"
 NC     = "\033[0m"
 
-# Disable colors on Windows if terminal doesn't support them
 if sys.platform == "win32":
-    os.system("")  # enables ANSI escape codes on Windows 10+
+    os.system("")
 
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def clear():
+    os.system("cls" if sys.platform == "win32" else "clear")
+
+
+async def list_admins():
+    conn = await asyncpg.connect(DB_URL)
+    try:
+        rows = await conn.fetch(
+            """SELECT u.id, u.username, u.email, u.is_active, u.created_at
+               FROM freeledger.users u
+               WHERE u.role = 'admin'
+               ORDER BY u.created_at"""
+        )
+
+        if not rows:
+            print(f"\n{YELLOW}No admin accounts found.{NC}\n")
+            return
+
+        print(f"\n  {'Username':<20} {'Email':<30} {'Status':<10} {'ID'}")
+        print(f"  {'-'*20} {'-'*30} {'-'*10} {'-'*26}")
+        for r in rows:
+            username = r["username"] or "-"
+            email = r["email"] or "-"
+            status = f"{GREEN}active{NC}" if r["is_active"] else f"{RED}inactive{NC}"
+            print(f"  {username:<20} {email:<30} {status:<20} {r['id']}")
+        print()
+    finally:
+        await conn.close()
 
 
 async def add_admin():
@@ -159,21 +186,28 @@ async def delete_admin():
 
 
 async def main():
-    print(f"\n{BOLD}FreeLedger Admin Manager{NC}")
-    print("=" * 30)
-    print(f"\nWhat would you like to do?\n")
-    print("  1) Add admin account")
-    print("  2) Delete admin account\n")
+    while True:
+        print(f"\n{BOLD}FreeLedger Admin Manager{NC}")
+        print("=" * 30)
+        print(f"\nWhat would you like to do?\n")
+        print("  1) List admin accounts")
+        print("  2) Add admin account")
+        print("  3) Delete admin account")
+        print(f"\n  {DIM}0) Back / Quit{NC}\n")
 
-    choice = input("Choose [1/2]: ").strip()
+        choice = input("Choose [0-3]: ").strip()
 
-    if choice == "1":
-        await add_admin()
-    elif choice == "2":
-        await delete_admin()
-    else:
-        print(f"{RED}Invalid choice.{NC}")
-        sys.exit(1)
+        if choice == "0":
+            print()
+            break
+        elif choice == "1":
+            await list_admins()
+        elif choice == "2":
+            await add_admin()
+        elif choice == "3":
+            await delete_admin()
+        else:
+            print(f"{RED}Invalid choice.{NC}")
 
 
 if __name__ == "__main__":
