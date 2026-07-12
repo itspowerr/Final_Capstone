@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import cast, func, or_, select, String
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -38,24 +39,31 @@ async def update_my_profile(
                 )
             )
             others = existing.scalars().all()
-            my_role = getattr(current_user, "role", None)
-            other_roles = [getattr(u, "role", None) for u in others]
-
-            if len(others) >= 2:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Wallet is connected to the maximum number of accounts",
-                )
-            if my_role in other_roles:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail=f"This wallet is already connected to another {my_role} account",
-                )
+            if others:
+                other_roles = [str(getattr(u, "role", "")) for u in others]
+                my_role = str(getattr(current_user, "role", ""))
+                if len(others) >= 2:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Wallet is connected to the maximum number of accounts",
+                    )
+                if my_role in other_roles:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail=f"This wallet is already connected to another {my_role} account",
+                    )
 
     for field, value in update_data.items():
         setattr(current_user, field, value)
 
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This wallet is already connected to another account",
+        )
     await db.refresh(current_user)
     return UserResponse.model_validate(current_user)
 
