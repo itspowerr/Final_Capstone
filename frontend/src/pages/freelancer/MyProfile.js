@@ -34,6 +34,10 @@ export default function MyProfile() {
         setExperience(data.experience_level || 'mid');
         setAvailability(data.is_available ? 'available' : 'busy');
         setWallet(data.wallet_address || '');
+        setLocation(data.location || '');
+        setGithub(data.github_url || '');
+        setPortfolio(data.portfolio_url || '');
+        setLinkedin(data.linkedin_url || '');
       } catch {
         const saved = JSON.parse(localStorage.getItem('fl_freelancer_profile') || '{}');
         setFullName(saved.fullName || '');
@@ -88,15 +92,15 @@ export default function MyProfile() {
         hourly_rate: hourlyRate ? parseFloat(hourlyRate) : undefined,
         experience_level: experience || undefined,
         is_available: availability === 'available',
+        location: location || undefined,
+        github_url: github || undefined,
+        linkedin_url: linkedin || undefined,
+        portfolio_url: portfolio || undefined,
+        wallet_address: wallet || undefined,
       });
-      showToast('Profile saved to server!');
+      showToast('Profile saved!');
     } catch {
-      const p = {
-        fullName, title, bio, location, github, portfolio, linkedin,
-        hourlyRate, experience, availability, skills, wallet,
-      };
-      localStorage.setItem('fl_freelancer_profile', JSON.stringify(p));
-      showToast('Saved locally (server unavailable)', '⚠️');
+      showToast('Failed to save. Try again.', '⚠️');
     }
   }
 
@@ -104,8 +108,12 @@ export default function MyProfile() {
     if (typeof window.ethereum !== 'undefined') {
       try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        setWallet(accounts[0]);
-        showToast('Wallet connected: ' + accounts[0].slice(0, 6) + '…' + accounts[0].slice(-4));
+        const addr = accounts[0];
+        setWallet(addr);
+        try {
+          await api.put('/users/me', { wallet_address: addr });
+        } catch { /* wallet saved locally at minimum */ }
+        showToast('Wallet connected: ' + addr.slice(0, 6) + '…' + addr.slice(-4));
       } catch (_) { showToast('MetaMask cancelled.', '❌'); }
     } else {
       showToast('MetaMask not found. Install at metamask.io', '⚠️');

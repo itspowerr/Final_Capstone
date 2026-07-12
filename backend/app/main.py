@@ -24,6 +24,18 @@ async def lifespan(app: FastAPI):
     start_repin_service()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Add columns that may not exist yet (safe for existing DBs)
+        for col, typ in [
+            ("location", "TEXT"),
+            ("github_url", "TEXT"),
+            ("linkedin_url", "TEXT"),
+            ("portfolio_url", "TEXT"),
+        ]:
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    f'ALTER TABLE freeledger.users ADD COLUMN IF NOT EXISTS {col} {typ}'
+                )
+            )
     yield
     await app.state.redis.close()
     await close_redis()

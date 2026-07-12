@@ -38,9 +38,9 @@ export default function ClientProfile() {
           bio: data.bio || '',
           skills: data.skills || [],
           hourlyRate: data.hourly_rate || '',
-          github: '',
-          linkedin: '',
-          portfolio: '',
+          github: data.github_url || '',
+          linkedin: data.linkedin_url || '',
+          portfolio: data.portfolio_url || '',
           emailNotifications: true,
           twoFactor: false,
         });
@@ -60,6 +60,9 @@ export default function ClientProfile() {
       const accounts = await provider.send('eth_requestAccounts', []);
       if (accounts.length > 0) {
         connectWallet(accounts[0]);
+        try {
+          await api.put('/users/me', { wallet_address: accounts[0] });
+        } catch { /* saved in context at minimum */ }
       }
     } catch (e) {
       setWalletError(e.message || 'Failed to connect wallet');
@@ -99,18 +102,14 @@ export default function ClientProfile() {
         bio: form.bio || undefined,
         skills: form.skills.length > 0 ? form.skills : undefined,
         hourly_rate: form.hourlyRate ? parseFloat(form.hourlyRate) : undefined,
+        github_url: form.github || undefined,
+        linkedin_url: form.linkedin || undefined,
+        portfolio_url: form.portfolio || undefined,
       });
       setUser(data);
-      showToast('Profile saved to server!');
+      showToast('Profile saved!');
     } catch (e) {
-      const p = {
-        name: form.name, email: form.email, bio: form.bio, skills: form.skills,
-        hourlyRate: form.hourlyRate, github: form.github, linkedin: form.linkedin,
-        portfolio: form.portfolio, emailNotifications: form.emailNotifications,
-        twoFactor: form.twoFactor,
-      };
-      localStorage.setItem('client_profile', JSON.stringify(p));
-      showToast('Saved locally (server unavailable)', '⚠️');
+      showToast('Failed to save. Try again.', '⚠️');
     } finally {
       setSaving(false);
     }

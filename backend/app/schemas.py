@@ -31,6 +31,10 @@ class UserResponse(BaseModel):
     experience_level: str = "mid"
     industries: list[str] = []
     is_available: bool = True
+    location: Optional[str] = None
+    github_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    portfolio_url: Optional[str] = None
     portfolio_cids: list[str] = []
     is_active: bool = True
     created_at: datetime
@@ -49,6 +53,11 @@ class UserUpdate(BaseModel):
     experience_level: Optional[str] = None
     is_available: Optional[bool] = None
     industries: Optional[list[str]] = None
+    location: Optional[str] = None
+    github_url: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    portfolio_url: Optional[str] = None
+    wallet_address: Optional[str] = None
     portfolio_cids: Optional[list[str]] = None
     avatar_cid: Optional[str] = None
 
