@@ -114,7 +114,10 @@ async def add_user():
         print(f"{RED}Username cannot be empty.{NC}")
         return
 
-    email = input("Email (optional, press Enter to skip): ").strip() or None
+    email = input("Email: ").strip()
+    if not email:
+        print(f"{RED}Email is required.{NC}")
+        return
 
     password = getpass.getpass("Password: ")
     if not password:
@@ -139,6 +142,13 @@ async def add_user():
             print(f"{RED}Error: Username '{username}' already exists.{NC}")
             return
 
+        existing_email = await conn.fetchval(
+            "SELECT id FROM freeledger.users WHERE email = $1", email.lower()
+        )
+        if existing_email:
+            print(f"{RED}Error: Email '{email}' already exists.{NC}")
+            return
+
         if wallet:
             wallet_owner = await conn.fetchval(
                 "SELECT id FROM freeledger.users WHERE wallet_address = $1", wallet
@@ -158,7 +168,7 @@ async def add_user():
             """INSERT INTO freeledger.users
                (id, username, email, password_hash, auth_method, role, wallet_address, is_active)
                VALUES ($1, $2, $3, $4, 'email', $5, $6, true)""",
-            user_id, username, email, pw_hash, role, wallet,
+            user_id, username, email.lower(), pw_hash, role, wallet,
         )
 
         print(f"\n{GREEN}{role.capitalize()} account created successfully!{NC}")
