@@ -48,8 +48,21 @@ def clear():
     os.system("cls" if sys.platform == "win32" else "clear")
 
 
+async def get_conn():
+    try:
+        return await asyncpg.connect(DB_URL)
+    except asyncpg.PostgresError:
+        print(f"{RED}Error: Cannot connect to database. Make sure Docker is running (docker compose up -d){NC}")
+        return None
+    except Exception as e:
+        print(f"{RED}Error: {e}{NC}")
+        return None
+
+
 async def list_admins():
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_conn()
+    if not conn:
+        return
     try:
         rows = await conn.fetch(
             """SELECT u.id, u.username, u.email, u.is_active, u.created_at
@@ -92,7 +105,9 @@ async def add_admin():
         print(f"{RED}Passwords do not match.{NC}")
         return
 
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_conn()
+    if not conn:
+        return
     try:
         existing = await conn.fetchval(
             "SELECT id FROM freeledger.users WHERE username = $1", username
@@ -135,7 +150,9 @@ async def add_admin():
 async def delete_admin():
     print(f"\n{CYAN}--- Delete Admin Account ---{NC}\n")
 
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_conn()
+    if not conn:
+        return
     try:
         rows = await conn.fetch(
             """SELECT u.id, u.username

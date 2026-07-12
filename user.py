@@ -48,8 +48,21 @@ def clear():
     os.system("cls" if sys.platform == "win32" else "clear")
 
 
+async def get_conn():
+    try:
+        return await asyncpg.connect(DB_URL)
+    except asyncpg.PostgresError:
+        print(f"{RED}Error: Cannot connect to database. Make sure Docker is running (docker compose up -d){NC}")
+        return None
+    except Exception as e:
+        print(f"{RED}Error: {e}{NC}")
+        return None
+
+
 async def list_users():
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_conn()
+    if not conn:
+        return
     try:
         rows = await conn.fetch(
             """SELECT u.id, u.username, u.email, u.role, u.wallet_address,
@@ -115,7 +128,9 @@ async def add_user():
 
     wallet = input("MetaMask wallet address (optional, press Enter to skip): ").strip() or None
 
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_conn()
+    if not conn:
+        return
     try:
         existing = await conn.fetchval(
             "SELECT id FROM freeledger.users WHERE username = $1", username
@@ -164,7 +179,9 @@ async def add_user():
 async def delete_user():
     print(f"\n{CYAN}--- Delete User Account ---{NC}\n")
 
-    conn = await asyncpg.connect(DB_URL)
+    conn = await get_conn()
+    if not conn:
+        return
     try:
         rows = await conn.fetch(
             """SELECT id, username, email, role, wallet_address
