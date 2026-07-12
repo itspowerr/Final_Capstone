@@ -74,13 +74,19 @@ def from_wei(wei_amount: int) -> float:
     return float(Web3.from_wei(wei_amount, "ether"))
 
 
-def build_contract_tx(fn, address: str, gas: int = 200000, value: int = 0) -> dict:
+def build_contract_tx(fn, address: str, gas: int = 0, value: int = 0) -> dict:
     w3 = get_web3()
     nonce = w3.eth.get_transaction_count(Web3.to_checksum_address(address))
     gas_price = w3.eth.gas_price
-    tx = fn.build_transaction(
-        {"from": address, "nonce": nonce, "gas": gas, "gasPrice": gas_price, "value": value}
-    )
+    params = {"from": address, "nonce": nonce, "gasPrice": gas_price, "value": value}
+    if gas:
+        params["gas"] = gas
+    else:
+        try:
+            params["gas"] = int(fn.estimate_gas(params) * 1.5)
+        except Exception:
+            params["gas"] = 500000
+    tx = fn.build_transaction(params)
     return tx
 
 
@@ -91,7 +97,7 @@ def sign_and_send(tx: dict, private_key: str) -> str:
     receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=settings.blockchain_tx_timeout)
     if receipt.status != 1:
         raise RuntimeError("Transaction reverted")
-    return receipt.transaction_hash.hex()
+    return receipt.transactionHash.hex()
 
 
 def create_contract_on_chain(freelancer_address: str, title: str, terms_cid: str, total_amount_wei: int, deadline: int, milestone_descs: list[str], milestone_amounts: list[int], client_private_key: str | None = None) -> dict:
