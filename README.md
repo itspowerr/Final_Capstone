@@ -32,8 +32,7 @@ Logs are saved to `logs/` on each run.
 ```
 CapstoneV3-main/
 ├── start.sh                  # One-command startup (macOS/Linux/Windows)
-├── admin.sh                  # Admin account manager (add/delete)
-├── user.sh                   # User account manager (add/delete/list)
+├── admin.sh                  # Admin account manager (add/delete/list)
 ├── backend/
 │   ├── app/
 │   │   ├── main.py           # FastAPI app, CORS, startup migrations
@@ -118,19 +117,6 @@ Interactive menu to manage admin accounts:
 - **List** — shows all admins with username, email, status, and ID
 - **Add** — create a new admin with username and password (bcrypt hashed)
 - **Delete** — select an admin from the list to remove
-- **Back** — exit the script (option 0)
-
-### User Manager
-
-```bash
-./user.sh
-```
-
-Interactive menu to manage freelancer and client accounts:
-
-- **List** — shows all users with username, email, role, MetaMask wallet address, and status
-- **Add** — create a new freelancer or client with username, password, email, and optional wallet
-- **Delete** — select a user from the list to remove
 - **Back** — exit the script (option 0)
 
 ## API Docs
