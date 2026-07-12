@@ -20,7 +20,7 @@ A blockchain-powered freelance platform using Ethereum smart contracts for secur
 
 This single command starts everything:
 
-- Docker containers (PostgreSQL, Redis, Hardhat node)
+- start the Docker desktop first then run the script
 - Smart contract deployment
 - FastAPI backend (port 8000)
 - React frontend (port 3001)
