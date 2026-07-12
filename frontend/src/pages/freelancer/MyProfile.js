@@ -114,7 +114,8 @@ export default function MyProfile() {
           setWallet(data.wallet_address);
           showToast('Wallet connected: ' + addr.slice(0, 6) + '…' + addr.slice(-4));
         } catch (err) {
-          const msg = err.response?.data?.detail || 'This wallet is already connected';
+          const detail = err.response?.data?.detail;
+          const msg = typeof detail === 'string' ? detail : detail?.message || 'This wallet is already connected';
           showToast(msg, '⚠️');
         }
       } catch (_) { showToast('MetaMask cancelled.', '❌'); }

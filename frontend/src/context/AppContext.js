@@ -59,10 +59,14 @@ export function AppProvider({ children }) {
 
   const disconnectWallet = () => {
     setWalletAddress(null);
-    setUser(null);
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user');
+    try {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        u.wallet_address = null;
+        localStorage.setItem('user', JSON.stringify(u));
+      }
+    } catch {}
   };
 
   const setUserAction = (userData) => {

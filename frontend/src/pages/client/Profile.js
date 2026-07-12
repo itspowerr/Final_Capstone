@@ -63,7 +63,8 @@ export default function ClientProfile() {
           const { data } = await api.put('/users/me', { wallet_address: accounts[0] });
           connectWallet(data.wallet_address);
         } catch (err) {
-          const msg = err.response?.data?.detail || 'This wallet is already connected';
+          const detail = err.response?.data?.detail;
+          const msg = typeof detail === 'string' ? detail : detail?.message || 'This wallet is already connected';
           setWalletError(msg);
         }
       }
