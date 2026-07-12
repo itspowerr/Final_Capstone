@@ -23,20 +23,20 @@ class UserResponse(BaseModel):
     auth_method: str = "email"
     wallet_address: Optional[str] = None
     bio: Optional[str] = None
-    skills: list[str] = []
-    hourly_rate: float = 0.0
-    rating: float = 0.0
+    skills: Optional[list[str]] = None
+    hourly_rate: Optional[float] = None
+    rating: Optional[float] = None
     avatar_cid: Optional[str] = None
     headline: Optional[str] = None
-    experience_level: str = "mid"
-    industries: list[str] = []
-    is_available: bool = True
+    experience_level: Optional[str] = None
+    industries: Optional[list[str]] = None
+    is_available: Optional[bool] = None
     location: Optional[str] = None
     github_url: Optional[str] = None
     linkedin_url: Optional[str] = None
     portfolio_url: Optional[str] = None
-    portfolio_cids: list[str] = []
-    is_active: bool = True
+    portfolio_cids: Optional[list[str]] = None
+    is_active: Optional[bool] = None
     created_at: datetime
 
     class Config:
