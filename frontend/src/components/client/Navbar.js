@@ -41,7 +41,7 @@ export default function Navbar({ activePage }) {
             <a className={activePage === 'browse-freelancers' ? 'active' : ''} href="/client/browse-freelancers" onClick={(e) => { e.preventDefault(); navigate('/client/browse-freelancers'); }}>Browse Freelancers</a>
             <a className={activePage === 'explore-jobs' ? 'active' : ''} href="/client/explore-jobs" onClick={(e) => { e.preventDefault(); navigate('/client/explore-jobs'); }}>Explore Jobs</a>
             <a className={activePage === 'my-contracts' ? 'active' : ''} href="/client/my-contracts" onClick={(e) => { e.preventDefault(); navigate('/client/my-contracts'); }}>My Contracts</a>
-            <a href="/client/messages" onClick={(e) => { e.preventDefault(); console.log('[Nav] Messages'); }}>Messages</a>
+            <a className={activePage === 'messages' ? 'active' : ''} href="/client/messages" onClick={(e) => { e.preventDefault(); navigate('/client/messages'); }}>Messages</a>
           </div>
         </div>
         <div className="dash-nav-right">

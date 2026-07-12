@@ -76,6 +76,7 @@ export default function BrowseFreelancers() {
       const job = myJobs.find(j => j.id === selectedJob);
       await api.post('/messages/send', {
         receiver_id: inviteModal.id,
+        job_id: selectedJob,
         content: inviteMsg
           ? `You've been invited to apply for "${job?.title}": ${inviteMsg}`
           : `You've been invited to apply for "${job?.title}"`,

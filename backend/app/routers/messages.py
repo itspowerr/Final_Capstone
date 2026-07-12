@@ -1,8 +1,7 @@
 import uuid
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import Column, DateTime, ForeignKey, String, Text, func, select
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Base, get_db
@@ -20,7 +19,8 @@ class Message(Base):
     sender_id = Column(String(50), ForeignKey("freeledger.users.id"), nullable=False)
     receiver_id = Column(String(50), ForeignKey("freeledger.users.id"), nullable=False)
     content = Column(Text, nullable=False)
-    read = Column(String(10), default="unread")
+    job_id = Column(String(50), nullable=True)
+    read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -43,6 +43,7 @@ async def send_message(
         sender_id=current_user.id,
         receiver_id=receiver_id,
         content=content,
+        job_id=body.get("job_id"),
     )
     db.add(msg)
     await db.commit()
@@ -56,21 +57,43 @@ async def get_inbox(
 ):
     result = await db.execute(
         select(Message)
-        .where(Message.receiver_id == current_user.id)
-        .order_by(Message.created_at.desc())
-        .limit(50)
+        .where(
+            or_(
+                Message.receiver_id == current_user.id,
+                Message.sender_id == current_user.id,
+            )
+        )
+        .order_by(Message.created_at.asc())
     )
     messages = result.scalars().all()
     return [
         {
             "id": m.id,
             "sender_id": m.sender_id,
+            "receiver_id": m.receiver_id,
             "content": m.content,
+            "job_id": m.job_id,
             "read": m.read,
             "created_at": m.created_at.isoformat() if m.created_at else None,
         }
         for m in messages
     ]
+
+
+@router.post("/{message_id}/read")
+async def mark_read(
+    message_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Message).where(Message.id == message_id, Message.receiver_id == current_user.id)
+    )
+    msg = result.scalar_one_or_none()
+    if msg:
+        msg.read = True
+        await db.commit()
+    return {"status": "ok"}
 
 
 @router.get("/unread-count")
@@ -81,7 +104,7 @@ async def unread_count(
     result = await db.execute(
         select(func.count()).select_from(Message).where(
             Message.receiver_id == current_user.id,
-            Message.read == "unread",
+            Message.read == False,
         )
     )
     return {"count": result.scalar() or 0}

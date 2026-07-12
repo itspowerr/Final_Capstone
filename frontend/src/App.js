@@ -11,6 +11,9 @@ import FreelancerDashboard from './pages/freelancer/Dashboard';
 import FreelancerFindJobs from './pages/freelancer/FindJobs';
 import FreelancerMyContracts from './pages/freelancer/MyContracts';
 import FreelancerMyProfile from './pages/freelancer/MyProfile';
+import ClientMessages from './pages/shared/Messages';
+import FreelancerNavbar from './components/freelancer/Navbar';
+import ClientNavbar from './components/client/Navbar';
 import AdminLogin from './pages/admin/Login';
 import AdminDashboard from './pages/admin/Dashboard';
 import AdminUsers from './pages/admin/AdminUsers';
@@ -90,6 +93,8 @@ export default function App() {
         <Route path="/freelancer/jobs" element={<FreelancerFindJobs />} />
         <Route path="/freelancer/contracts" element={<FreelancerMyContracts />} />
         <Route path="/freelancer/my-profile" element={<FreelancerMyProfile />} />
+        <Route path="/freelancer/messages" element={<ClientMessages NavbarComponent={FreelancerNavbar} />} />
+        <Route path="/client/messages" element={<ClientMessages NavbarComponent={ClientNavbar} />} />
       </Routes>
     </AppProvider>
   );

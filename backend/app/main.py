@@ -42,6 +42,12 @@ async def lifespan(app: FastAPI):
                 'ALTER TABLE freeledger.contracts ALTER COLUMN freelancer_id DROP NOT NULL'
             )
         )
+        # Add job_id to messages if missing
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                'ALTER TABLE freeledger.messages ADD COLUMN IF NOT EXISTS job_id VARCHAR(50)'
+            )
+        )
     yield
     await app.state.redis.close()
     await close_redis()
