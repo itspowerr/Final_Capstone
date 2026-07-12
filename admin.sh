@@ -1,190 +1,171 @@
-#!/bin/bash
-# FreeLedger — Admin account manager
-# Add or delete admin accounts from the database
+#!/usr/bin/env python3
+"""
+FreeLedger — Admin account manager
+Add or delete admin accounts from the database.
+Run: ./admin.sh
+"""
 
-ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+import asyncio
+import getpass
+import uuid
+import sys
 
-# Colors
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-BOLD='\033[1m'
-NC='\033[0m'
+try:
+    import asyncpg
+except ImportError:
+    print("Installing asyncpg...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "asyncpg", "-q"])
+    import asyncpg
 
-# DB connection
-export PGPASSWORD="freeledger_dev"
-DB_HOST="localhost"
-DB_PORT="5432"
-DB_USER="freeledger"
-DB_NAME="freeledger"
+try:
+    import bcrypt
+except ImportError:
+    print("Installing bcrypt...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "bcrypt", "-q"])
+    import bcrypt
 
-psql_cmd() {
-    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A "$@"
-}
+DB_URL = "postgresql://freeledger:freeledger_dev@localhost:5432/freeledger"
 
-hash_password() {
-    python3 -c "
-import bcrypt, sys
-password = sys.argv[1].encode('utf-8')
-salt = bcrypt.gensalt()
-print(bcrypt.hashpw(password, salt).decode('utf-8'))
-" "$1"
-}
+GREEN  = "\033[0;32m"
+RED    = "\033[0;31m"
+YELLOW = "\033[0;33m"
+CYAN   = "\033[0;36m"
+BOLD   = "\033[1m"
+NC     = "\033[0m"
 
-echo ""
-echo -e "${BOLD}FreeLedger Admin Manager${NC}"
-echo "========================"
-echo ""
 
-# Check psql is available
-if ! command -v psql &>/dev/null; then
-    echo -e "${RED}Error: psql not found. Install PostgreSQL client first.${NC}"
-    exit 1
-fi
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-# Check DB connection
-if ! psql_cmd -c "\q" 2>/dev/null; then
-    echo -e "${RED}Error: Cannot connect to database.${NC}"
-    echo "Make sure PostgreSQL is running (docker compose up -d)"
-    exit 1
-fi
 
-echo "What would you like to do?"
-echo ""
-echo "  1) Add admin account"
-echo "  2) Delete admin account"
-echo ""
-read -p "Choose [1/2]: " choice
+async def add_admin():
+    print(f"\n{CYAN}--- Add Admin Account ---{NC}\n")
 
-case "$choice" in
-    1)
-        echo ""
-        echo -e "${CYAN}--- Add Admin Account ---${NC}"
-        echo ""
+    username = input("Username: ").strip()
+    if not username:
+        print(f"{RED}Username cannot be empty.{NC}")
+        return
 
-        read -p "Username: " username
-        if [ -z "$username" ]; then
-            echo -e "${RED}Username cannot be empty.${NC}"
-            exit 1
-        fi
+    password = getpass.getpass("Password: ")
+    if not password:
+        print(f"{RED}Password cannot be empty.{NC}")
+        return
 
-        # Check if username already exists
-        existing=$(psql_cmd -c "SELECT id FROM freeledger.users WHERE username = '$username';")
-        if [ -n "$existing" ]; then
-            echo -e "${RED}Error: Username '$username' already exists.${NC}"
-            exit 1
-        fi
+    confirm = getpass.getpass("Confirm password: ")
+    if password != confirm:
+        print(f"{RED}Passwords do not match.{NC}")
+        return
 
-        read -s -p "Password: " password
-        echo ""
-        if [ -z "$password" ]; then
-            echo -e "${RED}Password cannot be empty.${NC}"
-            exit 1
-        fi
+    conn = await asyncpg.connect(DB_URL)
+    try:
+        existing = await conn.fetchval(
+            "SELECT id FROM freeledger.users WHERE username = $1", username
+        )
+        if existing:
+            print(f"{RED}Error: Username '{username}' already exists.{NC}")
+            return
 
-        read -s -p "Confirm password: " password_confirm
-        echo ""
-        if [ "$password" != "$password_confirm" ]; then
-            echo -e "${RED}Passwords do not match.${NC}"
-            exit 1
-        fi
+        print(f"\n{YELLOW}Hashing password...{NC}")
+        pw_hash = hash_password(password)
 
-        echo ""
-        echo -e "${YELLOW}Hashing password...${NC}"
-        password_hash=$(hash_password "$password")
+        user_id = f"usr_{uuid.uuid4().hex[:12]}"
+        admin_id = str(uuid.uuid4())
 
-        user_id="usr_$(python3 -c "import uuid; print(uuid.uuid4().hex[:12])")"
-        admin_id="$(python3 -c "import uuid; print(str(uuid.uuid4()))")"
+        print(f"{YELLOW}Inserting into database...{NC}")
 
-        echo -e "${YELLOW}Inserting into database...${NC}"
+        await conn.execute(
+            """INSERT INTO freeledger.users (id, username, password_hash, auth_method, role, is_active)
+               VALUES ($1, $2, $3, 'email', 'admin', true)""",
+            user_id, username, pw_hash,
+        )
 
-        # Insert user
-        psql_cmd -c "
-            INSERT INTO freeledger.users (id, username, password_hash, auth_method, role, is_active)
-            VALUES ('$user_id', '$username', '$password_hash', 'email', 'admin', true);
-        " 2>/dev/null
+        await conn.execute(
+            """INSERT INTO freeledger.admin_accounts (id, user_id, role)
+               VALUES ($1, $2, 'admin')""",
+            admin_id, user_id,
+        )
 
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}Error: Failed to insert user.${NC}"
-            exit 1
-        fi
+        print(f"\n{GREEN}Admin account created successfully!{NC}")
+        print(f"  Username: {BOLD}{username}{NC}")
+        print(f"  User ID:  {user_id}\n")
 
-        # Insert admin_accounts record
-        psql_cmd -c "
-            INSERT INTO freeledger.admin_accounts (id, user_id, role)
-            VALUES ('$admin_id', '$user_id', 'admin');
-        " 2>/dev/null
+    except Exception as e:
+        print(f"{RED}Error: {e}{NC}")
+    finally:
+        await conn.close()
 
-        if [ $? -ne 0 ]; then
-            echo -e "${RED}Error: Failed to create admin account record.${NC}"
-            exit 1
-        fi
 
-        echo ""
-        echo -e "${GREEN}Admin account created successfully!${NC}"
-        echo -e "  Username: ${BOLD}$username${NC}"
-        echo -e "  User ID:  $user_id"
-        echo ""
-        ;;
+async def delete_admin():
+    print(f"\n{CYAN}--- Delete Admin Account ---{NC}\n")
 
-    2)
-        echo ""
-        echo -e "${CYAN}--- Delete Admin Account ---${NC}"
-        echo ""
+    conn = await asyncpg.connect(DB_URL)
+    try:
+        rows = await conn.fetch(
+            """SELECT u.id, u.username
+               FROM freeledger.users u
+               WHERE u.role = 'admin'
+               ORDER BY u.created_at"""
+        )
 
-        # Fetch all admin users
-        admins=$(psql_cmd -c "
-            SELECT u.id, u.username
-            FROM freeledger.users u
-            WHERE u.role = 'admin'
-            ORDER BY u.created_at;
-        ")
+        if not rows:
+            print(f"{YELLOW}No admin accounts found.{NC}")
+            return
 
-        if [ -z "$admins" ]; then
-            echo -e "${YELLOW}No admin accounts found.${NC}"
-            exit 0
-        fi
+        print("Admin accounts:\n")
+        for i, row in enumerate(rows, 1):
+            print(f"  {i}) {row['username']} ({row['id']})")
 
-        echo "Admin accounts:"
-        echo ""
-        i=1
-        while IFS='|' read -r id username; do
-            echo "  $i) $username ($id)"
-            ids[$i]="$id"
-            i=$((i + 1))
-        done <<< "$admins"
+        print()
+        choice = input(f"Choose account to delete [1-{len(rows)}]: ").strip()
 
-        echo ""
-        read -p "Choose account to delete [1-$((i-1))]: " selection
+        if not choice.isdigit() or int(choice) < 1 or int(choice) > len(rows):
+            print(f"{RED}Invalid selection.{NC}")
+            return
 
-        if ! [[ "$selection" =~ ^[0-9]+$ ]] || [ "$selection" -lt 1 ] || [ "$selection" -ge "$i" ]; then
-            echo -e "${RED}Invalid selection.${NC}"
-            exit 1
-        fi
+        chosen = rows[int(choice) - 1]
+        print()
+        confirm = input(f"Delete '{chosen['username']}'? This cannot be undone. [y/N]: ").strip()
 
-        chosen_id="${ids[$selection]}"
-        chosen_username=$(psql_cmd -c "SELECT username FROM freeledger.users WHERE id = '$chosen_id';")
+        if confirm.lower() != "y":
+            print(f"{YELLOW}Cancelled.{NC}")
+            return
 
-        echo ""
-        read -p "Delete '$chosen_username'? This cannot be undone. [y/N]: " confirm
-        if [ "$confirm" != "y" ] && [ "$confirm" != "Y" ]; then
-            echo -e "${YELLOW}Cancelled.${NC}"
-            exit 0
-        fi
+        await conn.execute(
+            "DELETE FROM freeledger.admin_accounts WHERE user_id = $1",
+            chosen["id"],
+        )
+        await conn.execute(
+            "DELETE FROM freeledger.users WHERE id = $1",
+            chosen["id"],
+        )
 
-        # Delete admin_accounts record first (FK constraint)
-        psql_cmd -c "DELETE FROM freeledger.admin_accounts WHERE user_id = '$chosen_id';" 2>/dev/null
-        # Delete user
-        psql_cmd -c "DELETE FROM freeledger.users WHERE id = '$chosen_id';" 2>/dev/null
+        print(f"\n{GREEN}Admin account '{chosen['username']}' deleted.{NC}\n")
 
-        echo ""
-        echo -e "${GREEN}Admin account '$chosen_username' deleted.${NC}"
-        echo ""
-        ;;
+    except Exception as e:
+        print(f"{RED}Error: {e}{NC}")
+    finally:
+        await conn.close()
 
-    *)
-        echo -e "${RED}Invalid choice.${NC}"
-        exit 1
-        ;;
-esac
+
+async def main():
+    print(f"\n{BOLD}FreeLedger Admin Manager{NC}")
+    print("=" * 30)
+    print(f"\nWhat would you like to do?\n")
+    print("  1) Add admin account")
+    print("  2) Delete admin account\n")
+
+    choice = input("Choose [1/2]: ").strip()
+
+    if choice == "1":
+        await add_admin()
+    elif choice == "2":
+        await delete_admin()
+    else:
+        print(f"{RED}Invalid choice.{NC}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
