@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
 from app.redis_client import init_redis, close_redis
-from app.routers import admin, auth, contracts, disputes, ipfs, jobs, proposals, uploads, users, wallet_auth
+from app.routers import admin, auth, contracts, disputes, ipfs, jobs, messages, proposals, uploads, users, wallet_auth
 from app.services.event_listener import start_event_listener
 from app.services.ipfs_monitor import start_ipfs_monitor
 from app.services.repin_service import start_repin_service
@@ -36,6 +36,12 @@ async def lifespan(app: FastAPI):
                     f'ALTER TABLE freeledger.users ADD COLUMN IF NOT EXISTS {col} {typ}'
                 )
             )
+        # Fix contracts.freelancer_id to be nullable (DB may have NOT NULL from earlier schema)
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                'ALTER TABLE freeledger.contracts ALTER COLUMN freelancer_id DROP NOT NULL'
+            )
+        )
     yield
     await app.state.redis.close()
     await close_redis()
@@ -61,6 +67,7 @@ app.include_router(contracts.router, prefix="/api")
 app.include_router(disputes.router, prefix="/api")
 app.include_router(uploads.router, prefix="/api")
 app.include_router(proposals.router, prefix="/api")
+app.include_router(messages.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(wallet_auth.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
