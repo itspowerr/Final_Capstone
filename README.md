@@ -32,6 +32,8 @@ Logs are saved to `logs/` on each run.
 ```
 CapstoneV3-main/
 ├── start.sh                  # One-command startup (macOS/Linux/Windows)
+├── admin.sh                  # Admin account manager (add/delete)
+├── user.sh                   # User account manager (add/delete/list)
 ├── backend/
 │   ├── app/
 │   │   ├── main.py           # FastAPI app, CORS, startup migrations
@@ -102,6 +104,28 @@ node scripts/fund-wallet.js 0xYourAddress 1000
 ```
 
 Sends 1000 test ETH from Hardhat pre-funded accounts.
+
+## Management Scripts
+
+### Admin Manager
+
+```bash
+./admin.sh
+```
+
+Add or delete admin accounts. Prompts for username/password, hashes with bcrypt, and inserts into the database.
+
+### User Manager
+
+```bash
+./user.sh
+```
+
+Manage freelancer and client accounts:
+
+- **List** — shows all users with username, email, role, wallet address, and status
+- **Add** — create a new freelancer or client with username, password, email, and optional MetaMask wallet
+- **Delete** — select a user from the list to remove
 
 ## API Docs
 
