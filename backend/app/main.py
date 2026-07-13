@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
         )
         migration_check = await conn.execute(
             __import__("sqlalchemy").text(
-                "SELECT 1 FROM freeledger.schema_migrations WHERE name = 'clear_stale_onchain_ids'"
+                "SELECT 1 FROM freeledger.schema_migrations WHERE name = 'clear_stale_onchain_ids_v2'"
             )
         )
         if not migration_check.fetchone():
@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
             )
             await conn.execute(
                 __import__("sqlalchemy").text(
-                    "INSERT INTO freeledger.schema_migrations (name) VALUES ('clear_stale_onchain_ids')"
+                    "INSERT INTO freeledger.schema_migrations (name) VALUES ('clear_stale_onchain_ids_v2')"
                 )
             )
     yield

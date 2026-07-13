@@ -179,7 +179,7 @@ def approve_milestone_on_chain(contract_id: int, milestone_index: int, client_pr
 
 
 def submit_milestone_on_chain(contract_id: int, milestone_index: int, deliverable_cid: str, freelancer_private_key: str | None = None) -> str:
-    pk = freelancer_private_key or settings.freelancer_private_key or settings.client_private_key
+    pk = freelancer_private_key or settings.client_private_key
     if not pk:
         raise ValueError("Server private key not configured")
     w3 = get_web3()
