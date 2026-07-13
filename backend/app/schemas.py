@@ -179,6 +179,7 @@ class ContractResponse(BaseModel):
     description: Optional[str] = None
     total_amount: float
     deadline: Optional[datetime] = None
+    terms_cid: Optional[str] = None
     on_chain_id: Optional[int] = None
     contract_address: Optional[str] = None
     status: str

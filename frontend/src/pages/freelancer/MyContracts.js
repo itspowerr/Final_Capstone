@@ -353,7 +353,7 @@ export default function MyContracts() {
                           <div style={{ border: '2px dashed var(--accent-border)', borderRadius: 8, padding: 20, textAlign: 'center', cursor: 'pointer', background: 'var(--accent-pale)', marginBottom: 10 }} onClick={() => document.getElementById(`file-${detail.id}-${m.index}`).click()}>
                             <div style={{ fontSize: 20, marginBottom: 4 }}>📦</div>
                             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', marginBottom: 2 }}>Click to upload file</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Any file type — stored as local stub (no IPFS yet)</div>
+                            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Any file type — stored on IPFS (decentralized)</div>
                             <input id={`file-${detail.id}-${m.index}`} type="file" style={{ display: 'none' }} onChange={e => setSubmitFile(e.target.files[0] || null)} />
                           </div>
                           {submitFile ? (

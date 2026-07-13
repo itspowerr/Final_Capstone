@@ -1,3 +1,4 @@
+import json
 import os
 import tempfile
 from typing import BinaryIO
@@ -68,3 +69,8 @@ async def file_exists(cid: str) -> bool:
             return response.status_code == 200
     except httpx.HTTPError:
         return False
+
+
+async def upload_contract_terms(contract_data: dict) -> dict:
+    data_bytes = json.dumps(contract_data, indent=2, default=str).encode("utf-8")
+    return await upload_file_bytes(data_bytes, filename="contract_terms.json")

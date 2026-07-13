@@ -24,6 +24,7 @@ from app.services import blockchain_service
 from app.services.audit_service import log_transition
 from app.services.blockchain_service import create_contract_on_chain, to_wei
 from app.services.contract_service import fund_contract as do_fund_contract, sign_contract as do_sign_contract
+from app.services.ipfs_service import upload_contract_terms
 
 router = APIRouter(prefix="/contracts", tags=["contracts"])
 
@@ -92,12 +93,29 @@ async def create_contract(
 
         client_wallet = current_user.wallet_address
 
+        terms_doc = {
+            "contract_id": contract.id,
+            "title": data.title,
+            "description": data.description,
+            "total_amount": data.total_amount,
+            "deadline": data.deadline.isoformat() if data.deadline else None,
+            "client_id": current_user.id,
+            "freelancer_id": data.freelancer_id,
+            "milestones": [{"description": m.description, "amount": m.amount} for m in data.milestones],
+        }
+        try:
+            ipfs_result = await upload_contract_terms(terms_doc)
+            terms_cid = ipfs_result["cid"]
+        except Exception:
+            terms_cid = f"contract_{contract.id}"
+        contract.terms_cid = terms_cid
+
         deadline_ts = int(data.deadline.timestamp()) if data.deadline else 0
         on_chain = await asyncio.to_thread(
             create_contract_on_chain,
             freelancer_address=freelancer_addr,
             title=data.title or "",
-            terms_cid=f"contract_{contract.id}",
+            terms_cid=terms_cid,
             total_amount_wei=to_wei(float(data.total_amount)),
             deadline=deadline_ts,
             milestone_descs=[m.description for m in data.milestones],
@@ -281,20 +299,6 @@ async def approve_milestone(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "MILESTONE_NOT_SUBMITTED", "message": "Milestone has not been submitted"},
         )
-
-    if contract.on_chain_id is not None:
-        try:
-            on_chain_id = int(contract.on_chain_id)
-            await asyncio.to_thread(
-                blockchain_service.approve_milestone_on_chain,
-                contract_id=on_chain_id,
-                milestone_index=index,
-            )
-        except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail={"code": "BLOCKCHAIN_APPROVE_FAILED", "message": f"On-chain approval failed: {exc}"},
-            )
 
     ms.status = MilestoneStatus.approved
     ms.approved_at = func.now()

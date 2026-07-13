@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
+import config from '../../config';
 
 const LIMIT = 10;
 
@@ -30,6 +31,14 @@ function MilestoneRow({ m }) {
       <div style={{ flex: 1 }}>
         <span style={{ fontWeight: 600, marginRight: 8 }}>#{m.index + 1}</span>
         <span>{m.description}</span>
+        {m.deliverable_cid && (
+          <a href={`${config.ipfsGateway}/ipfs/${m.deliverable_cid}`}
+             target="_blank" rel="noopener noreferrer"
+             style={{ marginLeft: 8, fontSize: 11, color: '#3b82f6', textDecoration: 'underline' }}
+             onClick={e => e.stopPropagation()}>
+            View Deliverable
+          </a>
+        )}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span style={{ fontWeight: 600 }}>${Number(m.amount).toFixed(2)}</span>

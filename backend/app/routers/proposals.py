@@ -10,6 +10,7 @@ from app.routers.auth import get_current_user
 from app.schemas import ProposalCreate, ProposalResponse
 
 from app.services.blockchain_service import create_contract_on_chain, set_freelancer_on_chain, to_wei
+from app.services.ipfs_service import upload_contract_terms
 
 router = APIRouter(prefix="/proposals", tags=["proposals"])
 
@@ -162,11 +163,28 @@ async def accept_proposal(
                     freelancer_address=freelancer.wallet_address,
                 )
             else:
+                terms_doc = {
+                    "contract_id": contract.id,
+                    "title": contract.title,
+                    "description": contract.description,
+                    "total_amount": contract.total_amount,
+                    "deadline": contract.deadline.isoformat() if contract.deadline else None,
+                    "client_id": contract.client_id,
+                    "freelancer_id": proposal.freelancer_id,
+                    "milestones": [{"description": m.description, "amount": m.amount} for m in milestones],
+                }
+                try:
+                    ipfs_result = await upload_contract_terms(terms_doc)
+                    terms_cid = ipfs_result["cid"]
+                except Exception:
+                    terms_cid = f"contract_{contract.id}"
+                contract.terms_cid = terms_cid
+
                 on_chain = await asyncio.to_thread(
                     create_contract_on_chain,
                     freelancer_address=freelancer.wallet_address,
                     title=contract.title or "",
-                    terms_cid=f"contract_{contract.id}",
+                    terms_cid=terms_cid,
                     total_amount_wei=to_wei(float(contract.total_amount)),
                     deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
                     milestone_descs=[m.description for m in milestones],
