@@ -190,6 +190,35 @@ class ContractResponse(BaseModel):
         from_attributes = True
 
 
+class MilestoneDisputeInfo(BaseModel):
+    index: int
+    description: str
+    amount: float
+    status: str
+    deliverable_cid: Optional[str] = None
+    submitted_at: Optional[datetime] = None
+    approved_at: Optional[datetime] = None
+    rejection_reason: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ContractDisputeInfo(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    total_amount: float
+    status: str
+    client_id: str
+    freelancer_id: Optional[str] = None
+    on_chain_id: Optional[int] = None
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
 class DisputeResponse(BaseModel):
     id: str
     contract_id: str
@@ -200,6 +229,9 @@ class DisputeResponse(BaseModel):
     resolved_by: Optional[str] = None
     resolution_notes: Optional[str] = None
     created_at: datetime
+
+    contract_detail: Optional[ContractDisputeInfo] = None
+    milestones: list[MilestoneDisputeInfo] = []
 
     class Config:
         from_attributes = True

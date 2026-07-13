@@ -196,6 +196,8 @@ class Dispute(Base):
     resolution_notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
+    contract = relationship("Contract", foreign_keys=[contract_id], lazy="select")
+
 
 class AdminAccount(Base):
     __tablename__ = "admin_accounts"

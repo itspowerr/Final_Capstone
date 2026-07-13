@@ -12,9 +12,11 @@ from app.schemas import (
     AdminProposalCreate,
     AdminUserCreate,
     AuditLogResponse,
+    ContractDisputeInfo,
     ContractResponse,
     DisputeResponse,
     JobResponse,
+    MilestoneDisputeInfo,
     ProposalResponse,
     UserResponse,
 )
@@ -549,7 +551,9 @@ async def admin_list_disputes(
 ):
     await _require_admin(current_user, db)
 
-    query = select(Dispute).options(selectinload(Dispute.contract))
+    query = select(Dispute).options(
+        selectinload(Dispute.contract).selectinload(Contract.milestones_rel)
+    )
     if status_filter:
         query = query.where(Dispute.status == status_filter)
 
@@ -559,10 +563,18 @@ async def admin_list_disputes(
     query = query.order_by(Dispute.created_at.desc())
     query = query.offset((page - 1) * limit).limit(limit)
     result = await db.execute(query)
-    disputes = result.scalars().all()
+    disputes = result.scalars().unique().all()
+
+    enriched = []
+    for d in disputes:
+        resp = DisputeResponse.model_validate(d)
+        if d.contract:
+            resp.contract_detail = ContractDisputeInfo.model_validate(d.contract)
+            resp.milestones = [MilestoneDisputeInfo.model_validate(m) for m in d.contract.milestones_rel]
+        enriched.append(resp)
 
     return {
-        "disputes": [DisputeResponse.model_validate(d) for d in disputes],
+        "disputes": enriched,
         "total": total or 0,
         "page": page,
         "pages": max(1, (total + limit - 1) // limit) if total else 1,
