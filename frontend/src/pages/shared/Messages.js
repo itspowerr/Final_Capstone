@@ -35,6 +35,23 @@ function formatFullTime(iso) {
   return `${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${time}`;
 }
 
+function Avatar({ id, avatarCid, size = 42, style = {} }) {
+  const color = getAvatarColor(id);
+  return (
+    <div style={{
+      width: size, height: size, borderRadius: '50%', flexShrink: 0,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.36, fontWeight: 700, color: '#fff',
+      background: color, overflow: 'hidden', ...style,
+    }}>
+      {avatarCid
+        ? <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        : (id || '?')[0].toUpperCase()
+      }
+    </div>
+  );
+}
+
 export default function Messages({ NavbarComponent }) {
   const navigate = useNavigate();
   const [messages, setMessages] = useState([]);
@@ -44,6 +61,7 @@ export default function Messages({ NavbarComponent }) {
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState(null);
   const [jobCache, setJobCache] = useState({});
+  const [avatarCache, setAvatarCache] = useState({});
   const [connected, setConnected] = useState(false);
   const wsRef = useRef(null);
   const messagesRef = useRef([]);
@@ -54,6 +72,7 @@ export default function Messages({ NavbarComponent }) {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   })();
   const myId = currentUser.id;
+  const myRole = currentUser.role;
 
   const loadMessages = useCallback(async () => {
     try {
@@ -74,6 +93,15 @@ export default function Messages({ NavbarComponent }) {
         }
       }));
       setJobCache(prev => ({ ...prev, ...cache }));
+      const partnerIds = [...new Set(data.map(m => m.sender_id === myId ? m.receiver_id : m.sender_id).filter(Boolean))];
+      if (partnerIds.length) {
+        try {
+          const { data: udata } = await api.get('/users', { params: { ids: partnerIds.join(',') } });
+          const amap = {};
+          (udata.users || []).forEach(u => { amap[u.id] = { avatar_cid: u.avatar_cid || '', name: u.username || u.email || '' }; });
+          setAvatarCache(prev => ({ ...prev, ...amap }));
+        } catch {}
+      }
     } catch { }
     setLoading(false);
   }, []);
@@ -381,12 +409,10 @@ export default function Messages({ NavbarComponent }) {
                 className={`msg-thread ${activeThread?.partnerId === t.partnerId ? 'active' : ''}`}
                 onClick={() => { setActiveThread(t); setReplyText(''); }}
               >
-                <div className="msg-thread-avatar" style={{ background: getAvatarColor(t.partnerId) }}>
-                  {(t.partnerId || '?')[0].toUpperCase()}
-                </div>
+                <Avatar id={t.partnerId} avatarCid={avatarCache[t.partnerId]?.avatar_cid} size={42} />
                 <div className="msg-thread-info">
                   <div className="msg-thread-name">
-                    {(t.partnerId || '').slice(0, 18)}
+                    {avatarCache[t.partnerId]?.name || (t.partnerId || '').slice(0, 18)}
                   </div>
                   <div className="msg-thread-preview">
                     {t.lastMessage.sender_id === myId ? 'You: ' : ''}
@@ -437,11 +463,9 @@ export default function Messages({ NavbarComponent }) {
                     <polyline points="15 18 9 12 15 6"/>
                   </svg>
                 </button>
-                <div className="msg-chat-header-avatar" style={{ background: getAvatarColor(activeThread.partnerId) }}>
-                  {(activeThread.partnerId || '?')[0].toUpperCase()}
-                </div>
+                <Avatar id={activeThread.partnerId} avatarCid={avatarCache[activeThread.partnerId]?.avatar_cid} size={36} />
                 <div className="msg-chat-header-info">
-                  <h3>{activeThread.partnerId}</h3>
+                  <h3>{avatarCache[activeThread.partnerId]?.name || activeThread.partnerId}</h3>
                   <p>{activeThread.messages.length} message{activeThread.messages.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
@@ -453,6 +477,7 @@ export default function Messages({ NavbarComponent }) {
                   const job = msg.job_id ? jobCache[msg.job_id] : null;
                   const prevMsg = activeThread.messages[i - 1];
                   const showDate = !prevMsg || new Date(msg.created_at).toDateString() !== new Date(prevMsg.created_at).toDateString();
+                  const isFirstOfJob = job && (!prevMsg || prevMsg.job_id !== msg.job_id);
 
                   return (
                     <div key={msg.id}>
@@ -462,8 +487,9 @@ export default function Messages({ NavbarComponent }) {
                         </div>
                       )}
                       <div className={`msg-bubble-row ${isMe ? 'me' : 'them'}`}>
+                        {!isMe && <Avatar id={activeThread.partnerId} avatarCid={avatarCache[activeThread.partnerId]?.avatar_cid} size={28} style={{ marginTop: 2, marginRight: 6 }} />}
                         <div className={`msg-bubble ${isMe ? 'me' : 'them'}`}>
-                          {job && (
+                          {isFirstOfJob && (
                             <div className="msg-job-card">
                               <div className="msg-job-card-title">
                                 <span onClick={() => navigate(isMe ? '/client/my-contracts' : '/freelancer/jobs')}>
@@ -485,8 +511,8 @@ export default function Messages({ NavbarComponent }) {
                 <div ref={threadMessagesEndRef} />
               </div>
 
-              {/* Job invitation cards */}
-              {activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !activeThread.messages.some(
+              {/* Job invitation cards — only visible to freelancers (recipients) */}
+              {myRole === 'freelancer' && activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !activeThread.messages.some(
                 r => r.sender_id === myId && r.job_id === m.job_id && r.content?.includes('accepted')
               )) && (
                 <div style={{ padding: '0 24px' }}>
