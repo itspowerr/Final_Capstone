@@ -89,7 +89,7 @@ async def list_users(
     search: str = Query(None),
     skills: str = Query(None),
     ids: str = Query(None),
-    role: str = Query("freelancer"),
+    role: str = Query(None),
     experience_level: str = Query(None),
     is_available: bool = Query(None),
     min_rate: float = Query(None),
@@ -104,13 +104,13 @@ async def list_users(
     if ids:
         id_list = [id.strip() for id in ids.split(",") if id.strip()]
         query = query.where(User.id.in_(id_list))
-    else:
+    elif role:
         query = query.where(User.role == role)
 
     if search:
         q = f"%{search}%"
         query = query.where(
-            or_(User.username.ilike(q), User.email.ilike(q), User.headline.ilike(q), User.bio.ilike(q))
+            or_(User.id.ilike(q), User.username.ilike(q), User.email.ilike(q), User.headline.ilike(q), User.bio.ilike(q))
         )
 
     if skills:
