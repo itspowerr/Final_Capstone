@@ -7,14 +7,19 @@ import '../../css/freelancer/navbar.css';
 export default function Navbar({ activePage }) {
   const navigate = useNavigate();
   const { walletAddress, disconnectWallet } = useApp();
-  const [user, setUser] = useState({ name: '—', role: '—' });
+  const [user, setUser] = useState({ name: '—', role: '—', avatar_cid: '' });
 
   useEffect(() => {
-    const raw = localStorage.getItem('user');
-    if (raw) {
-      const u = JSON.parse(raw);
-      setUser({ name: u.username || u.email, role: u.role });
-    }
+    const load = () => {
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        setUser({ name: u.username || u.email, role: u.role, avatar_cid: u.avatar_cid || '' });
+      }
+    };
+    load();
+    window.addEventListener('avatar-updated', load);
+    return () => window.removeEventListener('avatar-updated', load);
   }, []);
 
   const handleLogout = () => {
@@ -57,7 +62,9 @@ export default function Navbar({ activePage }) {
               </div>
             )}
           </div>
-          <div className="user-avatar">{avatarLetter}</div>
+          <div className="user-avatar">
+            {user.avatar_cid ? <img src={`http://localhost:8080/ipfs/${user.avatar_cid}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
+          </div>
         </div>
       </div>
     </nav>

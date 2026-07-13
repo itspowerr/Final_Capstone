@@ -21,6 +21,8 @@ export default function MyProfile() {
   const [skills, setSkills] = useState([]);
   const [wallet, setWallet] = useState('');
   const [skillInput, setSkillInput] = useState('');
+  const [avatarCid, setAvatarCid] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -38,6 +40,7 @@ export default function MyProfile() {
         setGithub(data.github_url || '');
         setPortfolio(data.portfolio_url || '');
         setLinkedin(data.linkedin_url || '');
+        setAvatarCid(data.avatar_cid || '');
       } catch {
         const saved = JSON.parse(localStorage.getItem('fl_freelancer_profile') || '{}');
         setFullName(saved.fullName || '');
@@ -82,6 +85,39 @@ export default function MyProfile() {
     setSkills(skills.filter(s => s !== skill));
   }
 
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image must be under 5MB', '⚠️');
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/ipfs/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setAvatarCid(data.cid);
+      await api.put('/users/me', { avatar_cid: data.cid });
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          u.avatar_cid = data.cid;
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch {}
+      window.dispatchEvent(new Event('avatar-updated'));
+      showToast('Profile picture updated!');
+    } catch (err) {
+      showToast(err.response?.data?.detail?.message || 'Failed to upload', '⚠️');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  }
+
   async function saveProfile() {
     try {
       await api.put('/users/me', {
@@ -97,6 +133,7 @@ export default function MyProfile() {
         linkedin_url: linkedin || undefined,
         portfolio_url: portfolio || undefined,
         wallet_address: wallet || undefined,
+        avatar_cid: avatarCid || undefined,
       });
       showToast('Profile saved!');
     } catch {
@@ -168,7 +205,17 @@ export default function MyProfile() {
         <div className="fl-profile-layout">
           <div>
             <div className="fl-profile-card">
-              <div className="fl-profile-avatar-lg">{initials}</div>
+              <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                {avatarCid ? (
+                  <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                ) : (
+                  <div className="fl-profile-avatar-lg">{initials}</div>
+                )}
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)', fontSize: 12, color: 'white' }}>
+                  {uploadingAvatar ? '...' : '📷'}
+                </div>
+              </label>
               <div className="fl-profile-name">{nameDisplay}</div>
               <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>{title || 'Add your title'}</div>
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: availStyle.bg, color: availStyle.color, border: availStyle.border, marginBottom: 16 }}>

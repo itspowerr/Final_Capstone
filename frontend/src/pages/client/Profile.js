@@ -27,6 +27,8 @@ export default function ClientProfile() {
   const [skillInput, setSkillInput] = useState('');
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [avatarCid, setAvatarCid] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -44,6 +46,7 @@ export default function ClientProfile() {
           emailNotifications: true,
           twoFactor: false,
         });
+        setAvatarCid(data.avatar_cid || '');
       } catch {
         const saved = JSON.parse(localStorage.getItem('client_profile') || '{}');
         setForm(f => ({ ...f, ...saved }));
@@ -97,6 +100,39 @@ export default function ClientProfile() {
     setForm({ ...form, skills: form.skills.filter(s => s !== skill) });
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image must be under 5MB', '⚠️');
+      return;
+    }
+    setUploadingAvatar(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const { data } = await api.post('/ipfs/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setAvatarCid(data.cid);
+      await api.put('/users/me', { avatar_cid: data.cid });
+      try {
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          u.avatar_cid = data.cid;
+          localStorage.setItem('user', JSON.stringify(u));
+        }
+      } catch {}
+      window.dispatchEvent(new Event('avatar-updated'));
+      showToast('Profile picture updated!');
+    } catch (err) {
+      showToast(err.response?.data?.detail?.message || 'Failed to upload', '⚠️');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const saveProfile = async () => {
     setSaving(true);
     try {
@@ -109,6 +145,7 @@ export default function ClientProfile() {
         github_url: form.github || undefined,
         linkedin_url: form.linkedin || undefined,
         portfolio_url: form.portfolio || undefined,
+        avatar_cid: avatarCid || undefined,
       });
       setUser(data);
       showToast('Profile saved!');
@@ -148,7 +185,17 @@ export default function ClientProfile() {
         <div className="profile-layout">
           <div>
             <div className="profile-card">
-              <div className="profile-avatar-lg">{initials}</div>
+              <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                {avatarCid ? (
+                  <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                ) : (
+                  <div className="profile-avatar-lg">{initials}</div>
+                )}
+                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)', fontSize: 12, color: 'white' }}>
+                  {uploadingAvatar ? '...' : '📷'}
+                </div>
+              </label>
               <div className="profile-name">{form.name || 'Your Name'}</div>
               <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>{form.email}</div>
               <span className="role-badge client" style={{ marginBottom: 16 }}>Client</span>
