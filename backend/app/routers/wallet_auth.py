@@ -80,13 +80,22 @@ async def wallet_status(
     result = await db.execute(
         select(User).where(User.wallet_address == address.lower())
     )
-    user = result.scalar_one_or_none()
-    if not user:
+    users = result.scalars().all()
+    if not users:
         return {"exists": False}
+    if len(users) == 1:
+        return {
+            "exists": True,
+            "user_id": users[0].id,
+            "role": users[0].role.value if users[0].role else None,
+        }
+    # Multiple accounts with this wallet
     return {
         "exists": True,
-        "user_id": user.id,
-        "role": user.role.value if user.role else None,
+        "user_id": users[0].id,
+        "role": None,
+        "multiple": True,
+        "roles": [u.role.value for u in users if u.role],
     }
 
 
@@ -196,18 +205,66 @@ async def wallet_login(
         result = await db.execute(
             select(User).where(User.wallet_address == address)
         )
-        user = result.scalar_one_or_none()
+        existing_wallet_users = result.scalars().all()
 
-        # BUG FIX: If wallet is already linked to someone AND this is a sign-up
-        # attempt with email+password, reject instead of silently logging in
-        if user and email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                    "code": "WALLET_ALREADY_LINKED",
-                    "message": "This wallet is already linked to another account. Please log in directly with MetaMask or use a different wallet.",
-                },
-            )
+        if existing_wallet_users:
+            existing_count = len(existing_wallet_users)
+            existing_roles = {u.role.value for u in existing_wallet_users}
+
+            # If email provided (signup flow), check if we can add another account
+            if email:
+                if existing_count >= 2:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail={
+                            "code": "WALLET_FULL",
+                            "message": "This wallet is already linked to 2 accounts. Disconnect one first.",
+                        },
+                    )
+
+                if role and role.lower() in existing_roles:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail={
+                            "code": "WALLET_ROLE_EXISTS",
+                            "message": f"This wallet is already linked to a {role} account.",
+                        },
+                    )
+
+                if not role or role.lower() not in ("client", "freelancer"):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail={
+                            "code": "ROLE_REQUIRED",
+                            "message": "New users must specify role: 'client' or 'freelancer'.",
+                        },
+                    )
+
+                # Wallet has 1 account with different role — allow creating second account
+                # Fall through to user creation below
+            else:
+                # Pure MetaMask login (no email) — filter by role if provided
+                if role:
+                    matched = [u for u in existing_wallet_users if u.role.value == role.lower()]
+                    if matched:
+                        user = matched[0]
+                    elif existing_count >= 1:
+                        # Role specified but no match — if only 1 account exists, log into it
+                        # (user might have changed role or be confused)
+                        user = existing_wallet_users[0]
+                else:
+                    # No role specified
+                    if existing_count == 1:
+                        user = existing_wallet_users[0]
+                    else:
+                        # Multiple accounts, no role — need role to disambiguate
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail={
+                                "code": "ROLE_REQUIRED",
+                                "message": "This wallet has multiple accounts. Please select your role.",
+                            },
+                        )
 
     if not user:
         # New user — require role selection

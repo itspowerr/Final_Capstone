@@ -87,7 +87,7 @@ export default function useAuth() {
       if (password) loginPayload.password = password;
       if (username) loginPayload.username = username;
       // For new users without email, pass just the role
-      if (!ws.exists && role) loginPayload.role = role;
+      if (role) loginPayload.role = role;
 
       const result = await walletLogin(loginPayload);
 

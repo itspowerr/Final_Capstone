@@ -70,6 +70,29 @@ async def lifespan(app: FastAPI):
                     "INSERT INTO freeledger.schema_migrations (name) VALUES ('clear_stale_onchain_ids_v2')"
                 )
             )
+
+        # One-time: drop UNIQUE constraint on wallet_address (allow max 2 accounts per wallet)
+        wallet_migration_check = await conn.execute(
+            __import__("sqlalchemy").text(
+                "SELECT 1 FROM freeledger.schema_migrations WHERE name = 'wallet_unique_relaxed_v3'"
+            )
+        )
+        if not wallet_migration_check.fetchone():
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    'DROP INDEX IF EXISTS freeledger.ix_users_wallet_address'
+                )
+            )
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    'CREATE INDEX ix_users_wallet_address ON freeledger.users (wallet_address)'
+                )
+            )
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    "INSERT INTO freeledger.schema_migrations (name) VALUES ('wallet_unique_relaxed_v3')"
+                )
+            )
     yield
     await app.state.redis.close()
     await close_redis()

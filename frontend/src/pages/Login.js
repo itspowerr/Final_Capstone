@@ -39,6 +39,7 @@ export default function Login() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState('');
+  const [loginRole, setLoginRole] = useState('');
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -144,7 +145,12 @@ export default function Login() {
       }
     } else {
       // Login flow: pure wallet auth (no email needed)
-      const result = await connectAndCheck();
+      if (!loginRole) {
+        setErrors({ loginRole: 'Please select your role.' });
+        setLoading(false);
+        return;
+      }
+      const result = await connectAndCheck(loginRole);
 
       if (result.status === 'needs_role') {
         // New wallet — ask the user for their role
@@ -245,6 +251,28 @@ export default function Login() {
                   </label>
                   <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
                   {errors.password && <div className="error-msg visible">{errors.password}</div>}
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Signing in as</label>
+                  <div className="role-selector">
+                    <label className="role-option">
+                      <input type="radio" name="login-role" value="client" checked={loginRole === 'client'} onChange={() => setLoginRole('client')} />
+                      <div className="role-card">
+                        <div className="role-icon">🏢</div>
+                        <div className="role-name">Client</div>
+                        <div className="role-desc">I hire talent</div>
+                      </div>
+                    </label>
+                    <label className="role-option">
+                      <input type="radio" name="login-role" value="freelancer" checked={loginRole === 'freelancer'} onChange={() => setLoginRole('freelancer')} />
+                      <div className="role-card">
+                        <div className="role-icon">💼</div>
+                        <div className="role-name">Freelancer</div>
+                        <div className="role-desc">I offer my skills</div>
+                      </div>
+                    </label>
+                  </div>
+                  {errors.loginRole && <div className="error-msg visible">{errors.loginRole}</div>}
                 </div>
                 <button type="submit" className="btn btn-primary btn-full" style={{ marginBottom: 14 }} disabled={loading}>
                   {loading ? 'Signing in...' : 'Sign In'}

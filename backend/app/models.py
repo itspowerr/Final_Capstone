@@ -38,7 +38,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=True, index=True)
     password_hash = Column(String(255), nullable=True)
     auth_method = Column(Enum(AuthMethod, name="auth_method", schema="freeledger"), default=AuthMethod.email, nullable=False)
-    wallet_address = Column(String(42), unique=True, nullable=True, index=True)
+    wallet_address = Column(String(42), nullable=True, index=True)
     role = Column(Enum(UserRole, name="userrole", schema="freeledger"), default=UserRole.freelancer)
     bio = Column(Text, nullable=True)
     skills = Column(JSON, default=list)
