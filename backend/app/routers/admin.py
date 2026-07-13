@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, Dispute, DisputeStatus, Job, Proposal, User
+from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DisputeStatus, Job, MilestoneStatus, Proposal, User
 from app.routers.auth import get_current_user, hash_password
 from app.schemas import (
     AdminContractCreate,
@@ -476,7 +476,6 @@ async def admin_update_contract(
     for key, value in data.items():
         if key in allowed_fields:
             if key == "status":
-                from app.models import ContractStatus
                 value = ContractStatus(value)
             setattr(contract, key, value)
 
@@ -507,7 +506,6 @@ async def admin_create_contract(
     if not job.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Job not found")
 
-    from app.models import ContractStatus
     contract = Contract(
         job_id=data.job_id,
         client_id=data.client_id,
@@ -596,6 +594,125 @@ async def admin_delete_dispute(
 
     await db.execute(delete(Dispute).where(Dispute.id == dispute_id))
     await db.commit()
+
+
+@router.get("/reports", response_model=dict)
+async def admin_reports(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await _require_admin(current_user, db)
+
+    # Users
+    total_users = (await db.execute(select(func.count(User.id)))).scalar() or 0
+    active_users = (await db.execute(select(func.count(User.id)).where(User.is_active == True))).scalar() or 0
+    suspended_users = total_users - active_users
+    role_counts = {}
+    for role in ("admin", "client", "freelancer"):
+        role_counts[role] = (await db.execute(select(func.count(User.id)).where(User.role == role))).scalar() or 0
+
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    seven_days_ago = now - timedelta(days=7)
+    thirty_days_ago = now - timedelta(days=30)
+    new_users_7d = (await db.execute(select(func.count(User.id)).where(User.created_at >= seven_days_ago))).scalar() or 0
+    new_users_30d = (await db.execute(select(func.count(User.id)).where(User.created_at >= thirty_days_ago))).scalar() or 0
+
+    # Contracts
+    total_contracts = (await db.execute(select(func.count(Contract.id)))).scalar() or 0
+    contract_status_counts = {}
+    for s in ("draft", "pending_signatures", "pending_funding", "active", "completed", "cancelled", "disputed"):
+        contract_status_counts[s] = (await db.execute(select(func.count(Contract.id)).where(Contract.status == s))).scalar() or 0
+
+    total_volume = (await db.execute(select(func.coalesce(func.sum(Contract.total_amount), 0)))).scalar() or 0.0
+    avg_contract_value = (await db.execute(select(func.coalesce(func.avg(Contract.total_amount), 0)))).scalar() or 0.0
+    platform_fees = total_volume * 0.025
+
+    # Milestones
+    total_milestones = (await db.execute(select(func.count(ContractMilestone.id)))).scalar() or 0
+    milestone_status_counts = {}
+    for s in ("pending", "submitted", "approved", "rejected"):
+        milestone_status_counts[s] = (await db.execute(select(func.count(ContractMilestone.id)).where(ContractMilestone.status == s))).scalar() or 0
+
+    submitted_count = milestone_status_counts.get("submitted", 0) + milestone_status_counts.get("approved", 0) + milestone_status_counts.get("rejected", 0)
+    approved_count = milestone_status_counts.get("approved", 0)
+    approval_rate = round((approved_count / submitted_count * 100), 1) if submitted_count > 0 else 0
+    rejection_rate = round((milestone_status_counts.get("rejected", 0) / submitted_count * 100), 1) if submitted_count > 0 else 0
+    avg_milestone_value = (await db.execute(select(func.coalesce(func.avg(ContractMilestone.amount), 0)))).scalar() or 0.0
+
+    # Disputes
+    total_disputes = (await db.execute(select(func.count(Dispute.id)))).scalar() or 0
+    dispute_status_counts = {}
+    for s in ("open", "under_review", "resolved"):
+        dispute_status_counts[s] = (await db.execute(select(func.count(Dispute.id)).where(Dispute.status == s))).scalar() or 0
+
+    resolved_disputes = dispute_status_counts.get("resolved", 0)
+    refund_count = (await db.execute(select(func.count(Dispute.id)).where(Dispute.decision == "refund"))).scalar() or 0
+    release_count = (await db.execute(select(func.count(Dispute.id)).where(Dispute.decision == "release"))).scalar() or 0
+    resolution_rate = round((resolved_disputes / total_disputes * 100), 1) if total_disputes > 0 else 0
+
+    # Proposals
+    total_proposals = (await db.execute(select(func.count(Proposal.id)))).scalar() or 0
+
+    # Recent activity
+    recent_logs = await db.execute(
+        select(AuditLog).order_by(AuditLog.created_at.desc()).limit(10)
+    )
+    recent_activity = [
+        {
+            "id": log.id,
+            "entity_type": log.entity_type,
+            "entity_id": log.entity_id,
+            "action": log.action,
+            "actor_id": log.actor_id,
+            "actor_role": log.actor_role,
+            "from_status": log.from_status,
+            "to_status": log.to_status,
+            "created_at": log.created_at.isoformat() if log.created_at else None,
+        }
+        for log in recent_logs.scalars().all()
+    ]
+
+    return {
+        "users": {
+            "total": total_users,
+            "active": active_users,
+            "suspended": suspended_users,
+            "by_role": role_counts,
+            "new_last_7d": new_users_7d,
+            "new_last_30d": new_users_30d,
+        },
+        "contracts": {
+            "total": total_contracts,
+            "by_status": contract_status_counts,
+            "total_volume_eth": round(total_volume, 4),
+            "avg_value_eth": round(avg_contract_value, 4),
+        },
+        "milestones": {
+            "total": total_milestones,
+            "by_status": milestone_status_counts,
+            "approval_rate": approval_rate,
+            "rejection_rate": rejection_rate,
+            "avg_value_eth": round(avg_milestone_value, 4),
+        },
+        "financial": {
+            "total_volume_eth": round(total_volume, 4),
+            "platform_fees_eth": round(platform_fees, 4),
+            "avg_contract_value_eth": round(avg_contract_value, 4),
+            "avg_milestone_value_eth": round(avg_milestone_value, 4),
+        },
+        "disputes": {
+            "total": total_disputes,
+            "by_status": dispute_status_counts,
+            "resolution_rate": resolution_rate,
+            "refund_count": refund_count,
+            "release_count": release_count,
+        },
+        "proposals": {
+            "total": total_proposals,
+        },
+        "recent_activity": recent_activity,
+    }
 
 
 @router.get("/audit-logs", response_model=dict)
