@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../../services/api';
 
 const LIMIT = 10;
@@ -44,6 +44,238 @@ function MilestoneRow({ m }) {
   );
 }
 
+function DisputeChat({ disputeId, onClose }) {
+  const [messages, setMessages] = useState([]);
+  const [chatInitiated, setChatInitiated] = useState(false);
+  const [newMessage, setNewMessage] = useState('');
+  const [sending, setSending] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [connected, setConnected] = useState(false);
+  const wsRef = useRef(null);
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  const currentUser = (() => {
+    try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
+  })();
+  const myId = currentUser.id;
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const loadMessages = useCallback(async () => {
+    try {
+      const { data } = await api.get(`/dispute-messages/${disputeId}`);
+      setMessages(data);
+      setChatInitiated(data.length > 0);
+    } catch (err) {
+      if (err.response?.status === 403 || err.response?.status === 404) {
+        setChatInitiated(false);
+      }
+    }
+    setLoading(false);
+  }, [disputeId]);
+
+  useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  useEffect(() => {
+    if (!myId) return;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.hostname}:8000/api/dispute-messages/ws/${myId}`;
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => setConnected(true);
+    ws.onclose = () => {
+      setConnected(false);
+      setTimeout(() => {
+        if (wsRef.current === ws) {
+          const newWs = new WebSocket(wsUrl);
+          wsRef.current = newWs;
+        }
+      }, 3000);
+    };
+    ws.onerror = () => ws.close();
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'dispute_message' && data.message?.dispute_id === disputeId) {
+          setMessages(prev => {
+            if (prev.some(m => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
+        }
+        if (data.type === 'dispute_chat_deleted' && data.dispute_id === disputeId) {
+          setMessages([]);
+          setChatInitiated(false);
+        }
+      } catch {}
+    };
+
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [myId, disputeId]);
+
+  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+
+  useEffect(() => {
+    if (chatInitiated && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [chatInitiated]);
+
+  const handleInitiate = async () => {
+    setSending(true);
+    try {
+      await api.post('/dispute-messages/initiate', {
+        dispute_id: disputeId,
+        content: newMessage || `Discussion regarding dispute ${disputeId}`,
+      });
+      setNewMessage('');
+      setChatInitiated(true);
+      await loadMessages();
+    } catch (err) {
+      alert(err.response?.data?.detail?.message || 'Failed to initiate chat');
+    }
+    setSending(false);
+  };
+
+  const handleSend = async () => {
+    if (!newMessage.trim()) return;
+    setSending(true);
+    try {
+      await api.post('/dispute-messages/send', {
+        dispute_id: disputeId,
+        content: newMessage.trim(),
+      });
+      setNewMessage('');
+    } catch (err) {
+      alert(err.response?.data?.detail?.message || 'Failed to send');
+    }
+    setSending(false);
+  };
+
+  const handleDeleteChat = async () => {
+    if (!window.confirm('Delete this entire chat? This cannot be undone.')) return;
+    try {
+      await api.delete(`/dispute-messages/${disputeId}`);
+      setMessages([]);
+      setChatInitiated(false);
+      onClose?.();
+    } catch (err) {
+      alert(err.response?.data?.detail?.message || 'Failed to delete chat');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!chatInitiated) {
+        handleInitiate();
+      } else {
+        handleSend();
+      }
+    }
+  };
+
+  return (
+    <div style={{
+      marginTop: 16, borderRadius: 8, border: '1px solid var(--border, #e5e7eb)',
+      overflow: 'hidden', background: '#fff',
+    }}>
+      <div style={{
+        padding: '10px 16px', borderBottom: '1px solid var(--border, #e5e7eb)',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        background: 'var(--bg-secondary, #f9fafb)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>Chat with Client</span>
+          <span style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: connected ? '#10b981' : '#ef4444', display: 'inline-block',
+          }} />
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          {chatInitiated && messages.length > 0 && (
+            <button className="btn btn-sm btn-danger" onClick={handleDeleteChat}>
+              Delete Chat
+            </button>
+          )}
+          <button className="btn btn-sm" onClick={onClose} style={{ fontSize: 12 }}>Close</button>
+        </div>
+      </div>
+
+      <div style={{ padding: '12px 16px', minHeight: 100, maxHeight: 300, overflowY: 'auto' }}>
+        {loading ? (
+          <p style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center' }}>Loading...</p>
+        ) : !chatInitiated ? (
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
+            <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
+              No chat started yet. Click below to initiate a conversation with the client.
+            </p>
+            <button className="btn btn-sm btn-primary" onClick={handleInitiate} disabled={sending}>
+              {sending ? 'Starting...' : 'Start Chat'}
+            </button>
+          </div>
+        ) : (
+          <>
+            {messages.map(msg => {
+              const isMe = msg.sender_id === myId;
+              return (
+                <div key={msg.id} style={{
+                  display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start',
+                  marginBottom: 8,
+                }}>
+                  <div style={{
+                    maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
+                    background: isMe ? '#2563eb' : '#f3f4f6',
+                    color: isMe ? '#fff' : '#111827',
+                    fontSize: 13, lineHeight: 1.5,
+                  }}>
+                    <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>
+                      {isMe ? 'Admin' : 'Client'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </>
+        )}
+      </div>
+
+      {chatInitiated && (
+        <div style={{
+          padding: '10px 16px', borderTop: '1px solid var(--border, #e5e7eb)',
+          display: 'flex', gap: 8,
+        }}>
+          <input
+            ref={inputRef}
+            className="form-input"
+            placeholder="Type a message..."
+            value={newMessage}
+            onChange={e => setNewMessage(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ flex: 1, fontSize: 13 }}
+          />
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={handleSend}
+            disabled={sending || !newMessage.trim()}
+          >
+            Send
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminDisputes() {
   const [disputes, setDisputes] = useState([]);
   const [total, setTotal] = useState(0);
@@ -54,6 +286,7 @@ export default function AdminDisputes() {
   const [resolving, setResolving] = useState(null);
   const [resolveNotes, setResolveNotes] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [chatDispute, setChatDispute] = useState(null);
 
   const show = useCallback((msg, type = 'info') => {
     setToast({ msg, type });
@@ -95,7 +328,6 @@ export default function AdminDisputes() {
   };
 
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
-
   const formatAmount = (amt) => Number(amt || 0).toFixed(4);
 
   return (
@@ -206,6 +438,21 @@ export default function AdminDisputes() {
                     )}
                   </div>
                 </div>
+
+                {d.status !== 'resolved' && (
+                  <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={() => setChatDispute(chatDispute === d.id ? null : d.id)}
+                    >
+                      {chatDispute === d.id ? 'Close Chat' : 'Talk to Client'}
+                    </button>
+                  </div>
+                )}
+
+                {chatDispute === d.id && (
+                  <DisputeChat disputeId={d.id} onClose={() => setChatDispute(null)} />
+                )}
 
                 {d.status === 'open' && (
                   <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 8, background: 'var(--bg-secondary, #f3f4f6)' }}>
