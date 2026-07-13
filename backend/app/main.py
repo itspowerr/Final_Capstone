@@ -93,6 +93,24 @@ async def lifespan(app: FastAPI):
                     "INSERT INTO freeledger.schema_migrations (name) VALUES ('wallet_unique_relaxed_v3')"
                 )
             )
+
+        # One-time: clear all on_chain_ids after Hardhat restart (contracts redeployed)
+        chain_reset_check = await conn.execute(
+            __import__("sqlalchemy").text(
+                "SELECT 1 FROM freeledger.schema_migrations WHERE name = 'clear_onchain_reset_v4'"
+            )
+        )
+        if not chain_reset_check.fetchone():
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    'UPDATE freeledger.contracts SET on_chain_id = NULL, contract_address = NULL WHERE on_chain_id IS NOT NULL'
+                )
+            )
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    "INSERT INTO freeledger.schema_migrations (name) VALUES ('clear_onchain_reset_v4')"
+                )
+            )
     yield
     await app.state.redis.close()
     await close_redis()

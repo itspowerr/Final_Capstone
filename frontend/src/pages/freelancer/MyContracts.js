@@ -115,17 +115,19 @@ export default function MyContracts() {
   }
 
   async function submitMilestone(contractId, index) {
+    if (!submitFile) {
+      showToast('Please upload a deliverable file before submitting.', '⚠️');
+      return;
+    }
     setSubmitting(true);
     let cid = null;
-    if (submitFile) {
-      try {
-        const result = await uploadFile(submitFile);
-        cid = result.cid;
-      } catch (uploadErr) {
-        showToast(uploadErr.response?.data?.detail?.message || uploadErr.message || 'Failed to upload to IPFS', '⚠️');
-        setSubmitting(false);
-        return;
-      }
+    try {
+      const result = await uploadFile(submitFile);
+      cid = result.cid;
+    } catch (uploadErr) {
+      showToast(uploadErr.response?.data?.detail?.message || uploadErr.message || 'Failed to upload to IPFS', '⚠️');
+      setSubmitting(false);
+      return;
     }
     try {
       const res = await api.post(`/contracts/${contractId}/milestones/${index}/submit`, {
@@ -367,8 +369,8 @@ export default function MyContracts() {
                             <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 8 }}>Selected: {submitFile.name} ({(submitFile.size / 1024).toFixed(1)} KB)</div>
                           ) : null}
                           <textarea className="form-input" rows="3" placeholder="Describe what you've delivered…" style={{ resize: 'vertical', marginBottom: 10 }} value={submitNotes} onChange={e => setSubmitNotes(e.target.value)}></textarea>
-                          <button className="btn btn-primary btn-sm" type="submit" disabled={submitting}>
-                            {submitting ? 'Submitting…' : 'Submit Deliverable'}
+                          <button className="btn btn-primary btn-sm" type="submit" disabled={submitting || !submitFile}>
+                            {submitting ? 'Submitting…' : submitFile ? 'Submit Deliverable' : 'Upload a file first'}
                           </button>
                         </form>
                       )}

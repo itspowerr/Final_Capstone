@@ -386,10 +386,7 @@ async def reject_milestone(
                 milestone_index=index,
             )
         except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail={"code": "BLOCKCHAIN_REJECT_FAILED", "message": f"On-chain rejection failed: {exc}"},
-            )
+            print(f"[WARN] On-chain rejection failed for contract {contract_id}: {exc}")
 
     ms.status = MilestoneStatus.pending
     ms.deliverable_cid = None
@@ -459,10 +456,7 @@ async def submit_milestone(
                 deliverable_cid=data.deliverable_cid,
             )
         except Exception as exc:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail={"code": "BLOCKCHAIN_SUBMIT_FAILED", "message": f"On-chain submission failed: {exc}"},
-            )
+            print(f"[WARN] On-chain submission failed for contract {contract_id}: {exc}")
 
     ms.status = MilestoneStatus.submitted
     ms.deliverable_cid = data.deliverable_cid
