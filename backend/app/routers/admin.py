@@ -619,7 +619,7 @@ async def list_audit_logs(
     if action:
         query = query.where(AuditLog.action == action)
     if actor_id:
-        query = query.where(AuditLog.actor_id == actor_id)
+        query = query.where(AuditLog.actor_id.ilike(f"%{actor_id}%"))
 
     total_result = await db.execute(select(func.count()).select_from(query.subquery()))
     total = total_result.scalar()

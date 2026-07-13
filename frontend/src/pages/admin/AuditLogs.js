@@ -9,6 +9,7 @@ export default function AuditLogs() {
   const [page, setPage] = useState(1);
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
+  const [actorSearch, setActorSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = useCallback(async () => {
@@ -17,6 +18,7 @@ export default function AuditLogs() {
       const params = { page, limit: LIMIT };
       if (entityType) params.entity_type = entityType;
       if (action) params.action = action;
+      if (actorSearch.trim()) params.actor_id = actorSearch.trim();
       const res = await api.get('/admin/audit-logs', { params });
       setLogs(res.data.logs || []);
       setTotal(res.data.total || 0);
@@ -25,7 +27,7 @@ export default function AuditLogs() {
     } finally {
       setLoading(false);
     }
-  }, [page, entityType, action]);
+  }, [page, entityType, action, actorSearch]);
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
@@ -40,6 +42,14 @@ export default function AuditLogs() {
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
+        <input
+          className="form-input"
+          style={{ maxWidth: 280 }}
+          placeholder="Search by Actor ID..."
+          value={actorSearch}
+          onChange={e => { setActorSearch(e.target.value); setPage(1); }}
+          onKeyDown={e => { if (e.key === 'Enter') { setPage(1); } }}
+        />
         <select className="form-input" style={{ maxWidth: 160 }} value={entityType} onChange={e => { setEntityType(e.target.value); setPage(1); }}>
           <option value="">All Types</option>
           <option value="contract">Contract</option>
