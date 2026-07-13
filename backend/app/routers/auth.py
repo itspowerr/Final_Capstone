@@ -139,7 +139,6 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
     result = await db.execute(
         select(User).where(
             User.email == request.email.lower(),
-            User.role == request.loginRole.lower(),
         )
     )
     user = result.scalar_one_or_none()

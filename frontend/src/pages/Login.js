@@ -38,8 +38,8 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [role, setRole] = useState('freelancer');
-  const [loginRole, setLoginRole] = useState('client');
+  const [role, setRole] = useState('');
+
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -75,7 +75,6 @@ export default function Login() {
       const response = await api.post('/auth/login', {
         email: email.toLowerCase(),
         password,
-        loginRole,
       });
       const { access_token, refresh_token, user } = response.data;
       localStorage.setItem('access_token', access_token);
@@ -247,27 +246,6 @@ export default function Login() {
                   <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
                   {errors.password && <div className="error-msg visible">{errors.password}</div>}
                 </div>
-                <div className="form-group">
-                  <label className="form-label">Signing in as</label>
-                  <div className="role-selector">
-                    <label className="role-option">
-                      <input type="radio" name="login-role" value="client" checked={loginRole === 'client'} onChange={() => setLoginRole('client')} />
-                      <div className="role-card">
-                        <div className="role-icon">🏢</div>
-                        <div className="role-name">Client</div>
-                        <div className="role-desc">I hire talent</div>
-                      </div>
-                    </label>
-                    <label className="role-option">
-                      <input type="radio" name="login-role" value="freelancer" checked={loginRole === 'freelancer'} onChange={() => setLoginRole('freelancer')} />
-                      <div className="role-card">
-                        <div className="role-icon">💼</div>
-                        <div className="role-name">Freelancer</div>
-                        <div className="role-desc">I offer my skills</div>
-                      </div>
-                    </label>
-                  </div>
-                </div>
                 <button type="submit" className="btn btn-primary btn-full" style={{ marginBottom: 14 }} disabled={loading}>
                   {loading ? 'Signing in...' : 'Sign In'}
                 </button>
@@ -328,6 +306,7 @@ export default function Login() {
                       </div>
                     </label>
                   </div>
+                  {errors.role && <div className="error-msg visible">{errors.role}</div>}
                 </div>
                 <button type="submit" className="btn btn-primary btn-full" style={{ marginBottom: 12 }} disabled={loading}>
                   {loading ? 'Creating account...' : 'Create Account'}

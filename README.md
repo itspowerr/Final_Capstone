@@ -51,7 +51,7 @@ CapstoneV3-main/
 │   │   │   ├── disputes.py   # Dispute creation & resolution
 │   │   │   ├── ipfs.py       # IPFS upload/download endpoints
 │   │   │   ├── uploads.py    # Local file uploads
-│   │   │   ├── admin.py      # Admin management endpoints
+│   │   │   ├── admin.py      # Admin management endpoints + reports
 │   │   │   └── users.py      # Profile management, search
 │   │   └── services/
 │   │       ├── blockchain_service.py  # Web3 contract interactions
@@ -74,7 +74,7 @@ CapstoneV3-main/
 │   │   │   ├── freelancer/   # FindJobs, MyContracts, MyProfile
 │   │   │   ├── client/       # Dashboard, BrowseFreelancers, MyContracts, Profile
 │   │   │   ├── shared/       # Messages (both roles)
-│   │   │   └── admin/        # Dashboard, Users, UserSearch, Jobs, Proposals,
+│   │   │   └── admin/        # Dashboard, Reports, Users, UserSearch, Jobs, Proposals,
 │   │   │                     # Contracts, Disputes, AuditLogs
 │   │   ├── components/       # Navbar, PostProjectModal, layout
 │   │   └── services/         # api.js, web3.js, contractAbi.js, ipfs.js
@@ -112,12 +112,18 @@ CapstoneV3-main/
 - **User Search** — search by userId, username, email, or bio across all roles
 - **Contract Overview** — view all contracts with status and milestone details
 - **Dispute Management** — expandable cards with milestones, IPFS links, chat, resolution
-- **Audit Logs** — track all system transitions with actor info
+- **Audit Logs** — track all system transitions with actor info, filterable by entity/action/actor
+- **System Reports** — stats cards, bar charts, financial summary, recent activity feed
+
+### Auth & Roles
+- **RBAC** — role assigned at registration, enforced on all endpoints
+- **Role Required at Signup** — both email/password and MetaMask registration require explicit role selection
+- **Wallet Limit** — one wallet can connect to max 2 accounts (1 client + 1 freelancer)
+- **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
 
 ### Backend
 - **Async Processing** — `asyncio.to_thread()` for blockchain/IPFS calls, non-blocking
 - **Event Listener** — syncs 8 blockchain events back to PostgreSQL automatically
-- **Role-based Access** — admin, client, freelancer with enforced permissions
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
 
 ## Environment
