@@ -48,6 +48,7 @@ CapstoneV3-main/
 │   │   │   ├── contracts.py  # Milestone management, IPFS terms upload
 │   │   │   ├── messages.py   # WebSocket + REST messaging
 │   │   │   ├── dispute_messages.py  # Dispute chat (admin ↔ client)
+│   │   │   ├── notifications.py     # Notification CRUD + unread count
 │   │   │   ├── disputes.py   # Dispute creation & resolution
 │   │   │   ├── ipfs.py       # IPFS upload/download endpoints
 │   │   │   ├── uploads.py    # Local file uploads
@@ -60,6 +61,7 @@ CapstoneV3-main/
 │   │       ├── repin_service.py       # Background CID re-pinning
 │   │       ├── event_listener.py      # Blockchain event sync (8 events)
 │   │       ├── contract_service.py    # Contract business logic
+│   │       ├── notification_service.py # Create notifications
 │   │       └── audit_service.py       # Audit log transitions
 │   └── requirements.txt
 ├── contracts/
@@ -90,10 +92,13 @@ CapstoneV3-main/
 
 ### Core
 - **Job Posting & Bidding** — clients post gigs, freelancers submit proposals with bids
+- **Dynamic Job Listings** — completed/hired jobs auto-hidden, real-time applicant count shown on each job
 - **Smart Contract Escrow** — funds locked on-chain until milestones approved
 - **Milestone-based Payments** — submit deliverables, client approves, ETH released automatically
-- **Real-time Messaging** — WebSocket-powered thread-based inbox with read receipts
+- **Real-time Messaging** — WebSocket-powered thread-based inbox with read receipts, profile pictures
 - **Wallet Management** — MetaMask connect, max 2 accounts per wallet (1 client + 1 freelancer)
+- **Notifications** — real-time bell for milestone updates, contract status changes, dispute activity
+- **Profile Pictures** — upload to IPFS, shown in messages, navbars, and user search
 
 ### Dispute System
 - **Dispute Initiation** — client or freelancer raises dispute, contract paused on-chain
@@ -125,6 +130,7 @@ CapstoneV3-main/
 - **Async Processing** — `asyncio.to_thread()` for blockchain/IPFS calls, non-blocking
 - **Event Listener** — syncs 8 blockchain events back to PostgreSQL automatically
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
+- **Graceful On-chain Failures** — Hardhat restarts don't break the app, warnings logged instead
 
 ## Environment
 

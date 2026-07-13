@@ -124,6 +124,8 @@ class JobResponse(BaseModel):
     status: str
     on_chain_job_id: Optional[int] = None
     created_at: datetime
+    applicants_count: int = 0
+    has_hired: bool = False
 
     class Config:
         from_attributes = True

@@ -110,6 +110,7 @@ export default function FindJobs() {
   }
 
   const displayed = jobs.filter(j => {
+    if (j.has_hired) return false;
     const br = parseBudgetRange(fBudget);
     if (br && (Number(j.budget) < br[0] || Number(j.budget) >= br[1])) return false;
     if (fMatch === 'saved' && !savedJobs.includes(j.id)) return false;
@@ -207,7 +208,7 @@ export default function FindJobs() {
             <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Posted {posted}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>👥 {name ? '-' : ''}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>👥 {job.applicants_count || 0} applicant{job.applicants_count !== 1 ? 's' : ''}</span>
             <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{client ? `· ${name}` : ''}</span>
           </div>
         </div>
@@ -304,7 +305,7 @@ export default function FindJobs() {
                       <span style={{ fontSize: 13, color: 'var(--text-2)' }}>Posted by <strong>{name}</strong></span>
                     </div>
                   ) : null}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Budget</div>
                       <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(job.budget)}</div>
@@ -312,6 +313,10 @@ export default function FindJobs() {
                     <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Status</div>
                       <div style={{ fontSize: 16, fontWeight: 800 }}>{job.status ? job.status.replace(/\b\w/g, c => c.toUpperCase()) : 'Open'}</div>
+                    </div>
+                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Applicants</div>
+                      <div style={{ fontSize: 18, fontWeight: 800 }}>{job.applicants_count || 0}</div>
                     </div>
                   </div>
                   <div style={{ marginBottom: 18 }}>

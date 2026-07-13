@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, case
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Contract, Job, User
+from app.models import Contract, Job, Proposal, User
 from app.routers.auth import get_current_user
 from app.schemas import JobCreate, JobDetailResponse, JobResponse, JobUpdate, MilestoneResponse
 
@@ -23,7 +23,28 @@ async def list_jobs(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    query = select(Job)
+    proposal_count_sq = (
+        select(Proposal.job_id, func.count(Proposal.id).label("cnt"))
+        .group_by(Proposal.job_id)
+        .subquery()
+    )
+    hired_sq = (
+        select(Proposal.job_id)
+        .where(Proposal.status == "accepted")
+        .distinct()
+        .subquery()
+    )
+
+    query = (
+        select(
+            Job,
+            func.coalesce(proposal_count_sq.c.cnt, 0).label("applicants_count"),
+            case((hired_sq.c.job_id.isnot(None), True), else_=False).label("has_hired"),
+        )
+        .outerjoin(proposal_count_sq, Job.id == proposal_count_sq.c.job_id)
+        .outerjoin(hired_sq, Job.id == hired_sq.c.job_id)
+    )
+
     if status_filter:
         query = query.where(Job.status == status_filter)
     if category:
@@ -38,10 +59,20 @@ async def list_jobs(
                 Job.description.ilike(search_term),
             )
         )
+
     query = query.order_by(Job.created_at.desc())
     query = query.offset((page - 1) * limit).limit(limit)
     result = await db.execute(query)
-    return result.scalars().all()
+    rows = result.all()
+
+    return [
+        JobResponse(
+            **JobResponse.model_validate(row[0]).model_dump(exclude={"applicants_count", "has_hired"}),
+            applicants_count=row[1],
+            has_hired=row[2],
+        )
+        for row in rows
+    ]
 
 
 @router.post("", response_model=JobResponse, status_code=status.HTTP_201_CREATED)
