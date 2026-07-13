@@ -1,16 +1,16 @@
 # FreeLedger
 
-A blockchain-powered freelance platform using Ethereum smart contracts for secure gig escrow payments.
+A decentralized freelance protocol with Web3 integration — combining IPFS for decentralized storage, Ethereum smart contracts for escrow payments, and a hybrid backend for speed and coordination.
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React, ethers.js |
+| Frontend | React, ethers.js, MetaMask |
 | Backend | FastAPI, SQLAlchemy (async), PostgreSQL, Redis |
-| Blockchain | Solidity, Hardhat (local chain) |
-| Messaging | WebSocket (real-time) |
-| Storage | IPFS |
+| Blockchain | Solidity 0.8.20, Hardhat (local chain), OpenZeppelin v5 |
+| Messaging | WebSocket (real-time, threads + dispute chat) |
+| Storage | IPFS (Kubo node, pinning, health monitoring) |
 
 ## Quick Start
 
@@ -18,10 +18,10 @@ A blockchain-powered freelance platform using Ethereum smart contracts for secur
 ./start.sh
 ```
 
-This single command starts everything:
+Start Docker Desktop first, then run the script. This single command starts:
 
-- start the Docker desktop first then run the script
-- Smart contract deployment
+- Hardhat node (port 8545) via Docker
+- IPFS Kubo node (ports 5001/8080) via Docker
 - FastAPI backend (port 8000)
 - React frontend (port 3001)
 
@@ -31,70 +31,117 @@ Logs are saved to `logs/` on each run.
 
 ```
 CapstoneV3-main/
-├── start.sh                  # One-command startup (macOS/Linux/Windows)
+├── start.sh                  # Cross-platform startup (macOS/Linux/Windows)
 ├── admin.sh                  # Admin account manager (add/delete/list)
 ├── fund.sh                   # Fund test wallets with ETH
 ├── backend/
 │   ├── app/
 │   │   ├── main.py           # FastAPI app, CORS, startup migrations
-│   │   ├── models.py         # SQLAlchemy models
+│   │   ├── models.py         # SQLAlchemy models (Users, Contracts, Milestones, Disputes)
 │   │   ├── schemas.py        # Pydantic request/response schemas
 │   │   ├── database.py       # Async DB session
 │   │   ├── config.py         # Environment settings
-│   │   ├── routers/          # API endpoints
-│   │   │   ├── auth.py       # Login, register, JWT
+│   │   ├── routers/
+│   │   │   ├── auth.py       # Login, register, SIWE wallet auth, JWT
 │   │   │   ├── jobs.py       # Create/browse jobs
 │   │   │   ├── proposals.py  # Submit/accept proposals
-│   │   │   ├── contracts.py  # Milestone management
+│   │   │   ├── contracts.py  # Milestone management, IPFS terms upload
 │   │   │   ├── messages.py   # WebSocket + REST messaging
-│   │   │   ├── disputes.py   # Dispute resolution
-│   │   │   └── users.py      # Profile management
-│   │   └── services/         # Background workers
-│   │       ├── event_listener.py  # Blockchain event sync
-│   │       └── ...
+│   │   │   ├── dispute_messages.py  # Dispute chat (admin ↔ client)
+│   │   │   ├── disputes.py   # Dispute creation & resolution
+│   │   │   ├── ipfs.py       # IPFS upload/download endpoints
+│   │   │   ├── uploads.py    # Local file uploads
+│   │   │   ├── admin.py      # Admin management endpoints
+│   │   │   └── users.py      # Profile management, search
+│   │   └── services/
+│   │       ├── blockchain_service.py  # Web3 contract interactions
+│   │       ├── ipfs_service.py        # IPFS upload/download/pin
+│   │       ├── ipfs_monitor.py        # IPFS health monitoring
+│   │       ├── repin_service.py       # Background CID re-pinning
+│   │       ├── event_listener.py      # Blockchain event sync (8 events)
+│   │       ├── contract_service.py    # Contract business logic
+│   │       └── audit_service.py       # Audit log transitions
 │   └── requirements.txt
 ├── contracts/
-│   └── contracts/
-│       └── GigEscrow.sol     # Solidity escrow contract
+│   ├── contracts/
+│   │   └── GigEscrow.sol     # Solidity escrow contract (327 lines)
+│   ├── scripts/
+│   │   └── deploy.js         # Deployment script, updates .env files
+│   └── hardhat.config.js
 ├── frontend/
 │   ├── src/
 │   │   ├── pages/
-│   │   │   ├── freelancer/   # Job browse, contracts, profile
-│   │   │   ├── client/       # Post jobs, browse freelancers
-│   │   │   └── shared/       # Messages (both roles)
-│   │   ├── components/       # Navbar, layout
-│   │   └── services/api.js   # Axios instance
+│   │   │   ├── freelancer/   # FindJobs, MyContracts, MyProfile
+│   │   │   ├── client/       # Dashboard, BrowseFreelancers, MyContracts, Profile
+│   │   │   ├── shared/       # Messages (both roles)
+│   │   │   └── admin/        # Dashboard, Users, UserSearch, Jobs, Proposals,
+│   │   │                     # Contracts, Disputes, AuditLogs
+│   │   ├── components/       # Navbar, PostProjectModal, layout
+│   │   └── services/         # api.js, web3.js, contractAbi.js, ipfs.js
 │   └── package.json
 ├── scripts/
 │   └── fund-wallet.js        # Send test ETH from Hardhat accounts
-└── docker/                   # Container configs
+└── docker/
+    ├── docker-compose.yml    # Hardhat node + IPFS Kubo node
+    └── ipfs/                 # IPFS config and persistent data
 ```
 
 ## Features
 
-- **Job Posting & Bidding** — clients post gigs, freelancers submit proposals
+### Core
+- **Job Posting & Bidding** — clients post gigs, freelancers submit proposals with bids
 - **Smart Contract Escrow** — funds locked on-chain until milestones approved
-- **Real-time Messaging** — WebSocket-powered thread-based inbox
-- **Wallet Management** — MetaMask connect, max 2 accounts per wallet
-- **Dispute Resolution** — on-chain dispute system with admin decisions
-- **IPFS Storage** — decentralized file storage for deliverables
+- **Milestone-based Payments** — submit deliverables, client approves, ETH released automatically
+- **Real-time Messaging** — WebSocket-powered thread-based inbox with read receipts
+- **Wallet Management** — MetaMask connect, max 2 accounts per wallet (1 client + 1 freelancer)
+
+### Dispute System
+- **Dispute Initiation** — client or freelancer raises dispute, contract paused on-chain
+- **Dispute Chat** — admin initiates real-time chat with client, client replies after admin
+- **Dispute Resolution** — admin reviews deliverables, resolves with on-chain refund or release
+- **Anonymous Disputes** — admin sees user IDs only, can search usernames separately
+
+### IPFS Integration
+- **Deliverable Upload** — freelancers upload work to IPFS, CID stored in DB and on-chain
+- **Contract Terms** — contract details uploaded to IPFS as JSON, real CID stored on-chain
+- **Pin Management** — background repin service every 6 hours for data persistence
+- **Health Monitoring** — IPFS node health checked every 30 seconds
+
+### Admin Dashboard
+- **User Management** — list, add, suspend, delete users
+- **User Search** — search by userId, username, email, or bio across all roles
+- **Contract Overview** — view all contracts with status and milestone details
+- **Dispute Management** — expandable cards with milestones, IPFS links, chat, resolution
+- **Audit Logs** — track all system transitions with actor info
+
+### Backend
+- **Async Processing** — `asyncio.to_thread()` for blockchain/IPFS calls, non-blocking
+- **Event Listener** — syncs 8 blockchain events back to PostgreSQL automatically
+- **Role-based Access** — admin, client, freelancer with enforced permissions
+- **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
 
 ## Environment
 
-Backend configuration lives in `backend/.env`:
+Backend configuration in `backend/.env`:
 
 ```
 DATABASE_URL=postgresql+asyncpg://freeledger:freeledger_dev@localhost:5432/freeledger
 REDIS_URL=redis://localhost:6379
 CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+RPC_URL=http://127.0.0.1:8545
+CLIENT_PRIVATE_KEY=0xac0974bec39c16e59c4d768b2e999bf8d01740335f01215ce953baeef316c3de
+FREELANCER_PRIVATE_KEY=0x59c6995e611969122921531cecaed9f73164a9c8ea81f084b45000c7cb488698
 JWT_SECRET=your-secret-here
 ```
 
-Frontend configuration lives in `frontend/.env`:
+Frontend configuration in `frontend/.env`:
 
 ```
 REACT_APP_CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
 REACT_APP_API_URL=http://localhost:8000/api
+REACT_APP_BLOCKCHAIN_RPC=http://127.0.0.1:8545
+REACT_APP_CHAIN_ID=31337
+REACT_APP_IPFS_GATEWAY=http://localhost:8080
 ```
 
 ## Fund Test Wallets
@@ -107,7 +154,7 @@ Interactive script to send test ETH to any wallet:
 
 - Enter your MetaMask wallet address
 - Choose amount (100, 500, 1000 ETH or custom)
-- ETH sent from Hardhat pre-funded accounts
+- ETH sent from Hardhat pre-funded accounts (10,000 ETH each)
 
 ## Management Scripts
 
@@ -123,6 +170,19 @@ Interactive menu to manage admin accounts:
 - **Add** — create a new admin with username and password (bcrypt hashed)
 - **Delete** — select an admin from the list to remove
 - **Back** — exit the script (option 0)
+
+## Smart Contract
+
+`GigEscrow.sol` — Solidity 0.8.20 with OpenZeppelin v5:
+
+- `createContract()` — deploy escrow with milestones
+- `fundContract()` — client deposits ETH
+- `submitMilestone()` — freelancer submits deliverable CID
+- `approveMilestone()` — client approves, triggers payout (2.5% platform fee)
+- `rejectMilestone()` — client rejects, resets to funded
+- `raiseDispute()` — either party can dispute
+- `resolveDispute()` — admin resolves with refund or release
+- `cancelContract()` — client cancels before funding
 
 ## API Docs
 
