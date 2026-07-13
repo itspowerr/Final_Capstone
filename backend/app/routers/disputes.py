@@ -106,6 +106,19 @@ async def create_dispute(
         to_status="disputed",
         details=data.reason,
     )
+    from app.services.notification_service import create_notification
+    from app.models import User as UserModel, AdminAccount
+    admins = await db.execute(select(AdminAccount))
+    for admin in admins.scalars().all():
+        await create_notification(
+            db=db,
+            user_id=admin.user_id,
+            type="dispute_raised",
+            title="Dispute raised",
+            message=f"A dispute was raised on contract \"{contract.title}\". Reason: {data.reason[:100]}",
+            entity_type="dispute",
+            entity_id=dispute.id,
+        )
     await db.commit()
     await db.refresh(dispute)
     return DisputeResponse.model_validate(dispute)
@@ -170,6 +183,28 @@ async def resolve_dispute(
             to_status=contract.status.value,
             details=f"Decision: {'release to freelancer' if data.release_to_freelancer else 'refund to client'}. {data.resolution_notes or ''}",
         )
+        from app.services.notification_service import create_notification
+        decision = "released to freelancer" if data.release_to_freelancer else "refunded to client"
+        if contract.client_id:
+            await create_notification(
+                db=db,
+                user_id=contract.client_id,
+                type="dispute_resolved",
+                title="Dispute resolved",
+                message=f"Dispute on \"{contract.title}\" resolved: {decision}. {data.resolution_notes or ''}",
+                entity_type="dispute",
+                entity_id=dispute.id,
+            )
+        if contract.freelancer_id:
+            await create_notification(
+                db=db,
+                user_id=contract.freelancer_id,
+                type="dispute_resolved",
+                title="Dispute resolved",
+                message=f"Dispute on \"{contract.title}\" resolved: {decision}. {data.resolution_notes or ''}",
+                entity_type="dispute",
+                entity_id=dispute.id,
+            )
 
     await db.commit()
     await db.refresh(dispute)

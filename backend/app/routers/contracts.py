@@ -331,6 +331,26 @@ async def approve_milestone(
             to_status="completed",
         )
 
+    from app.services.notification_service import create_notification
+    await create_notification(
+        db=db,
+        user_id=contract.freelancer_id,
+        type="milestone_approved",
+        title="Milestone approved",
+        message=f"Milestone \"{ms.description}\" was approved. Payment released!",
+        entity_type="milestone",
+        entity_id=ms.id,
+    )
+    if all_done:
+        await create_notification(
+            db=db,
+            user_id=contract.freelancer_id,
+            type="contract_completed",
+            title="Contract completed",
+            message=f"All milestones in \"{contract.title}\" are approved. Contract is complete!",
+            entity_type="contract",
+            entity_id=contract.id,
+        )
     await db.commit()
     await db.refresh(ms)
     return MilestoneResponse.model_validate(ms)
@@ -387,6 +407,16 @@ async def reject_milestone(
         from_status="submitted",
         to_status="pending",
         details=data.reason,
+    )
+    from app.services.notification_service import create_notification
+    await create_notification(
+        db=db,
+        user_id=contract.freelancer_id,
+        type="milestone_rejected",
+        title="Milestone rejected",
+        message=f"Milestone \"{ms.description}\" was rejected. Reason: {data.reason}",
+        entity_type="milestone",
+        entity_id=ms.id,
     )
     await db.commit()
     await db.refresh(ms)
@@ -448,6 +478,16 @@ async def submit_milestone(
         actor_role=current_user.role.value,
         from_status="pending",
         to_status="submitted",
+    )
+    from app.services.notification_service import create_notification
+    await create_notification(
+        db=db,
+        user_id=contract.client_id,
+        type="milestone_submitted",
+        title="Milestone submitted",
+        message=f"Freelancer submitted work for \"{ms.description}\". Review it when ready.",
+        entity_type="milestone",
+        entity_id=ms.id,
     )
     await db.commit()
     await db.refresh(ms)

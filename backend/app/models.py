@@ -223,3 +223,18 @@ class AuditLog(Base):
     actor_role = Column(String(50), nullable=True)
     details = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class Notification(Base):
+    __tablename__ = "notifications"
+    __table_args__ = {"schema": "freeledger"}
+
+    id = Column(String(50), primary_key=True, default=lambda: generate_pseudonymous_id("ntf"))
+    user_id = Column(String(50), ForeignKey("freeledger.users.id"), nullable=False, index=True)
+    type = Column(String(50), nullable=False)
+    title = Column(String(200), nullable=False)
+    message = Column(Text, nullable=False)
+    entity_type = Column(String(50), nullable=True)
+    entity_id = Column(String(50), nullable=True)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

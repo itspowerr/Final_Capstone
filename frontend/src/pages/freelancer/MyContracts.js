@@ -317,16 +317,17 @@ export default function MyContracts() {
               const isOpen = expandedIdx === i;
               const canSubmit = detail.status === 'active' && (m.status || '').toLowerCase() === 'pending';
               const isPaid = (m.status || '').toLowerCase() === 'approved' || (m.status || '').toLowerCase() === 'paid';
+              const isRejected = m.rejection_reason && (m.status || '').toLowerCase() === 'pending';
               return (
-                <div key={i} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, marginBottom: 8, overflow: 'hidden' }}>
+                <div key={i} style={{ background: 'var(--surface)', border: '1px solid ' + (isRejected ? '#fecaca' : 'var(--border)'), borderRadius: 8, marginBottom: 8, overflow: 'hidden' }}>
                   <div onClick={() => toggleExpand(i)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, cursor: 'pointer' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, background: isPaid ? '#ecfdf5' : (m.status === 'submitted' ? 'var(--accent-pale)' : 'var(--surface)'), border: '2px solid ' + (isPaid ? 'var(--accent)' : (m.status === 'submitted' ? 'var(--accent)' : 'var(--border)')), color: isPaid ? 'var(--accent)' : (m.status === 'submitted' ? 'var(--accent)' : 'var(--text-3)') }}>
-                      {isPaid ? '✓' : (m.status === 'submitted' ? '▶' : '○')}
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, background: isPaid ? '#ecfdf5' : isRejected ? '#fef2f2' : (m.status === 'submitted' ? 'var(--accent-pale)' : 'var(--surface)'), border: '2px solid ' + (isPaid ? 'var(--accent)' : isRejected ? '#dc2626' : (m.status === 'submitted' ? 'var(--accent)' : 'var(--border)')), color: isPaid ? 'var(--accent)' : isRejected ? '#dc2626' : (m.status === 'submitted' ? 'var(--accent)' : 'var(--text-3)') }}>
+                      {isPaid ? '✓' : isRejected ? '✕' : (m.status === 'submitted' ? '▶' : '○')}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{m.description}</div>
                       <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
-                        {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' ? 'Rejected' : 'Pending'}
+                        {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' ? 'Rejected' : m.rejection_reason ? 'Rejected — resubmit below' : 'Pending'}
                       </div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)' }}>{Number(m.amount || 0).toLocaleString()} ETH</div>
@@ -337,6 +338,12 @@ export default function MyContracts() {
                   {isOpen && (
                     <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)' }}>
                       <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 10 }}>Deliverables</div>
+                      {m.rejection_reason && (
+                        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12, marginBottom: 14 }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>⚠ Rejected by client</div>
+                          <div style={{ fontSize: 12, color: '#991b1b' }}>{m.rejection_reason}</div>
+                        </div>
+                      )}
                       {m.deliverable_cid || m.submission_notes || m.submitted_at ? (
                         <div style={{ marginBottom: 14 }}>
                           {m.deliverable_cid ? <div style={{ fontSize: 12, marginBottom: 6, fontFamily: "'DM Mono', monospace" }}>CID: {m.deliverable_cid}</div> : null}

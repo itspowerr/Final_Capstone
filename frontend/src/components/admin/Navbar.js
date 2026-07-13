@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import NotificationBell from '../shared/NotificationBell.js';
 
 const links = [
   { path: '/dashboard',  label: 'Dashboard' },
@@ -30,6 +31,7 @@ export default function Navbar() {
         </div>
       </div>
       <div className="admin-topbar-right">
+        <NotificationBell />
         <button className="btn btn-outline btn-sm" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); navigate('/login'); }}>Logout</button>
       </div>
     </div>
