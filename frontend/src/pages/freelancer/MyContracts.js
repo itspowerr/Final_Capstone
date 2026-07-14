@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import api from '../../services/api';
@@ -43,39 +43,49 @@ export default function MyContracts() {
   const [submitNotes, setSubmitNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState(null);
+  const [disputeModal, setDisputeModal] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [modalDisputeId, setModalDisputeId] = useState(null);
+  const [showDisputeChat, setShowDisputeChat] = useState(false);
+  const [disputeChatMessages, setDisputeChatMessages] = useState([]);
+  const [disputeChatInitiated, setDisputeChatInitiated] = useState(false);
+  const [disputeChatInput, setDisputeChatInput] = useState('');
+  const [disputeChatSending, setDisputeChatSending] = useState(false);
+  const [disputeChatConnected, setDisputeChatConnected] = useState(false);
+  const disputeWsRef = useRef(null);
+  const disputeMessagesEndRef = useRef(null);
+  const disputeInputRef = useRef(null);
+
+  const loadContracts = useCallback(async () => {
+    try {
+      const res = await api.get('/contracts');
+      const list = (res.data && res.data.contracts) || [];
+      setContracts(list);
+      setError(null);
+      const ids = [...new Set(list.flatMap(c => [c.client_id, c.freelancer_id].filter(Boolean)))];
+      if (ids.length) {
+        try {
+          const uRes = await api.get('/users', { params: { ids: ids.join(',') } });
+          const map = {};
+          (uRes.data || []).forEach(u => { map[u.id] = u; });
+          setUsers(map);
+        } catch {}
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail?.message || err.message || 'Failed to load contracts');
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
     let pollId;
 
-    const fetchData = () => {
-      return api.get('/contracts')
-        .then(res => {
-          if (cancelled) return;
-          const list = (res.data && res.data.contracts) || [];
-          setContracts(list);
-          setError(null);
-          const ids = [...new Set(list.flatMap(c => [c.client_id, c.freelancer_id].filter(Boolean)))];
-          if (!ids.length) return;
-          return api.get('/users', { params: { ids: ids.join(',') } }).then(uRes => {
-            if (cancelled) return;
-            const map = {};
-            (uRes.data || []).forEach(u => { map[u.id] = u; });
-            setUsers(map);
-          }).catch(() => {});
-        })
-        .catch(err => {
-          if (!cancelled) setError(err.response?.data?.detail?.message || err.message || 'Failed to load contracts');
-        });
-    };
-
     setLoading(true);
     setError(null);
-    fetchData().finally(() => { if (!cancelled) setLoading(false); });
-
-    pollId = setInterval(fetchData, 30000);
+    loadContracts().finally(() => { if (!cancelled) setLoading(false); });
+    pollId = setInterval(() => { loadContracts(); }, 30000);
     return () => { cancelled = true; clearInterval(pollId); };
-  }, []);
+  }, [loadContracts]);
 
   const tabs = [
     { key: 'all', label: 'All' },
@@ -102,6 +112,24 @@ export default function MyContracts() {
   }, [contracts]);
 
   const detail = detailId ? contracts.find(c => c.id === detailId) : null;
+
+  useEffect(() => {
+    if (!detail) {
+      setModalDisputeId(null);
+      setShowDisputeChat(false);
+      setDisputeChatMessages([]);
+      setDisputeChatInitiated(false);
+      return;
+    }
+    if (detail.status === 'disputed') {
+      api.get('/disputes', { params: { page: 1, limit: 50 } }).then(res => {
+        const dispute = (res.data?.disputes || []).find(d => d.contract_id === detail.id);
+        setModalDisputeId(dispute ? dispute.id : null);
+      }).catch(() => setModalDisputeId(null));
+    } else {
+      setModalDisputeId(null);
+    }
+  }, [detail]);
 
   function showToast(msg, icon) {
     setToast({ msg, icon: icon || '✅' });
@@ -162,6 +190,94 @@ export default function MyContracts() {
       setSubmitting(false);
     }
   }
+
+  const raiseDispute = async (contractId, reason) => {
+    setActionLoading(true);
+    try {
+      await api.post(`/contracts/${contractId}/disputes`, { reason });
+      showToast('Dispute raised. Admin will review.');
+      setDisputeModal(null);
+      await loadContracts();
+      setDetailId(null);
+    } catch (err) {
+      showToast(err.response?.data?.detail?.message || 'Failed to raise dispute', '❌');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const loadDisputeMessages = useCallback(async (disputeId) => {
+    try {
+      const { data } = await api.get(`/dispute-messages/${disputeId}`);
+      setDisputeChatMessages(data);
+      setDisputeChatInitiated(data.length > 0);
+    } catch {
+      setDisputeChatInitiated(false);
+    }
+  }, []);
+
+  const openDisputeChat = async () => {
+    if (!modalDisputeId) return;
+    setShowDisputeChat(true);
+    await loadDisputeMessages(modalDisputeId);
+  };
+
+  useEffect(() => {
+    if (!showDisputeChat || !modalDisputeId) return;
+    const currentUser = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+    const myId = currentUser.id;
+    if (!myId) return;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.hostname}:8000/api/dispute-messages/ws/${myId}`;
+    const ws = new WebSocket(wsUrl);
+    disputeWsRef.current = ws;
+    ws.onopen = () => setDisputeChatConnected(true);
+    ws.onclose = () => { setDisputeChatConnected(false); };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'dispute_message' && data.message?.dispute_id === modalDisputeId) {
+          setDisputeChatMessages(prev => {
+            if (prev.some(m => m.id === data.message.id)) return prev;
+            return [...prev, data.message];
+          });
+          setDisputeChatInitiated(true);
+        }
+        if (data.type === 'dispute_chat_deleted' && data.dispute_id === modalDisputeId) {
+          setDisputeChatMessages([]);
+          setDisputeChatInitiated(false);
+          setShowDisputeChat(false);
+          setModalDisputeId(null);
+        }
+      } catch {}
+    };
+    return () => { ws.close(); disputeWsRef.current = null; };
+  }, [showDisputeChat, modalDisputeId]);
+
+  useEffect(() => { disputeMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [disputeChatMessages]);
+
+  const sendDisputeMessage = async () => {
+    if (!disputeChatInput.trim() || !modalDisputeId) return;
+    setDisputeChatSending(true);
+    try {
+      await api.post('/dispute-messages/send', {
+        dispute_id: modalDisputeId,
+        content: disputeChatInput.trim(),
+      });
+      setDisputeChatInput('');
+    } catch (err) {
+      showToast(err.response?.data?.detail?.message || 'Failed to send', '❌');
+    }
+    setDisputeChatSending(false);
+  };
+
+  const handleDisputeChatKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendDisputeMessage();
+    }
+  };
 
   return (
     <div>
@@ -379,12 +495,133 @@ export default function MyContracts() {
                 </div>
               );
             })}
+            {showDisputeChat && modalDisputeId && (
+              <div style={{
+                marginTop: 16, borderRadius: 8, border: '1px solid var(--border, #e5e7eb)',
+                overflow: 'hidden', background: '#fff',
+              }}>
+                <div style={{
+                  padding: '10px 16px', borderBottom: '1px solid var(--border, #e5e7eb)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  background: 'var(--bg-secondary, #f9fafb)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>Chat with Admin</span>
+                    <span style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: disputeChatConnected ? '#10b981' : '#ef4444', display: 'inline-block',
+                    }} />
+                  </div>
+                  <button className="btn btn-sm" onClick={() => setShowDisputeChat(false)} style={{ fontSize: 12 }}>Close</button>
+                </div>
+                <div style={{ padding: '12px 16px', minHeight: 80, maxHeight: 300, overflowY: 'auto' }}>
+                  {!disputeChatInitiated ? (
+                    <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: '16px 0' }}>
+                      Waiting for admin to initiate a chat…
+                    </p>
+                  ) : (
+                    <>
+                      {disputeChatMessages.map(msg => {
+                        const currentUser = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
+                        const isMe = msg.sender_id === currentUser.id;
+                        return (
+                          <div key={msg.id} style={{
+                            display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start',
+                            marginBottom: 8,
+                          }}>
+                            <div style={{
+                              maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
+                              background: isMe ? '#2563eb' : '#f3f4f6',
+                              color: isMe ? '#fff' : '#111827',
+                              fontSize: 13, lineHeight: 1.5,
+                            }}>
+                              <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>
+                                {isMe ? 'You' : detail?.client_id === msg.sender_id ? 'Client' : 'Admin'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                              </div>
+                              <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div ref={disputeMessagesEndRef} />
+                    </>
+                  )}
+                </div>
+                {disputeChatInitiated && (
+                  <div style={{
+                    padding: '10px 16px', borderTop: '1px solid var(--border, #e5e7eb)',
+                    display: 'flex', gap: 8,
+                  }}>
+                    <input
+                      ref={disputeInputRef}
+                      className="form-input"
+                      placeholder="Type a message..."
+                      value={disputeChatInput}
+                      onChange={e => setDisputeChatInput(e.target.value)}
+                      onKeyDown={handleDisputeChatKeyDown}
+                      style={{ flex: 1, fontSize: 13 }}
+                    />
+                    <button
+                      className="btn btn-sm btn-primary"
+                      onClick={sendDisputeMessage}
+                      disabled={disputeChatSending || !disputeChatInput.trim()}
+                    >
+                      {disputeChatSending ? '...' : 'Send'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)', marginTop: 20 }}>
-              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setDetailId(null); setExpandedIdx(null); }}>Close</button>
+              {(detail.status === 'active' || detail.status === 'pending_signatures' || detail.status === 'pending_funding' || detail.status === 'disputed') && (
+                <button className="btn btn-outline" style={{ flex: 1 }}
+                        onClick={() => setDisputeModal(detail.id)}
+                        disabled={actionLoading}>
+                  ⚠ Raise Dispute
+                </button>
+              )}
+              {modalDisputeId && (
+                <button className="btn btn-primary" style={{ flex: 1, background: '#8b5cf6', borderColor: '#8b5cf6' }}
+                        onClick={openDisputeChat}>
+                  💬 Chat with Admin
+                </button>
+              )}
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setDetailId(null); setExpandedIdx(null); setShowDisputeChat(false); setModalDisputeId(null); }}>Close</button>
               {detail.status === 'pending_signatures' ? (
                 <button className="btn btn-primary" onClick={() => signContract(detail.id)}>Sign Contract</button>
               ) : null}
             </div>
+          </div>
+        </div>
+      )}
+
+      {disputeModal && (
+        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setDisputeModal(null); }}>
+          <div className="modal-box" style={{ maxWidth: 450 }}>
+            <button className="modal-close" onClick={() => setDisputeModal(null)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+            <h3 style={{ marginBottom: 12 }}>Raise a Dispute</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+              This will flag the contract for admin review and pause all milestone activity.
+            </p>
+            <form onSubmit={async (e) => {
+              e.preventDefault();
+              const reason = e.target.reason.value;
+              if (!reason.trim()) return;
+              await raiseDispute(disputeModal, reason);
+            }}>
+              <textarea name="reason" className="search-input" style={{ width: '100%', minHeight: 100, marginBottom: 12 }}
+                        placeholder="Describe the issue in detail…" required />
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }}
+                        disabled={actionLoading}>
+                  {actionLoading ? 'Submitting…' : 'Submit Dispute'}
+                </button>
+                <button type="button" className="btn btn-outline" onClick={() => setDisputeModal(null)}>Cancel</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

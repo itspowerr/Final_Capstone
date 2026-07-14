@@ -102,9 +102,12 @@ CapstoneV3-main/
 
 ### Dispute System
 - **Dispute Initiation** — client or freelancer raises dispute, contract paused on-chain
-- **Dispute Chat** — admin initiates real-time chat with client, client replies after admin
+- **Dispute Chat** — admin initiates real-time chat with both parties, either party replies after admin
+- **Freelancer Disputes** — freelancers can raise disputes and chat with admin (e.g. client not accepting delivered work)
 - **Dispute Resolution** — admin reviews deliverables, resolves with on-chain refund or release
 - **Anonymous Disputes** — admin sees user IDs only, can search usernames separately
+- **Dynamic Job Listings** — completed/hired jobs auto-hidden, real-time applicant count per job
+- **Notification Bell** — real-time unread badge, mark read/all read, server-authoritative state
 
 ### IPFS Integration
 - **Deliverable Upload** — freelancers upload work to IPFS, CID stored in DB and on-chain

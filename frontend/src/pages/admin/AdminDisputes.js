@@ -53,7 +53,7 @@ function MilestoneRow({ m }) {
   );
 }
 
-function DisputeChat({ disputeId, onClose }) {
+function DisputeChat({ disputeId, contractDetail, onClose }) {
   const [messages, setMessages] = useState([]);
   const [chatInitiated, setChatInitiated] = useState(false);
   const [newMessage, setNewMessage] = useState('');
@@ -202,7 +202,7 @@ function DisputeChat({ disputeId, onClose }) {
         background: 'var(--bg-secondary, #f9fafb)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 14, fontWeight: 700 }}>Chat with Client</span>
+          <span style={{ fontSize: 14, fontWeight: 700 }}>Dispute Chat</span>
           <span style={{
             width: 8, height: 8, borderRadius: '50%',
             background: connected ? '#10b981' : '#ef4444', display: 'inline-block',
@@ -224,7 +224,7 @@ function DisputeChat({ disputeId, onClose }) {
         ) : !chatInitiated ? (
           <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <p style={{ fontSize: 13, color: '#6b7280', marginBottom: 12 }}>
-              No chat started yet. Click below to initiate a conversation with the client.
+              No chat started yet. Click below to initiate a conversation with the disputing parties.
             </p>
             <button className="btn btn-sm btn-primary" onClick={handleInitiate} disabled={sending}>
               {sending ? 'Starting...' : 'Start Chat'}
@@ -246,7 +246,7 @@ function DisputeChat({ disputeId, onClose }) {
                     fontSize: 13, lineHeight: 1.5,
                   }}>
                     <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>
-                      {isMe ? 'Admin' : 'Client'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                      {isMe ? 'Admin' : contractDetail?.client_id === msg.sender_id ? 'Client' : 'Freelancer'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     </div>
                     <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
                   </div>
@@ -454,13 +454,13 @@ export default function AdminDisputes() {
                       className="btn btn-sm btn-primary"
                       onClick={() => setChatDispute(chatDispute === d.id ? null : d.id)}
                     >
-                      {chatDispute === d.id ? 'Close Chat' : 'Talk to Client'}
+                      {chatDispute === d.id ? 'Close Chat' : 'Dispute Chat'}
                     </button>
                   </div>
                 )}
 
                 {chatDispute === d.id && (
-                  <DisputeChat disputeId={d.id} onClose={() => setChatDispute(null)} />
+                  <DisputeChat disputeId={d.id} contractDetail={d.contract_detail} onClose={() => setChatDispute(null)} />
                 )}
 
                 {d.status === 'open' && (

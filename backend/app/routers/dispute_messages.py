@@ -132,6 +132,8 @@ async def initiate_chat(
 
     if contract.client_id:
         await manager.send_to_user(contract.client_id, message_data)
+    if contract.freelancer_id and contract.freelancer_id != contract.client_id:
+        await manager.send_to_user(contract.freelancer_id, message_data)
 
     return {"status": "initiated", "message_id": msg.id}
 
@@ -151,11 +153,12 @@ async def send_message(
 
     is_admin = current_user.role.value == "admin"
     is_client = str(contract.client_id) == str(current_user.id)
+    is_freelancer = contract.freelancer_id and str(contract.freelancer_id) == str(current_user.id)
 
-    if not is_admin and not is_client:
+    if not is_admin and not is_client and not is_freelancer:
         raise HTTPException(status_code=403, detail="You are not a party to this dispute")
 
-    if is_client:
+    if is_client or is_freelancer:
         msg_check = await db.execute(
             select(DisputeMessage).where(
                 DisputeMessage.dispute_id == dispute_id,
@@ -189,9 +192,12 @@ async def send_message(
     }
 
     other_ids = set()
-    if is_admin and contract.client_id:
-        other_ids.add(contract.client_id)
-    elif is_client:
+    if is_admin:
+        if contract.client_id:
+            other_ids.add(contract.client_id)
+        if contract.freelancer_id:
+            other_ids.add(contract.freelancer_id)
+    elif is_client or is_freelancer:
         admin_result = await db.execute(
             select(DisputeMessage.sender_id).where(
                 DisputeMessage.dispute_id == dispute_id,
@@ -218,8 +224,9 @@ async def get_messages(
 
     is_admin = current_user.role.value == "admin"
     is_client = str(contract.client_id) == str(current_user.id)
+    is_freelancer = contract.freelancer_id and str(contract.freelancer_id) == str(current_user.id)
 
-    if not is_admin and not is_client:
+    if not is_admin and not is_client and not is_freelancer:
         raise HTTPException(status_code=403, detail="You are not a party to this dispute")
 
     result = await db.execute(
@@ -265,11 +272,11 @@ async def delete_chat(
     await db.commit()
 
     _, contract = await _get_admin_and_client(dispute_id, db)
+    deleted_event = {"type": "dispute_chat_deleted", "dispute_id": dispute_id}
     if contract.client_id:
-        await manager.send_to_user(contract.client_id, {
-            "type": "dispute_chat_deleted",
-            "dispute_id": dispute_id,
-        })
+        await manager.send_to_user(contract.client_id, deleted_event)
+    if contract.freelancer_id:
+        await manager.send_to_user(contract.freelancer_id, deleted_event)
 
     return {"status": "deleted"}
 

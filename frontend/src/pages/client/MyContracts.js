@@ -656,7 +656,7 @@ export default function MyContracts() {
                               fontSize: 13, lineHeight: 1.5,
                             }}>
                               <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>
-                                {isMe ? 'You' : 'Admin'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                                {isMe ? 'You' : modalContract?.freelancer_id === msg.sender_id ? 'Freelancer' : 'Admin'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                               </div>
                               <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
                             </div>

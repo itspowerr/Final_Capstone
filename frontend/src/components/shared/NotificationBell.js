@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import api from '../../services/api';
 
 export default function NotificationBell() {
@@ -7,7 +7,7 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const [notiRes, countRes] = await Promise.all([
         api.get('/notifications/'),
@@ -16,13 +16,13 @@ export default function NotificationBell() {
       setNotifications(notiRes.data);
       setUnreadCount(countRes.data.count);
     } catch {}
-  };
+  }, []);
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClick = (e) => {
@@ -35,16 +35,14 @@ export default function NotificationBell() {
   const markRead = async (id) => {
     try {
       await api.post(`/notifications/${id}/read`);
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-      setUnreadCount(prev => Math.max(0, prev - 1));
+      await fetchNotifications();
     } catch {}
   };
 
   const markAllRead = async () => {
     try {
       await api.post('/notifications/read-all');
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      setUnreadCount(0);
+      await fetchNotifications();
     } catch {}
   };
 
