@@ -3,6 +3,7 @@ import Navbar from '../../components/client/Navbar';
 import { getProvider } from '../../services/web3.js';
 import { useApp } from '../../context/AppContext';
 import api from '../../services/api';
+import TOTPSettings from '../../components/shared/TOTPSettings';
 import '../../css/client/profile.css';
 
 const quickSkills = ['React', 'Node.js', 'Solidity', 'Web3.js', 'Figma', 'Python', 'TypeScript', 'UI/UX', 'Marketing', 'Writing'];
@@ -304,12 +305,10 @@ export default function ClientProfile() {
                   <input type="checkbox" checked={form.emailNotifications} onChange={e => setForm({ ...form, emailNotifications: e.target.checked })} style={{ width: 16, height: 16, accentColor: 'var(--accent)' }} />
                   Email notifications for new proposals and messages
                 </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
-                  <input type="checkbox" checked={form.twoFactor} onChange={e => setForm({ ...form, twoFactor: e.target.checked })} style={{ width: 16, height: 16, accentColor: 'var(--accent)' }} />
-                  Enable two-factor authentication
-                </label>
               </div>
             </div>
+
+            <TOTPSettings />
 
             <button className="btn btn-primary btn-full" onClick={saveProfile} disabled={saving}>
               {saving ? 'Saving...' : 'Save Profile'}

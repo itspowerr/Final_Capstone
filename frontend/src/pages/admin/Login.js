@@ -9,6 +9,9 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [totpPending, setTotpPending] = useState(false);
+  const [totpToken, setTotpToken] = useState('');
+  const [totpCode, setTotpCode] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -20,7 +23,17 @@ export default function AdminLogin() {
         username,
         password,
       });
-      const { access_token, refresh_token, user } = response.data;
+      const data = response.data;
+
+      if (data.requires_totp) {
+        setTotpToken(data.totp_token);
+        setTotpPending(true);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      const { access_token, refresh_token, user } = data;
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
@@ -28,6 +41,30 @@ export default function AdminLogin() {
     } catch (err) {
       const detail = err.response?.data?.detail;
       const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Login failed';
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTOTPValidate = async (e) => {
+    e.preventDefault();
+    if (!totpCode.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/auth/totp/validate', {
+        totp_token: totpToken,
+        code: totpCode.trim(),
+      });
+      const { access_token, refresh_token, user } = response.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      navigate('/dashboard');
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
       setError(errorMsg);
     } finally {
       setLoading(false);
@@ -84,6 +121,45 @@ export default function AdminLogin() {
             </div>
           )}
 
+          {totpPending ? (
+            <form onSubmit={handleTOTPValidate}>
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px',
+                }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Two-Factor Authentication</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-3)' }}>Enter the code from your authenticator app</p>
+              </div>
+              <div className="admin-form-group">
+                <label className="admin-form-label">Verification Code</label>
+                <input
+                  className="admin-form-input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={8}
+                  placeholder="000000"
+                  value={totpCode}
+                  onChange={e => setTotpCode(e.target.value.replace(/[^0-9a-zA-Z-]/g, ''))}
+                  autoFocus
+                  style={{ textAlign: 'center', fontSize: 20, letterSpacing: 5, fontWeight: 700 }}
+                />
+              </div>
+              <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }} disabled={loading}>
+                {loading ? 'Verifying...' : 'Verify & Sign In'}
+              </button>
+              <div style={{ textAlign: 'center', marginTop: 12 }}>
+                <a onClick={() => { setTotpPending(false); setTotpCode(''); setError(null); }} style={{ fontSize: 12, color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}>
+                  ← Back to login
+                </a>
+              </div>
+            </form>
+          ) : (
           <form onSubmit={handleLogin}>
             <div className="admin-form-group">
               <label className="admin-form-label">Username</label>
@@ -111,6 +187,7 @@ export default function AdminLogin() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+          )}
         </div>
       </div>
     </div>

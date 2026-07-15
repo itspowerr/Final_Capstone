@@ -38,6 +38,7 @@ class UserResponse(BaseModel):
     portfolio_cids: Optional[list[str]] = None
     is_active: Optional[bool] = None
     created_at: datetime
+    totp_enabled: Optional[bool] = None
 
     class Config:
         from_attributes = True
@@ -67,6 +68,8 @@ class TokenResponse(BaseModel):
     refresh_token: str
     token_type: str = "bearer"
     user: UserResponse
+    requires_totp: bool = False
+    totp_token: Optional[str] = None
 
 
 class RegisterRequest(BaseModel):
@@ -89,6 +92,27 @@ class AdminLoginRequest(BaseModel):
 
 class RefreshRequest(BaseModel):
     refresh_token: str
+
+
+class TOTPVerifyRequest(BaseModel):
+    code: str = Field(..., min_length=6, max_length=8)
+
+
+class TOTPValidateRequest(BaseModel):
+    totp_token: str
+    code: str = Field(..., min_length=6, max_length=8)
+
+
+class TOTPSetupResponse(BaseModel):
+    secret: str
+    qr_code: str
+    backup_codes: list[str]
+    uri: str
+
+
+class TOTPStatusResponse(BaseModel):
+    enabled: bool
+    has_secret: bool
 
 
 class JobCreate(BaseModel):

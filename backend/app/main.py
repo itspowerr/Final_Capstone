@@ -111,6 +111,18 @@ async def lifespan(app: FastAPI):
                     "INSERT INTO freeledger.schema_migrations (name) VALUES ('clear_onchain_reset_v4')"
                 )
             )
+
+        # Add TOTP columns if missing
+        for col, typ in [
+            ("totp_secret", "VARCHAR(64)"),
+            ("totp_enabled", "BOOLEAN DEFAULT FALSE"),
+            ("totp_backup_codes", "JSON DEFAULT '[]'::json"),
+        ]:
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    f'ALTER TABLE freeledger.users ADD COLUMN IF NOT EXISTS {col} {typ}'
+                )
+            )
     yield
     await app.state.redis.close()
     await close_redis()

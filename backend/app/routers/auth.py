@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from secrets import token_hex, token_urlsafe
+from collections import defaultdict
+import time
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from jose import jwt
@@ -17,12 +19,31 @@ from app.schemas import (
     RefreshRequest,
     RegisterRequest,
     TokenResponse,
+    TOTPSetupResponse,
+    TOTPStatusResponse,
+    TOTPValidateRequest,
+    TOTPVerifyRequest,
     UserResponse,
+)
+from app.services.totp_service import (
+    create_temp_token,
+    generate_backup_codes,
+    generate_qr_data_url,
+    generate_secret,
+    get_totp_uri,
+    hash_backup_codes,
+    verify_backup_code,
+    verify_code,
+    verify_temp_token,
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+totp_rate_limit: dict[str, list[float]] = defaultdict(list)
+TOTP_MAX_ATTEMPTS = 5
+TOTP_RATE_WINDOW = 60
 
 
 def hash_password(password: str) -> str:
@@ -153,6 +174,16 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
             detail={"code": "INVALID_CREDENTIALS", "message": "Invalid email or password "},
         )
 
+    if user.totp_enabled and user.totp_secret:
+        totp_token = create_temp_token(user.id)
+        return TokenResponse(
+            access_token="",
+            refresh_token="",
+            user=UserResponse.model_validate(user),
+            requires_totp=True,
+            totp_token=totp_token,
+        )
+
     access_token = create_access_token(user.id)
     refresh_token = create_refresh_token(user.id)
 
@@ -188,6 +219,16 @@ async def admin_login(request: AdminLoginRequest, db: AsyncSession = Depends(get
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail={"code": "ADMIN_ACCOUNT_MISSING", "message": "Admin account not configured "},
+        )
+
+    if user.totp_enabled and user.totp_secret:
+        totp_token = create_temp_token(user.id)
+        return TokenResponse(
+            access_token="",
+            refresh_token="",
+            user=UserResponse.model_validate(user),
+            requires_totp=True,
+            totp_token=totp_token,
         )
 
     access_token = create_access_token(user.id)
@@ -231,3 +272,156 @@ async def refresh(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return UserResponse.model_validate(current_user)
+
+
+@router.get("/totp/status", response_model=TOTPStatusResponse)
+async def totp_status(current_user: User = Depends(get_current_user)):
+    return TOTPStatusResponse(
+        enabled=current_user.totp_enabled or False,
+        has_secret=bool(current_user.totp_secret),
+    )
+
+
+@router.post("/totp/setup", response_model=TOTPSetupResponse)
+async def totp_setup(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if current_user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "TOTP_ALREADY_ENABLED", "message": "2FA is already enabled. Disable it first to re-setup."},
+        )
+
+    secret = generate_secret()
+    uri = get_totp_uri(secret, current_user.email or current_user.username)
+    qr_code = generate_qr_data_url(uri)
+    backup = generate_backup_codes()
+    hashed = hash_backup_codes(backup)
+
+    current_user.totp_secret = secret
+    current_user.totp_backup_codes = hashed
+    await db.commit()
+
+    return TOTPSetupResponse(
+        secret=secret,
+        qr_code=qr_code,
+        backup_codes=backup,
+        uri=uri,
+    )
+
+
+@router.post("/totp/verify")
+async def totp_verify(
+    data: TOTPVerifyRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user.totp_secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "NO_TOTP_SECRET", "message": "No TOTP setup in progress. Start setup first."},
+        )
+
+    if not verify_code(current_user.totp_secret, data.code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_CODE", "message": "Invalid verification code. Check your authenticator app."},
+        )
+
+    current_user.totp_enabled = True
+    await db.commit()
+
+    return {"status": "enabled", "message": "2FA has been enabled successfully."}
+
+
+@router.post("/totp/validate")
+async def totp_validate(
+    data: TOTPValidateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = verify_temp_token(data.totp_token)
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_TOTP_TOKEN", "message": "Invalid or expired verification session. Please login again."},
+        )
+
+    now = time.time()
+    rate_key = f"totp_{user_id}"
+    totp_rate_limit[rate_key] = [t for t in totp_rate_limit[rate_key] if now - t < TOTP_RATE_WINDOW]
+    if len(totp_rate_limit[rate_key]) >= TOTP_MAX_ATTEMPTS:
+        totp_rate_limit[rate_key].clear()
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={"code": "RATE_LIMITED", "message": f"Too many attempts. Wait {TOTP_RATE_WINDOW} seconds and try again."},
+        )
+    totp_rate_limit[rate_key].append(now)
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "USER_NOT_FOUND", "message": "User not found."},
+        )
+
+    code = data.code.strip()
+
+    code_valid = False
+    if user.totp_secret and verify_code(user.totp_secret, code):
+        code_valid = True
+    elif user.totp_backup_codes:
+        code_valid, remaining = verify_backup_code(code, user.totp_backup_codes)
+        if code_valid:
+            user.totp_backup_codes = remaining
+            await db.commit()
+
+    if not code_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_CODE", "message": "Invalid verification code."},
+        )
+
+    totp_rate_limit.pop(rate_key, None)
+
+    access_token = create_access_token(user.id)
+    refresh_token = create_refresh_token(user.id)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserResponse.model_validate(user),
+    )
+
+
+@router.post("/totp/disable")
+async def totp_disable(
+    data: TOTPVerifyRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not current_user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "TOTP_NOT_ENABLED", "message": "2FA is not enabled."},
+        )
+
+    if not current_user.totp_secret:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "NO_TOTP_SECRET", "message": "No TOTP secret found. Contact support."},
+        )
+
+    if not verify_code(current_user.totp_secret, data.code):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_CODE", "message": "Invalid verification code. Check your authenticator app."},
+        )
+
+    current_user.totp_enabled = False
+    current_user.totp_secret = None
+    current_user.totp_backup_codes = []
+    await db.commit()
+
+    return {"status": "disabled", "message": "2FA has been disabled successfully."}

@@ -46,6 +46,10 @@ export default function Login() {
   const [error, setError] = useState(null);
   const [walletRoleModal, setWalletRoleModal] = useState(false);
   const [walletPending, setWalletPending] = useState(null);
+  const [totpPending, setTotpPending] = useState(false);
+  const [totpToken, setTotpToken] = useState('');
+  const [totpCode, setTotpCode] = useState('');
+  const [totpUser, setTotpUser] = useState(null);
 
   const panel = panels[tab];
 
@@ -77,7 +81,18 @@ export default function Login() {
         email: email.toLowerCase(),
         password,
       });
-      const { access_token, refresh_token, user } = response.data;
+      const data = response.data;
+
+      if (data.requires_totp) {
+        setTotpToken(data.totp_token);
+        setTotpUser(data.user);
+        setTotpPending(true);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
+      const { access_token, refresh_token, user } = data;
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
@@ -85,6 +100,33 @@ export default function Login() {
     } catch (err) {
       const detail = err.response?.data?.detail;
       const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Login failed';
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTOTPValidate = async (e) => {
+    e.preventDefault();
+    if (!totpCode.trim() || totpCode.trim().length < 6) {
+      setError('Please enter a 6-digit code');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await api.post('/auth/totp/validate', {
+        totp_token: totpToken,
+        code: totpCode.trim(),
+      });
+      const { access_token, refresh_token, user } = response.data;
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('refresh_token', refresh_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
       setError(errorMsg);
     } finally {
       setLoading(false);
@@ -235,7 +277,61 @@ export default function Login() {
             </div>
           )}
 
-          {tab === 'login' ? (
+          {totpPending ? (
+            <div className="form-panel active">
+              <div style={{ textAlign: 'center', marginBottom: 20 }}>
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), var(--accent-dark))',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
+                }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Two-Factor Authentication</h3>
+                <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
+                  Enter the 6-digit code from your authenticator app
+                </p>
+              </div>
+
+              {error && (
+                <div className="error-popup">
+                  <div className="error-popup-content">
+                    <div className="error-popup-icon">!</div>
+                    <div className="error-popup-text">{error}</div>
+                    <button className="error-popup-close" onClick={() => setError(null)}>×</button>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleTOTPValidate}>
+                <div className="form-group">
+                  <label className="form-label">Verification Code</label>
+                  <input
+                    className="form-input"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={8}
+                    placeholder="000000"
+                    value={totpCode}
+                    onChange={e => setTotpCode(e.target.value.replace(/[^0-9a-zA-Z-]/g, ''))}
+                    autoFocus
+                    style={{ textAlign: 'center', fontSize: 22, letterSpacing: 6, fontWeight: 700 }}
+                  />
+                  <div className="form-hint">Enter your 6-digit code or a backup code (XXXX-XXXX)</div>
+                </div>
+                <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+                  {loading ? 'Verifying...' : 'Verify & Sign In'}
+                </button>
+              </form>
+              <div style={{ textAlign: 'center', marginTop: 16 }}>
+                <a onClick={() => { setTotpPending(false); setTotpCode(''); setError(null); }} style={{ fontSize: 13, color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}>
+                  ← Back to login
+                </a>
+              </div>
+            </div>
+          ) : tab === 'login' ? (
             <div className="form-panel active">
               <p className="subtitle">Don't have an account? <a onClick={() => setTab('register')}>Create one →</a></p>
               <form onSubmit={handleLogin}>

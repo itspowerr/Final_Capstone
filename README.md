@@ -62,6 +62,7 @@ CapstoneV3-main/
 │   │       ├── event_listener.py      # Blockchain event sync (8 events)
 │   │       ├── contract_service.py    # Contract business logic
 │   │       ├── notification_service.py # Create notifications
+│   │       ├── totp_service.py         # TOTP 2FA setup, verify, backup codes
 │   │       └── audit_service.py       # Audit log transitions
 │   └── requirements.txt
 ├── contracts/
@@ -78,7 +79,7 @@ CapstoneV3-main/
 │   │   │   ├── shared/       # Messages (both roles)
 │   │   │   └── admin/        # Dashboard, Reports, Users, UserSearch, Jobs, Proposals,
 │   │   │                     # Contracts, Disputes, AuditLogs
-│   │   ├── components/       # Navbar, PostProjectModal, layout
+│   │   ├── components/       # Navbar, PostProjectModal, TOTPSettings, layout
 │   │   └── services/         # api.js, web3.js, contractAbi.js, ipfs.js
 │   └── package.json
 ├── scripts/
@@ -96,6 +97,9 @@ CapstoneV3-main/
 - **Smart Contract Escrow** — funds locked on-chain until milestones approved
 - **Milestone-based Payments** — submit deliverables, client approves, ETH released automatically
 - **Real-time Messaging** — WebSocket-powered thread-based inbox with read receipts, profile pictures
+- **Chat Deletion** — freelancers and clients can delete conversations (with contract/dispute guards)
+- **Auto-chat on Hire** — message auto-sent when client accepts a proposal
+- **Auto-chat on Invitation** — thread created when client invites a freelancer to a job
 - **Wallet Management** — MetaMask connect, max 2 accounts per wallet (1 client + 1 freelancer)
 - **Notifications** — real-time bell for milestone updates, contract status changes, dispute activity
 - **Profile Pictures** — upload to IPFS, shown in messages, navbars, and user search
@@ -106,6 +110,10 @@ CapstoneV3-main/
 - **Freelancer Disputes** — freelancers can raise disputes and chat with admin (e.g. client not accepting delivered work)
 - **Dispute Resolution** — admin reviews deliverables, resolves with on-chain refund or release
 - **Anonymous Disputes** — admin sees user IDs only, can search usernames separately
+- **Chat Deletion Rules** — chat can only be deleted when:
+  - Contract is `completed` or `cancelled`
+  - Contract is `disputed` and dispute is `resolved`
+  - No contract exists (pure messaging)
 - **Dynamic Job Listings** — completed/hired jobs auto-hidden, real-time applicant count per job
 - **Notification Bell** — real-time unread badge, mark read/all read, server-authoritative state
 
@@ -128,6 +136,12 @@ CapstoneV3-main/
 - **Role Required at Signup** — both email/password and MetaMask registration require explicit role selection
 - **Wallet Limit** — one wallet can connect to max 2 accounts (1 client + 1 freelancer)
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
+- **TOTP 2FA** — optional two-factor authentication for email/password users (Microsoft Authenticator, Google Authenticator, Authy)
+  - Setup: scan QR code or enter secret manually, verify with 6-digit code
+  - Login: 6-digit code or single-use backup code (8 codes generated)
+  - Rate limiting: 5 attempts per 60 seconds
+  - Works completely offline — no internet needed after scanning QR code
+  - Applies to freelancers, clients, and admins
 
 ### Backend
 - **Async Processing** — `asyncio.to_thread()` for blockchain/IPFS calls, non-blocking
@@ -202,6 +216,30 @@ Interactive menu to manage admin accounts:
 ## API Docs
 
 Once running, visit `http://localhost:8000/docs` for the auto-generated Swagger UI.
+
+### Auth Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/auth/register` | Register with email/password |
+| POST | `/api/auth/login` | Login with email/password (returns `requires_totp` if 2FA enabled) |
+| POST | `/api/auth/admin/login` | Admin login (returns `requires_totp` if 2FA enabled) |
+| POST | `/api/auth/totp/status` | Check if 2FA is enabled |
+| POST | `/api/auth/totp/setup` | Generate TOTP secret + QR code + backup codes |
+| POST | `/api/auth/totp/verify` | Confirm TOTP setup with code |
+| POST | `/api/auth/totp/validate` | Complete login with TOTP code (rate-limited) |
+| POST | `/api/auth/totp/disable` | Disable 2FA (requires current code) |
+
+### Messaging Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/messages/send` | Send a message |
+| GET | `/api/messages/inbox` | Get all messages |
+| POST | `/api/messages/{id}/read` | Mark message as read |
+| GET | `/api/messages/unread-count` | Count unread messages |
+| DELETE | `/api/messages/thread/{partner_id}` | Delete entire conversation (contract/dispute guards) |
+| WS | `/api/messages/ws/{user_id}` | Real-time WebSocket connection |
 
 ## License
 

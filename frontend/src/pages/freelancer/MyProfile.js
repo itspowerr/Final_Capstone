@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import api from '../../services/api';
+import TOTPSettings from '../../components/shared/TOTPSettings';
 
 export default function MyProfile() {
   const navigate = useNavigate();
@@ -345,6 +346,8 @@ export default function MyProfile() {
                 Connect MetaMask
               </button>
             </div>
+
+            <TOTPSettings />
 
             <div style={{ display: 'flex', gap: 10 }}>
               <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveProfile}>Save Profile</button>
