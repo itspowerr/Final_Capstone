@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.models import Contract, ContractMilestone, Job, Proposal, User
 from app.routers.auth import get_current_user
+from app.routers.messages import Message, manager as msg_manager
 from app.schemas import ProposalCreate, ProposalResponse
 
 from app.services.blockchain_service import create_contract_on_chain, set_freelancer_on_chain, to_wei
@@ -201,4 +202,29 @@ async def accept_proposal(
 
     await db.commit()
     await db.refresh(proposal)
+
+    job_result = await db.execute(select(Job).where(Job.id == proposal.job_id))
+    job = job_result.scalar_one_or_none()
+    hire_msg = Message(
+        sender_id=current_user.id,
+        receiver_id=proposal.freelancer_id,
+        content=f"You've been hired for \"{job.title}\"! Let's get started.",
+        job_id=proposal.job_id,
+    )
+    db.add(hire_msg)
+    await db.commit()
+    await db.refresh(hire_msg)
+    await msg_manager.broadcast_to_both(current_user.id, proposal.freelancer_id, {
+        "type": "new_message",
+        "message": {
+            "id": hire_msg.id,
+            "sender_id": hire_msg.sender_id,
+            "receiver_id": hire_msg.receiver_id,
+            "content": hire_msg.content,
+            "job_id": hire_msg.job_id,
+            "read": False,
+            "created_at": hire_msg.created_at.isoformat() if hire_msg.created_at else None,
+        },
+    })
+
     return ProposalResponse.model_validate(proposal)

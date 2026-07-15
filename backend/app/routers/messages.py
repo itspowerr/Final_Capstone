@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Base, async_session_factory, get_db
 from app.routers.auth import get_current_user
-from app.models import User
+from app.models import User, Contract, Dispute
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -174,3 +174,62 @@ async def unread_count(
         )
     )
     return {"count": result.scalar() or 0}
+
+
+@router.delete("/thread/{partner_id}")
+async def delete_thread(
+    partner_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    contract_result = await db.execute(
+        select(Contract).where(
+            or_(
+                (Contract.client_id == current_user.id) & (Contract.freelancer_id == partner_id),
+                (Contract.client_id == partner_id) & (Contract.freelancer_id == current_user.id),
+            )
+        )
+    )
+    contract = contract_result.scalar_one_or_none()
+
+    if contract:
+        deletable_statuses = {"completed", "cancelled"}
+        if contract.status.value in deletable_statuses:
+            pass
+        elif contract.status.value == "disputed":
+            dispute_result = await db.execute(
+                select(Dispute).where(
+                    Dispute.contract_id == contract.id,
+                    Dispute.status == "resolved",
+                )
+            )
+            if not dispute_result.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=403,
+                    detail="Cannot delete chat while dispute is active. Wait for it to be resolved.",
+                )
+        else:
+            raise HTTPException(
+                status_code=403,
+                detail="Cannot delete chat while contract is active. Complete or cancel the contract first.",
+            )
+
+    result = await db.execute(
+        select(Message).where(
+            or_(
+                (Message.sender_id == current_user.id) & (Message.receiver_id == partner_id),
+                (Message.sender_id == partner_id) & (Message.receiver_id == current_user.id),
+            )
+        )
+    )
+    messages_to_delete = result.scalars().all()
+    for msg in messages_to_delete:
+        await db.delete(msg)
+    await db.commit()
+
+    await manager.send_to_user(partner_id, {
+        "type": "thread_deleted",
+        "partner_id": current_user.id,
+    })
+
+    return {"status": "deleted", "count": len(messages_to_delete)}

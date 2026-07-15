@@ -142,6 +142,16 @@ export default function Messages({ NavbarComponent }) {
             messagesRef.current = updated;
             return updated;
           });
+        } else if (data.type === 'thread_deleted') {
+          setMessages(prev => {
+            const updated = prev.filter(m =>
+              !((m.sender_id === data.partner_id && m.receiver_id === myId) ||
+                (m.sender_id === myId && m.receiver_id === data.partner_id))
+            );
+            messagesRef.current = updated;
+            return updated;
+          });
+          setActiveThread(prev => prev?.partnerId === data.partner_id ? null : prev);
         }
       } catch {}
     };
@@ -206,6 +216,22 @@ export default function Messages({ NavbarComponent }) {
     }
   }
 
+  async function deleteThread(partnerId) {
+    if (!window.confirm('Delete this entire conversation?')) return;
+    try {
+      await api.delete(`/messages/thread/${partnerId}`);
+      setMessages(prev => prev.filter(m =>
+        !((m.sender_id === myId && m.receiver_id === partnerId) ||
+          (m.sender_id === partnerId && m.receiver_id === myId))
+      ));
+      setActiveThread(null);
+      showToast('Conversation deleted');
+    } catch (err) {
+      const msg = err.response?.data?.detail || 'Failed to delete';
+      showToast(msg, '!');
+    }
+  }
+
   function showToast(msg, icon) {
     setToast({ msg, icon: icon || '+' });
     setTimeout(() => setToast(null), 2500);
@@ -254,6 +280,8 @@ export default function Messages({ NavbarComponent }) {
           border-bottom: 1px solid #f1f5f9; position: relative;
         }
         .msg-thread:hover { background: #f8fafc; }
+        .msg-thread:hover .msg-thread-delete { opacity: .6; }
+        .msg-thread-delete:hover { opacity: 1 !important; }
         .msg-thread.active { background: var(--accent-pale); }
         .msg-thread-avatar {
           width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
@@ -423,6 +451,20 @@ export default function Messages({ NavbarComponent }) {
                   <div className="msg-thread-time">{formatTime(t.lastMessage.created_at)}</div>
                   {t.unread > 0 && <div className="msg-unread-badge">{t.unread}</div>}
                 </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteThread(t.partnerId); }}
+                  style={{
+                    position: 'absolute', top: 8, right: 8, background: 'none',
+                    border: 'none', cursor: 'pointer', opacity: 0, transition: 'opacity .15s',
+                    color: '#dc2626', padding: 2, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}
+                  className="msg-thread-delete"
+                  title="Delete conversation"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                </button>
               </div>
             ))}
             {threads.length === 0 && !loading && (
@@ -467,6 +509,23 @@ export default function Messages({ NavbarComponent }) {
                 <div className="msg-chat-header-info">
                   <h3>{avatarCache[activeThread.partnerId]?.name || activeThread.partnerId}</h3>
                   <p>{activeThread.messages.length} message{activeThread.messages.length !== 1 ? 's' : ''}</p>
+                </div>
+                <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button
+                    onClick={() => deleteThread(activeThread.partnerId)}
+                    style={{
+                      background: 'none', border: '1px solid #fecaca', borderRadius: 8,
+                      padding: '6px 10px', cursor: 'pointer', color: '#dc2626',
+                      fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                      transition: 'all .15s',
+                    }}
+                    title="Delete conversation"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Delete
+                  </button>
                 </div>
               </div>
 
