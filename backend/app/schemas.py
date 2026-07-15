@@ -70,6 +70,7 @@ class TokenResponse(BaseModel):
     user: UserResponse
     requires_totp: bool = False
     totp_token: Optional[str] = None
+    backup_login: bool = False
 
 
 class RegisterRequest(BaseModel):
@@ -100,7 +101,7 @@ class TOTPVerifyRequest(BaseModel):
 
 class TOTPValidateRequest(BaseModel):
     totp_token: str
-    code: str = Field(..., min_length=6, max_length=8)
+    code: str = Field(..., min_length=6, max_length=9)
 
 
 class TOTPSetupResponse(BaseModel):

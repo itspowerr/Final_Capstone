@@ -32,7 +32,7 @@ export default function Navbar() {
       </div>
       <div className="admin-topbar-right">
         <NotificationBell />
-        <button className="btn btn-outline btn-sm" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); navigate('/login'); }}>Logout</button>
+        <button className="btn btn-outline btn-sm" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); localStorage.removeItem('backup_login'); navigate('/login'); }}>Logout</button>
       </div>
     </div>
   );

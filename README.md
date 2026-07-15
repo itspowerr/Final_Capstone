@@ -140,6 +140,8 @@ CapstoneV3-main/
   - Setup: scan QR code or enter secret manually, verify with 6-digit code
   - Login flow: tabs hidden, dedicated "Don't have your authenticator?" link toggles between authenticator code (6-digit) and backup code (XXXX-XXXX) input modes
   - Backup codes: 8 single-use codes generated at setup, SHA-256 hashed, consumed on use
+  - Backup code recovery: after logging in with a backup code, profile shows a warning banner to reset 2FA and set up a new device
+  - 2FA reset: `POST /auth/totp/reset` disables 2FA without requiring a TOTP code (only works with backup-code login token)
   - Rate limiting: 5 attempts per 60 seconds, cooldown persisted in localStorage across page refreshes
   - Works completely offline — no internet needed after scanning QR code
 
@@ -227,8 +229,9 @@ Once running, visit `http://localhost:8000/docs` for the auto-generated Swagger 
 | POST | `/api/auth/totp/status` | Check if 2FA is enabled |
 | POST | `/api/auth/totp/setup` | Generate TOTP secret + QR code + backup codes |
 | POST | `/api/auth/totp/verify` | Confirm TOTP setup with code |
-| POST | `/api/auth/totp/validate` | Complete login with TOTP code (rate-limited) |
-| POST | `/api/auth/totp/disable` | Disable 2FA (requires current code) |
+| POST | `/api/auth/totp/validate` | Complete login with TOTP code (rate-limited, returns `backup_login` flag) |
+| POST | `/api/auth/totp/disable` | Disable 2FA (requires current TOTP code) |
+| POST | `/api/auth/totp/reset` | Reset 2FA after backup code login (no TOTP code required) |
 
 ### Messaging Endpoints
 

@@ -29,12 +29,14 @@ api.interceptors.response.use(
           );
           localStorage.setItem("access_token", data.access_token);
           localStorage.setItem("refresh_token", data.refresh_token);
+          localStorage.removeItem("backup_login");
           original.headers.Authorization = `Bearer ${data.access_token}`;
           return api(original);
         } catch {
           localStorage.removeItem("access_token");
           localStorage.removeItem("refresh_token");
           localStorage.removeItem("user");
+          localStorage.removeItem("backup_login");
           window.location.href = "/login";
         }
       }

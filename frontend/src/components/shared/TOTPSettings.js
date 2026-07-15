@@ -10,6 +10,8 @@ export default function TOTPSettings() {
   const [step, setStep] = useState('idle');
   const [backupCodes, setBackupCodes] = useState(null);
   const [toast, setToast] = useState(null);
+  const [backupLogin, setBackupLogin] = useState(() => localStorage.getItem('backup_login') === '1');
+  const [resetting, setResetting] = useState(false);
 
   const showToast = (msg, icon) => {
     setToast({ msg, icon: icon || '+' });
@@ -69,6 +71,23 @@ export default function TOTPSettings() {
     } catch (err) {
       const msg = err.response?.data?.detail?.message || 'Invalid code';
       showToast(msg, '!');
+    }
+  };
+
+  const handleReset2FA = async () => {
+    setResetting(true);
+    try {
+      await api.post('/auth/totp/reset');
+      setStatus({ enabled: false, has_secret: false });
+      setStep('idle');
+      localStorage.removeItem('backup_login');
+      setBackupLogin(false);
+      showToast('2FA has been reset. You can set it up on a new device.');
+    } catch (err) {
+      const msg = err.response?.data?.detail?.message || 'Failed to reset 2FA';
+      showToast(msg, '!');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -139,6 +158,33 @@ export default function TOTPSettings() {
             )}
           </div>
         </div>
+
+        {backupLogin && status.enabled && (
+          <div style={{
+            padding: '14px 16px', borderRadius: 8, marginBottom: 16,
+            background: '#fef3c7', border: '1px solid #fcd34d', color: '#92400e', fontSize: 13,
+            display: 'flex', alignItems: 'flex-start', gap: 10,
+          }}>
+            <span style={{ fontSize: 18, flexShrink: 0, lineHeight: 1 }}>&#9888;</span>
+            <div>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>You logged in with a backup code</div>
+              <div style={{ lineHeight: 1.5 }}>
+                Your authenticator device may be lost. Reset 2FA below to disable the old setup and configure a new device.
+              </div>
+              <button
+                className="btn"
+                onClick={handleReset2FA}
+                disabled={resetting}
+                style={{
+                  marginTop: 10, padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                  background: '#dc2626', color: '#fff', borderRadius: 6,
+                }}
+              >
+                {resetting ? 'Resetting...' : 'Reset 2FA & Set Up New Device'}
+              </button>
+            </div>
+          </div>
+        )}
 
         {!status.enabled && step === 'idle' && (
           <div>
@@ -221,7 +267,7 @@ export default function TOTPSettings() {
           </div>
         )}
 
-        {status.enabled && step === 'idle' && (
+        {status.enabled && step === 'idle' && !backupLogin && (
           <div>
             <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16, lineHeight: 1.6 }}>
               2FA is enabled. To disable it, enter the current code from your authenticator app.
@@ -245,7 +291,6 @@ export default function TOTPSettings() {
                 className="btn"
                 onClick={handleDisable}
                 style={{ background: '#dc2626', color: '#fff', flexShrink: 0 }}
-              >
               >
                 Disable 2FA
               </button>

@@ -151,6 +151,9 @@ export default function Login() {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
+      if (response.data.backup_login) {
+        localStorage.setItem('backup_login', '1');
+      }
       navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
     } catch (err) {
       const detail = err.response?.data?.detail;

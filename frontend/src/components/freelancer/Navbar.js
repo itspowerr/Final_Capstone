@@ -24,6 +24,10 @@ export default function Navbar({ activePage }) {
 
   const handleLogout = () => {
     disconnectWallet();
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('backup_login');
     navigate('/login');
   };
 

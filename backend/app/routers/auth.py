@@ -54,7 +54,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(user_id: str) -> str:
+def create_access_token(user_id: str, backup_login: bool = False) -> str:
     expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
     payload = {
         "sub": user_id,
@@ -62,6 +62,7 @@ def create_access_token(user_id: str) -> str:
         "type": "access",
         "iat": datetime.now(timezone.utc),
         "jti": token_hex(16),
+        "backup_login": backup_login,
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
@@ -264,8 +265,9 @@ async def refresh(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
 
     return TokenResponse(
         access_token=access_token,
-        refresh_token=new_refresh_token,
+        refresh_token=refresh_token,
         user=UserResponse.model_validate(user),
+        backup_login=used_backup_code,
     )
 
 
@@ -351,10 +353,11 @@ async def totp_validate(
     rate_key = f"totp_{user_id}"
     totp_rate_limit[rate_key] = [t for t in totp_rate_limit[rate_key] if now - t < TOTP_RATE_WINDOW]
     if len(totp_rate_limit[rate_key]) >= TOTP_MAX_ATTEMPTS:
-        totp_rate_limit[rate_key].clear()
+        oldest = totp_rate_limit[rate_key][0]
+        remaining = int(TOTP_RATE_WINDOW - (now - oldest)) + 1
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail={"code": "RATE_LIMITED", "message": f"Too many attempts. Wait {TOTP_RATE_WINDOW} seconds and try again."},
+            detail={"code": "RATE_LIMITED", "message": f"Too many attempts. Wait {remaining} seconds and try again."},
         )
     totp_rate_limit[rate_key].append(now)
 
@@ -369,11 +372,13 @@ async def totp_validate(
     code = data.code.strip()
 
     code_valid = False
+    used_backup_code = False
     if user.totp_secret and verify_code(user.totp_secret, code):
         code_valid = True
     elif user.totp_backup_codes:
         code_valid, remaining = verify_backup_code(code, user.totp_backup_codes)
         if code_valid:
+            used_backup_code = True
             user.totp_backup_codes = remaining
             await db.commit()
 
@@ -385,7 +390,7 @@ async def totp_validate(
 
     totp_rate_limit.pop(rate_key, None)
 
-    access_token = create_access_token(user.id)
+    access_token = create_access_token(user.id, backup_login=used_backup_code)
     refresh_token = create_refresh_token(user.id)
 
     return TokenResponse(
@@ -425,3 +430,58 @@ async def totp_disable(
     await db.commit()
 
     return {"status": "disabled", "message": "2FA has been disabled successfully."}
+
+
+@router.post("/totp/reset")
+async def totp_reset(
+    authorization: str = Header(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Reset 2FA after logging in with a backup code. No TOTP code required."""
+    if not authorization:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "MISSING_AUTH_HEADER", "message": "Missing authorization header"},
+        )
+
+    scheme, _, token = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_AUTH_SCHEME", "message": "Invalid authorization scheme"},
+        )
+
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_TOKEN", "message": "Invalid or expired token"},
+        )
+
+    if not payload.get("backup_login"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "BACKUP_LOGIN_REQUIRED", "message": "2FA reset is only available after logging in with a backup code."},
+        )
+
+    user_id = payload.get("sub")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "USER_NOT_FOUND", "message": "User not found."},
+        )
+
+    if not user.totp_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "TOTP_NOT_ENABLED", "message": "2FA is not enabled."},
+        )
+
+    user.totp_enabled = False
+    user.totp_secret = None
+    user.totp_backup_codes = []
+    await db.commit()
+
+    return {"status": "disabled", "message": "2FA has been reset. You can now set it up on a new device."}
