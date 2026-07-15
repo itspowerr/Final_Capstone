@@ -139,7 +139,7 @@ CapstoneV3-main/
 - **TOTP 2FA** — optional two-factor authentication for all users (freelancer, client, admin)
   - Setup: scan QR code or enter secret manually, verify with 6-digit code
   - Login flow: tabs hidden, dedicated "Don't have your authenticator?" link toggles between authenticator code (6-digit) and backup code (XXXX-XXXX) input modes
-  - Backup codes: 8 single-use codes generated at setup, SHA-256 hashed, consumed on use
+  - Backup codes: 8 single-use codes generated at setup, SHA-256 hashed, consumed on use; downloadable as .txt file
   - Backup code recovery: after logging in with a backup code, profile shows a warning banner to reset 2FA and set up a new device
   - 2FA reset: `POST /auth/totp/reset` disables 2FA without requiring a TOTP code (only works with backup-code login token)
   - Rate limiting: 5 attempts per 60 seconds, cooldown persisted in localStorage across page refreshes

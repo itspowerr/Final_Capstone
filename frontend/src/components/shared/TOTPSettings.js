@@ -255,9 +255,28 @@ export default function TOTPSettings() {
                 <div className="totp-grid-item" key={i}>{code}</div>
               ))}
             </div>
-            <button className="btn btn-outline" onClick={() => setBackupCodes(null)} style={{ marginTop: 8 }}>
-              I've saved my codes
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button
+                className="btn btn-outline"
+                onClick={() => {
+                  const blob = new Blob(
+                    [backupCodes.map((c, i) => `${i + 1}. ${c}`).join('\n')],
+                    { type: 'text/plain' }
+                  );
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'totp-backup-codes.txt';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+              >
+                Download Codes
+              </button>
+              <button className="btn btn-outline" onClick={() => setBackupCodes(null)}>
+                I've saved my codes
+              </button>
+            </div>
           </div>
         )}
 
