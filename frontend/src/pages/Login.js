@@ -1,5 +1,5 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import api from '../services/api.js';
@@ -50,8 +50,36 @@ export default function Login() {
   const [totpToken, setTotpToken] = useState('');
   const [totpCode, setTotpCode] = useState('');
   const [totpUser, setTotpUser] = useState(null);
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [cooldown, setCooldown] = useState(() => {
+    const until = parseInt(localStorage.getItem('totp_cooldown_until') || '0', 10);
+    if (until > Date.now()) return Math.ceil((until - Date.now()) / 1000);
+    return 0;
+  });
+  const cooldownRef = useRef(null);
 
   const panel = panels[tab];
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      localStorage.removeItem('totp_cooldown_until');
+      return;
+    }
+    localStorage.setItem('totp_cooldown_until', String(Date.now() + cooldown * 1000));
+    cooldownRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          localStorage.removeItem('totp_cooldown_until');
+          return 0;
+        }
+        localStorage.setItem('totp_cooldown_until', String(Date.now() + (prev - 1) * 1000));
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(cooldownRef.current);
+  }, [cooldown > 0]);
 
   const validateLogin = () => {
     const errs = {};
@@ -126,8 +154,15 @@ export default function Login() {
       navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
     } catch (err) {
       const detail = err.response?.data?.detail;
-      const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
-      setError(errorMsg);
+      if (err.response?.status === 429 && detail?.code === 'RATE_LIMITED') {
+        const match = detail.message.match(/Wait (\d+) seconds/);
+        const secs = match ? parseInt(match[1], 10) : 60;
+        setCooldown(secs);
+        setError(detail.message);
+      } else {
+        const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -261,10 +296,12 @@ export default function Login() {
             Back to home
           </Link>
 
-          <div className="tab-switcher">
-            <button className={`tab-btn ${tab === 'login' ? 'active' : ''}`} onClick={() => setTab('login')}>Sign In</button>
-            <button className={`tab-btn ${tab === 'register' ? 'active' : ''}`} onClick={() => setTab('register')}>Create Account</button>
-          </div>
+          {!totpPending && (
+            <div className="tab-switcher">
+              <button className={`tab-btn ${tab === 'login' ? 'active' : ''}`} onClick={() => setTab('login')}>Sign In</button>
+              <button className={`tab-btn ${tab === 'register' ? 'active' : ''}`} onClick={() => setTab('register')}>Create Account</button>
+            </div>
+          )}
 
           {/* Error Popup — visible on both tabs for wallet/auth errors */}
           {error && (
@@ -294,39 +331,58 @@ export default function Login() {
                 </p>
               </div>
 
-              {error && (
-                <div className="error-popup">
-                  <div className="error-popup-content">
-                    <div className="error-popup-icon">!</div>
-                    <div className="error-popup-text">{error}</div>
-                    <button className="error-popup-close" onClick={() => setError(null)}>×</button>
-                  </div>
-                </div>
-              )}
-
               <form onSubmit={handleTOTPValidate}>
                 <div className="form-group">
-                  <label className="form-label">Verification Code</label>
+                  <label className="form-label">
+                    {useBackupCode ? 'Backup Code' : 'Verification Code'}
+                  </label>
                   <input
                     className="form-input"
                     type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={8}
-                    placeholder="000000"
+                    inputMode={useBackupCode ? 'text' : 'numeric'}
+                    pattern={useBackupCode ? '[A-Za-z0-9-]*' : '[0-9]*'}
+                    maxLength={useBackupCode ? 9 : 6}
+                    placeholder={cooldown > 0 ? `Locked for ${cooldown}s` : useBackupCode ? 'XXXX-XXXX' : '000000'}
                     value={totpCode}
-                    onChange={e => setTotpCode(e.target.value.replace(/[^0-9a-zA-Z-]/g, ''))}
-                    autoFocus
-                    style={{ textAlign: 'center', fontSize: 22, letterSpacing: 6, fontWeight: 700 }}
+                    onChange={e => {
+                      if (cooldown > 0) return;
+                      if (useBackupCode) {
+                        setTotpCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''));
+                      } else {
+                        setTotpCode(e.target.value.replace(/[^0-9]/g, ''));
+                      }
+                    }}
+                    disabled={cooldown > 0}
+                    autoFocus={cooldown <= 0}
+                    style={{
+                      textAlign: 'center', fontSize: 22, letterSpacing: 6, fontWeight: 700,
+                      opacity: cooldown > 0 ? 0.5 : 1,
+                    }}
                   />
-                  <div className="form-hint">Enter your 6-digit code or a backup code (XXXX-XXXX)</div>
+                  {cooldown > 0 ? (
+                    <div className="form-hint" style={{ color: '#dc2626', fontWeight: 600 }}>
+                      Too many attempts. Try again in {cooldown} second{cooldown !== 1 ? 's' : ''}.
+                    </div>
+                  ) : useBackupCode ? (
+                    <div className="form-hint">Enter one of your single-use backup codes</div>
+                  ) : (
+                    <div className="form-hint">Enter the 6-digit code from your authenticator app</div>
+                  )}
                 </div>
-                <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-                  {loading ? 'Verifying...' : 'Verify & Sign In'}
+                <button type="submit" className="btn btn-primary btn-full" disabled={loading || cooldown > 0}>
+                  {cooldown > 0 ? `Locked (${cooldown}s)` : loading ? 'Verifying...' : 'Verify & Sign In'}
                 </button>
               </form>
-              <div style={{ textAlign: 'center', marginTop: 16 }}>
-                <a onClick={() => { setTotpPending(false); setTotpCode(''); setError(null); }} style={{ fontSize: 13, color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}>
+              <div style={{ textAlign: 'center', marginTop: 12 }}>
+                <a
+                  onClick={() => { setUseBackupCode(!useBackupCode); setTotpCode(''); setError(null); }}
+                  style={{ fontSize: 13, color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
+                >
+                  {useBackupCode ? 'Use authenticator app instead' : "Don't have your authenticator?"}
+                </a>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 8 }}>
+                <a onClick={() => { setTotpPending(false); setTotpCode(''); setError(null); setUseBackupCode(false); }} style={{ fontSize: 13, color: 'var(--text-3)', cursor: 'pointer' }}>
                   ← Back to login
                 </a>
               </div>

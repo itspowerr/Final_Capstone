@@ -136,12 +136,12 @@ CapstoneV3-main/
 - **Role Required at Signup** — both email/password and MetaMask registration require explicit role selection
 - **Wallet Limit** — one wallet can connect to max 2 accounts (1 client + 1 freelancer)
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
-- **TOTP 2FA** — optional two-factor authentication for email/password users (Microsoft Authenticator, Google Authenticator, Authy)
+- **TOTP 2FA** — optional two-factor authentication for all users (freelancer, client, admin)
   - Setup: scan QR code or enter secret manually, verify with 6-digit code
-  - Login: 6-digit code or single-use backup code (8 codes generated)
-  - Rate limiting: 5 attempts per 60 seconds
+  - Login flow: tabs hidden, dedicated "Don't have your authenticator?" link toggles between authenticator code (6-digit) and backup code (XXXX-XXXX) input modes
+  - Backup codes: 8 single-use codes generated at setup, SHA-256 hashed, consumed on use
+  - Rate limiting: 5 attempts per 60 seconds, cooldown persisted in localStorage across page refreshes
   - Works completely offline — no internet needed after scanning QR code
-  - Applies to freelancers, clients, and admins
 
 ### Backend
 - **Async Processing** — `asyncio.to_thread()` for blockchain/IPFS calls, non-blocking

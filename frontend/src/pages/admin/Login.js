@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import api from '../../services/api.js';
@@ -12,6 +12,34 @@ export default function AdminLogin() {
   const [totpPending, setTotpPending] = useState(false);
   const [totpToken, setTotpToken] = useState('');
   const [totpCode, setTotpCode] = useState('');
+  const [useBackupCode, setUseBackupCode] = useState(false);
+  const [cooldown, setCooldown] = useState(() => {
+    const until = parseInt(localStorage.getItem('totp_cooldown_until') || '0', 10);
+    if (until > Date.now()) return Math.ceil((until - Date.now()) / 1000);
+    return 0;
+  });
+  const cooldownRef = useRef(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+      localStorage.removeItem('totp_cooldown_until');
+      return;
+    }
+    localStorage.setItem('totp_cooldown_until', String(Date.now() + cooldown * 1000));
+    cooldownRef.current = setInterval(() => {
+      setCooldown(prev => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          localStorage.removeItem('totp_cooldown_until');
+          return 0;
+        }
+        localStorage.setItem('totp_cooldown_until', String(Date.now() + (prev - 1) * 1000));
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(cooldownRef.current);
+  }, [cooldown > 0]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -64,8 +92,15 @@ export default function AdminLogin() {
       navigate('/dashboard');
     } catch (err) {
       const detail = err.response?.data?.detail;
-      const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
-      setError(errorMsg);
+      if (err.response?.status === 429 && detail?.code === 'RATE_LIMITED') {
+        const match = detail.message.match(/Wait (\d+) seconds/);
+        const secs = match ? parseInt(match[1], 10) : 60;
+        setCooldown(secs);
+        setError(detail.message);
+      } else {
+        const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
+        setError(errorMsg);
+      }
     } finally {
       setLoading(false);
     }
@@ -133,28 +168,58 @@ export default function AdminLogin() {
                   </svg>
                 </div>
                 <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>Two-Factor Authentication</h3>
-                <p style={{ fontSize: 13, color: 'var(--text-3)' }}>Enter the code from your authenticator app</p>
+                <p style={{ fontSize: 13, color: 'var(--text-3)' }}>
+                  {useBackupCode ? 'Enter one of your single-use backup codes' : 'Enter the code from your authenticator app'}
+                </p>
               </div>
               <div className="admin-form-group">
-                <label className="admin-form-label">Verification Code</label>
+                <label className="admin-form-label">{useBackupCode ? 'Backup Code' : 'Verification Code'}</label>
                 <input
                   className="admin-form-input"
                   type="text"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={8}
-                  placeholder="000000"
+                  inputMode={useBackupCode ? 'text' : 'numeric'}
+                  pattern={useBackupCode ? '[A-Za-z0-9-]*' : '[0-9]*'}
+                  maxLength={useBackupCode ? 9 : 6}
+                  placeholder={cooldown > 0 ? `Locked for ${cooldown}s` : useBackupCode ? 'XXXX-XXXX' : '000000'}
                   value={totpCode}
-                  onChange={e => setTotpCode(e.target.value.replace(/[^0-9a-zA-Z-]/g, ''))}
-                  autoFocus
-                  style={{ textAlign: 'center', fontSize: 20, letterSpacing: 5, fontWeight: 700 }}
+                  onChange={e => {
+                    if (cooldown > 0) return;
+                    if (useBackupCode) {
+                      setTotpCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''));
+                    } else {
+                      setTotpCode(e.target.value.replace(/[^0-9]/g, ''));
+                    }
+                  }}
+                  disabled={cooldown > 0}
+                  autoFocus={cooldown <= 0}
+                  style={{
+                    textAlign: 'center', fontSize: 20, letterSpacing: 5, fontWeight: 700,
+                    opacity: cooldown > 0 ? 0.5 : 1,
+                  }}
                 />
+                {cooldown > 0 ? (
+                  <div style={{ fontSize: 12, color: '#dc2626', fontWeight: 600, marginTop: 6 }}>
+                    Too many attempts. Try again in {cooldown} second{cooldown !== 1 ? 's' : ''}.
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 6 }}>
+                    {useBackupCode ? 'Enter one of your single-use backup codes' : 'Enter the 6-digit code from your authenticator app'}
+                  </div>
+                )}
               </div>
-              <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }} disabled={loading}>
-                {loading ? 'Verifying...' : 'Verify & Sign In'}
+              <button type="submit" className="btn btn-primary btn-full" style={{ marginTop: 4 }} disabled={loading || cooldown > 0}>
+                {cooldown > 0 ? `Locked (${cooldown}s)` : loading ? 'Verifying...' : 'Verify & Sign In'}
               </button>
               <div style={{ textAlign: 'center', marginTop: 12 }}>
-                <a onClick={() => { setTotpPending(false); setTotpCode(''); setError(null); }} style={{ fontSize: 12, color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}>
+                <a
+                  onClick={() => { setUseBackupCode(!useBackupCode); setTotpCode(''); setError(null); }}
+                  style={{ fontSize: 12, color: 'var(--accent)', cursor: 'pointer', fontWeight: 500 }}
+                >
+                  {useBackupCode ? 'Use authenticator app instead' : "Don't have your authenticator?"}
+                </a>
+              </div>
+              <div style={{ textAlign: 'center', marginTop: 8 }}>
+                <a onClick={() => { setTotpPending(false); setTotpCode(''); setError(null); setUseBackupCode(false); }} style={{ fontSize: 12, color: 'var(--text-3)', cursor: 'pointer' }}>
                   ← Back to login
                 </a>
               </div>
