@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/client/Navbar';
+import { SkeletonCard } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import '../../css/client/browse-freelancers.css';
 
@@ -132,9 +133,8 @@ export default function BrowseFreelancers() {
         </div>
 
         {loading ? (
-          <div className="empty-state">
-            <div className="empty-icon" style={{ fontSize: 32 }}>⏳</div>
-            <h3>Loading freelancers…</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} rows={3} />)}
           </div>
         ) : freelancers.length === 0 ? (
           <div className="empty-state">

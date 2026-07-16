@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import UserSearchSelect from '../../components/admin/UserSearchSelect';
+import { SkeletonTable } from '../../components/shared/Skeleton';
 
 const LIMIT = 10;
 
@@ -84,7 +85,7 @@ export default function AdminJobs() {
       <div className="card">
         <div className="card-body" style={{ paddingTop: 20 }}>
           {loading ? (
-            <div style={{ padding: 20, textAlign: 'center', color: 'var(--text-3)' }}>Loading...</div>
+            <SkeletonTable rows={5} cols={4} />
           ) : items.length === 0 ? (
             <div className="empty-state"><div className="empty-icon">📋</div><h3>No jobs found</h3></div>
           ) : items.map(j => (

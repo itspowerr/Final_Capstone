@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import Navbar from '../../components/client/Navbar';
+import { SkeletonCard } from '../../components/shared/Skeleton';
 import api from '../../services/api.js';
 import '../../css/client/explore-jobs.css';
 
@@ -158,9 +159,8 @@ export default function ExploreJobs() {
         )}
 
         {loading ? (
-          <div className="empty-state">
-            <div className="empty-icon" style={{ fontSize: 32 }}>⏳</div>
-            <h3>Loading jobs…</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            {Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} rows={3} />)}
           </div>
         ) : fetchError ? (
           <div className="empty-state">

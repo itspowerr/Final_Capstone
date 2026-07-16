@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
+import { SkeletonTable } from '../../components/shared/Skeleton';
 
 const LIMIT = 30;
 
@@ -72,7 +73,7 @@ export default function AuditLogs() {
       </div>
 
       {loading ? (
-        <div className="empty-state"><p>Loading logs...</p></div>
+        <div className="empty-state"><SkeletonTable rows={5} cols={4} /></div>
       ) : logs.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">&#x1F4DD;</div>

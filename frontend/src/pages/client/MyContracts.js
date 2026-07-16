@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import Navbar from '../../components/client/Navbar';
+import { SkeletonTable } from '../../components/shared/Skeleton';
 import api from '../../services/api.js';
 import { getContract, getSigner, ensureCorrectNetwork } from '../../services/web3.js';
 import { GIG_ESCROW_ABI } from '../../services/contractAbi.js';
@@ -417,10 +418,7 @@ export default function MyContracts() {
         </div>
 
         {loading ? (
-          <div className="empty-state">
-            <div className="empty-icon" style={{ fontSize: 32 }}>⏳</div>
-            <h3>Loading contracts…</h3>
-          </div>
+          <SkeletonTable rows={5} cols={4} />
         ) : fetchError ? (
           <div className="empty-state">
             <div className="empty-icon" style={{ fontSize: 32 }}>⚠️</div>

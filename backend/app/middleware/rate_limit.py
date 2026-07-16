@@ -30,8 +30,8 @@ AUTH_PATHS = (
 )
 
 AUTH_LIMIT = 10
-WRITE_LIMIT = 30
-READ_LIMIT = 100
+WRITE_LIMIT = 60
+READ_LIMIT = 300
 WINDOW = 60
 
 
@@ -41,6 +41,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.url.path == "/health":
+            return await call_next(request)
+
+        if "/notifications/" in request.url.path:
             return await call_next(request)
 
         if get_redis is None:

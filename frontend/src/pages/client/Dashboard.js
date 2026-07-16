@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../../components/client/Navbar';
 import PostProjectModal from '../../components/shared/PostProjectModal';
+import { SkeletonStatCard, SkeletonCard } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import '../../css/client/dashboard.css';
 
@@ -98,7 +99,15 @@ export default function ClientDashboard() {
     return (
       <>
         <Navbar activePage="dashboard" />
-        <div className="dash-body"><p style={{ textAlign: 'center', padding: 48, color: 'var(--text-3)' }}>Loading dashboard…</p></div>
+        <div className="dash-body">
+          <div className="stats-grid">
+            {Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 24 }}>
+            <SkeletonCard rows={4} />
+            <SkeletonCard rows={4} />
+          </div>
+        </div>
       </>
     );
   }

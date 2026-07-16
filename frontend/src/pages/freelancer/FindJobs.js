@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Navbar from '../../components/freelancer/Navbar';
 import api from '../../services/api';
+import { SkeletonCard } from '../../components/shared/Skeleton';
 
 function loadArray(key) {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
@@ -262,7 +263,7 @@ export default function FindJobs() {
         </div>
 
         {error && <div style={{ padding: 12, background: '#fee2e2', color: '#991b1b', borderRadius: 10, marginBottom: 16 }}>{error} <button className="btn btn-outline btn-sm" onClick={() => fetchJobs({ status: 'open', category: fCat || null, search: search || null, page: 1, limit: 20 })}>Retry</button></div>}
-        {loading && <div style={{ padding: 24, color: 'var(--text-3)' }}>Loading jobs…</div>}
+        {loading && <div style={{ padding: 24 }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>{Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} rows={3} />)}</div></div>}
 
         <div className={'jobs-grid' + (currentView === 'list' ? ' list-view' : '')}>
           {!loading && displayed.length === 0 ? (

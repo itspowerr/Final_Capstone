@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { SkeletonStatCard, SkeletonCard } from '../../components/shared/Skeleton';
 
 function Bar({ label, value, max, color }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
@@ -51,7 +52,14 @@ export default function Report() {
     })();
   }, []);
 
-  if (loading) return <div style={{ padding: 40, color: 'var(--text-3)' }}>Loading report...</div>;
+  if (loading) return (
+    <div style={{ padding: '28px 32px' }}>
+      <div className="stats-grid">
+        {Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)}
+      </div>
+      <div style={{ marginTop: 24 }}><SkeletonCard rows={4} /></div>
+    </div>
+  );
   if (!data) return <div style={{ padding: 40, color: 'var(--text-3)' }}>Failed to load report.</div>;
 
   const u = data.users || {};

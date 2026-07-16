@@ -27,6 +27,7 @@ import AuditLogs from './pages/admin/AuditLogs';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminNavbar from './components/admin/Navbar';
 import './css/landing.css';
+import './css/skeleton.css';
 import './css/login.css';
 import './css/client/dashboard.css';
 import './css/client/navbar.css';

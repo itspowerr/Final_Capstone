@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonThreadList, SkeletonChatArea } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 
 const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#c026d3'];
@@ -487,7 +488,7 @@ export default function Messages({ NavbarComponent }) {
         {/* Chat area */}
         <div className={`msg-chat ${activeThread ? 'visible' : ''}`}>
           {loading ? (
-            <div className="msg-loading">Loading messages...</div>
+            <SkeletonChatArea />
           ) : !activeThread ? (
             <div className="msg-empty">
               <div className="msg-empty-icon">

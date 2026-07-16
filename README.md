@@ -103,6 +103,7 @@ CapstoneV3-main/
 - **Wallet Management** — MetaMask connect, max 2 accounts per wallet (1 client + 1 freelancer)
 - **Notifications** — real-time bell for milestone updates, contract status changes, dispute activity
 - **Profile Pictures** — upload to IPFS, shown in messages, navbars, and user search
+- **Skeleton Loading** — shimmer-animated placeholders for all pages (stats, tables, cards, chat)
 
 ### Dispute System
 - **Dispute Initiation** — client or freelancer raises dispute, contract paused on-chain
@@ -152,7 +153,7 @@ CapstoneV3-main/
 - **Event Listener** — syncs 8 blockchain events back to PostgreSQL automatically
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
 - **Graceful On-chain Failures** — Hardhat restarts don't break the app, warnings logged instead
-- **Global Rate Limiting** — Redis sliding window: 10 req/min (auth), 30 req/min (writes), 100 req/min (reads)
+- **Global Rate Limiting** — Redis sliding window: 10 req/min (auth), 60 req/min (writes), 300 req/min (reads); notifications excluded
 
 ## Environment
 

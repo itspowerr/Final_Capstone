@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonStatCard, SkeletonCard } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 
 export default function Dashboard() {
@@ -20,7 +21,17 @@ export default function Dashboard() {
     })();
   }, []);
 
-  if (loading) return <div style={{ padding: 40, color: 'var(--text-3)' }}>Loading dashboard...</div>;
+  if (loading) return (
+    <div style={{ padding: '28px 32px' }}>
+      <div className="stats-grid">
+        {Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)}
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 24 }}>
+        <SkeletonCard rows={4} />
+        <SkeletonCard rows={4} />
+      </div>
+    </div>
+  );
   if (!stats) return <div style={{ padding: 40, color: 'var(--text-3)' }}>Failed to load dashboard data.</div>;
 
   return (

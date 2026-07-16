@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from '../../components/client/Navbar';
 import { getProvider } from '../../services/web3.js';
 import { useApp } from '../../context/AppContext';
+import { SkeletonCard, SkeletonLine } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import TOTPSettings from '../../components/shared/TOTPSettings';
 import '../../css/client/profile.css';
@@ -165,7 +166,22 @@ export default function ClientProfile() {
     return (
       <>
         <Navbar activePage="profile" />
-        <div className="dash-body"><p style={{ padding: 40, color: 'var(--text-3)' }}>Loading profile...</p></div>
+        <div className="dash-body" style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
+            <div className="skeleton-circle" style={{ width: 80, height: 80, borderRadius: '50%' }} />
+            <div style={{ flex: 1 }}>
+              <SkeletonLine width="40%" height={20} />
+              <SkeletonLine width="25%" height={14} style={{ marginTop: 8 }} />
+            </div>
+          </div>
+          <SkeletonCard rows={4} />
+          <div style={{ marginTop: 20 }}>
+            <SkeletonCard rows={2} />
+          </div>
+          <div style={{ marginTop: 20 }}>
+            <SkeletonCard rows={3} />
+          </div>
+        </div>
       </>
     );
   }
