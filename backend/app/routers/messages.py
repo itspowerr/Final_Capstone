@@ -162,6 +162,32 @@ async def mark_read(
     return {"status": "ok"}
 
 
+@router.post("/thread/{partner_id}/read")
+async def mark_thread_read(
+    partner_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Message).where(
+            Message.sender_id == partner_id,
+            Message.receiver_id == current_user.id,
+            Message.read == False,
+        )
+    )
+    msgs = result.scalars().all()
+    for msg in msgs:
+        msg.read = True
+    if msgs:
+        await db.commit()
+        await manager.send_to_user(partner_id, {
+            "type": "message_read",
+            "thread": True,
+            "reader_id": current_user.id,
+        })
+    return {"marked": len(msgs)}
+
+
 @router.get("/unread-count")
 async def unread_count(
     db: AsyncSession = Depends(get_db),

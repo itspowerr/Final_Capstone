@@ -197,6 +197,15 @@ export default function Messages({ NavbarComponent }) {
     setSending(false);
   }
 
+  async function markThreadRead(partnerId) {
+    setMessages(prev => prev.map(m =>
+      m.sender_id === partnerId && m.receiver_id === myId ? { ...m, read: true } : m
+    ));
+    try {
+      await api.post(`/messages/thread/${partnerId}/read`);
+    } catch {}
+  }
+
   async function acceptJob(jobId, partnerId) {
     try {
       await api.post('/proposals', {
@@ -435,7 +444,7 @@ export default function Messages({ NavbarComponent }) {
               <div
                 key={t.partnerId}
                 className={`msg-thread ${activeThread?.partnerId === t.partnerId ? 'active' : ''}`}
-                onClick={() => { setActiveThread(t); setReplyText(''); }}
+                onClick={() => { setActiveThread(t); setReplyText(''); markThreadRead(t.partnerId); }}
               >
                 <Avatar id={t.partnerId} avatarCid={avatarCache[t.partnerId]?.avatar_cid} size={42} />
                 <div className="msg-thread-info">

@@ -116,6 +116,7 @@ CapstoneV3-main/
   - No contract exists (pure messaging)
 - **Dynamic Job Listings** — completed/hired jobs auto-hidden, real-time applicant count per job
 - **Notification Bell** — real-time unread badge, mark read/all read, server-authoritative state
+- **Message Read Receipts** — thread unread badge clears when conversation is opened, bulk mark-read on backend
 
 ### IPFS Integration
 - **Deliverable Upload** — freelancers upload work to IPFS, CID stored in DB and on-chain
