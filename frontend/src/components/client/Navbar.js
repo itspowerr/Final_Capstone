@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import PostProjectModal from '../shared/PostProjectModal.js';
 import NotificationBell from '../shared/NotificationBell.js';
 import { useApp } from '../../context/AppContext';
+import api from '../../services/api';
 import '../../css/client/navbar.css';
 
 export default function Navbar({ activePage }) {
@@ -26,6 +27,7 @@ export default function Navbar({ activePage }) {
 
   const handleLogout = () => {
     disconnectWallet();
+    api.clearCache();
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');

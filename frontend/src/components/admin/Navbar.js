@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import NotificationBell from '../shared/NotificationBell.js';
+import api from '../../services/api';
 
 const links = [
   { path: '/dashboard',  label: 'Dashboard' },
@@ -49,7 +50,7 @@ export default function Navbar() {
           </div>
           <span style={{ color: 'var(--text-1)' }}>{user.username || user.name || 'Admin'}</span>
         </div>
-        <button className="btn btn-outline btn-sm" onClick={() => { localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); localStorage.removeItem('backup_login'); navigate('/login'); }}>Logout</button>
+        <button className="btn btn-outline btn-sm" onClick={() => { api.clearCache(); localStorage.removeItem('access_token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); localStorage.removeItem('backup_login'); navigate('/login'); }}>Logout</button>
       </div>
     </div>
   );

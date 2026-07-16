@@ -177,13 +177,6 @@ body {
 .modal-body { margin-bottom: 20px; }
 .modal-footer { display: flex; gap: 10px; justify-content: flex-end; padding-top: 20px; border-top: 1px solid var(--border); }
 
-.admin-spinner {
-  width: 32px; height: 32px; border: 3px solid var(--border);
-  border-top-color: var(--accent); border-radius: 50%;
-  animation: admin-spin .75s linear infinite;
-}
-@keyframes admin-spin { to { transform: rotate(360deg); } }
-
 .Toast {
   position: fixed; bottom: 24px; right: 24px; z-index: 999;
   padding: 12px 20px; border-radius: 10px; font-size: 14px;
