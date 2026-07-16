@@ -2,6 +2,7 @@
 # FreeLedger — One-command project start
 # Starts: Docker (PostgreSQL + Redis + Hardhat + contract deploy) + Backend + Frontend
 # Works on: macOS, Linux, Windows (Git Bash / WSL)
+# Auto-installs Python and Node.js if missing
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -10,6 +11,90 @@ OS="$(uname -s)"
 PYTHON=""
 PYTHON_BINARIES="python3 python"
 
+# ─── Windows detection ─────────────────────────────────────────────────────
+is_windows() {
+  [[ "$OS" == MINGW* ]] || [[ "$OS" == MSYS* ]] || [[ "$OS" == CYGWIN* ]]
+}
+
+# ─── Auto-install Python if missing ────────────────────────────────────────
+install_python() {
+  echo ""
+  echo "  Python is required but not installed."
+  echo "  Attempting automatic installation..."
+  echo ""
+  if [ "$OS" = "Darwin" ]; then
+    if ! command -v brew >/dev/null 2>&1; then
+      echo "  Installing Homebrew first..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    brew install python
+  elif is_windows; then
+    if command -v winget >/dev/null 2>&1; then
+      winget install Python.Python.3.12 --accept-source-agreements --accept-package-agreements
+    elif command -v choco >/dev/null 2>&1; then
+      choco install python -y
+    else
+      echo "  Could not auto-install Python on Windows."
+      echo "  Please install Python 3 manually:"
+      echo "    winget install Python.Python.3.12"
+      echo "    or download from: https://www.python.org/downloads/"
+      exit 1
+    fi
+  elif [ -f /etc/debian_version ]; then
+    sudo apt-get update && sudo apt-get install -y python3 python3-pip python3-venv
+  elif [ -f /etc/redhat-release ]; then
+    sudo yum install -y python3 python3-pip
+  else
+    echo "  Could not auto-install Python."
+    echo "  Please install Python 3 manually:"
+    echo "    macOS:    brew install python"
+    echo "    Linux:    sudo apt install python3 python3-venv"
+    echo "    Windows:  winget install Python.Python.3.12"
+    exit 1
+  fi
+}
+
+# ─── Auto-install Node.js if missing ───────────────────────────────────────
+install_node() {
+  echo ""
+  echo "  Node.js is required but not installed."
+  echo "  Attempting automatic installation..."
+  echo ""
+  if [ "$OS" = "Darwin" ]; then
+    if ! command -v brew >/dev/null 2>&1; then
+      echo "  Installing Homebrew first..."
+      /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    fi
+    brew install node
+  elif is_windows; then
+    if command -v winget >/dev/null 2>&1; then
+      winget install OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements
+    elif command -v choco >/dev/null 2>&1; then
+      choco install nodejs-lts -y
+    else
+      echo "  Could not auto-install Node.js on Windows."
+      echo "  Please install Node.js 18+ manually:"
+      echo "    winget install OpenJS.NodeJS.LTS"
+      echo "    or download from: https://nodejs.org/en/download/"
+      exit 1
+    fi
+  elif [ -f /etc/debian_version ]; then
+    curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+    sudo apt-get install -y nodejs
+  elif [ -f /etc/redhat-release ]; then
+    curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+    sudo yum install -y nodejs
+  else
+    echo "  Could not auto-install Node.js."
+    echo "  Please install Node.js 18+ manually:"
+    echo "    macOS:    brew install node"
+    echo "    Linux:    https://nodejs.org/en/download/"
+    echo "    Windows:  winget install OpenJS.NodeJS.LTS"
+    exit 1
+  fi
+}
+
+# ─── Check & install Python ────────────────────────────────────────────────
 for bin in $PYTHON_BINARIES; do
   if command -v "$bin" >/dev/null 2>&1; then
     PYTHON="$bin"
@@ -18,9 +103,59 @@ for bin in $PYTHON_BINARIES; do
 done
 
 if [ -z "$PYTHON" ]; then
-  echo "ERROR: python3 (or python) not found in PATH"
+  install_python
+  # Re-check after install
+  for bin in $PYTHON_BINARIES; do
+    if command -v "$bin" >/dev/null 2>&1; then
+      PYTHON="$bin"
+      break
+    fi
+  done
+fi
+
+if [ -z "$PYTHON" ]; then
+  echo "ERROR: Python installation failed. Please install Python 3 manually."
   exit 1
 fi
+
+# ─── Check & install Node.js ───────────────────────────────────────────────
+if ! command -v node >/dev/null 2>&1; then
+  install_node
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "ERROR: Node.js installation failed. Please install Node.js 18+ manually."
+  exit 1
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "ERROR: npm not found. Please install Node.js 18+ (includes npm)."
+  exit 1
+fi
+
+# ─── Check Docker ──────────────────────────────────────────────────────────
+if ! command -v docker >/dev/null 2>&1; then
+  echo ""
+  echo "ERROR: Docker is not installed."
+  echo "  Please install Docker Desktop:"
+  echo "    macOS:    https://docker.com/products/docker-desktop"
+  echo "    Windows:  https://docker.com/products/docker-desktop"
+  echo "    Linux:    https://docs.docker.com/engine/install/"
+  echo ""
+  exit 1
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  echo ""
+  echo "ERROR: Docker daemon is not running."
+  echo "  Please start Docker Desktop and try again."
+  echo ""
+  exit 1
+fi
+
+PYTHON_VERSION=$($PYTHON --version 2>&1)
+NODE_VERSION=$(node --version 2>&1)
+DOCKER_VERSION=$(docker --version 2>&1 | head -1)
 
 sed_inplace() {
   # Usage: sed_inplace 's/foo/bar/' file
@@ -80,6 +215,11 @@ log ""
 log "============================================"
 log "  FreeLedger — Starting All Services"
 log "============================================"
+log ""
+log "  Detected:"
+log "    Python:  $PYTHON_VERSION"
+log "    Node.js: $NODE_VERSION"
+log "    Docker:  $DOCKER_VERSION"
 log ""
 
 # ─── Kill stale processes on ports 8000 and 3000/3001 ──────────────────────
