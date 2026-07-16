@@ -44,7 +44,7 @@ export default function ClientProfile() {
           github: data.github_url || '',
           linkedin: data.linkedin_url || '',
           portfolio: data.portfolio_url || '',
-          emailNotifications: true,
+          emailNotifications: data.email_notifications !== false,
           twoFactor: false,
         });
         setAvatarCid(data.avatar_cid || '');
@@ -147,6 +147,7 @@ export default function ClientProfile() {
         linkedin_url: form.linkedin || undefined,
         portfolio_url: form.portfolio || undefined,
         avatar_cid: avatarCid || undefined,
+        email_notifications: form.emailNotifications,
       });
       setUser(data);
       showToast('Profile saved!');

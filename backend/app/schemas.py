@@ -39,6 +39,7 @@ class UserResponse(BaseModel):
     is_active: Optional[bool] = None
     created_at: datetime
     totp_enabled: Optional[bool] = None
+    email_notifications: Optional[bool] = None
 
     class Config:
         from_attributes = True
@@ -61,6 +62,7 @@ class UserUpdate(BaseModel):
     wallet_address: Optional[str] = None
     portfolio_cids: Optional[list[str]] = None
     avatar_cid: Optional[str] = None
+    email_notifications: Optional[bool] = None
 
 
 class TokenResponse(BaseModel):

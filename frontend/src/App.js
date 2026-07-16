@@ -24,6 +24,7 @@ import AdminDisputes from './pages/admin/AdminDisputes';
 import AdminUserSearch from './pages/admin/UserSearch';
 import AdminReport from './pages/admin/Report';
 import AuditLogs from './pages/admin/AuditLogs';
+import AdminProfile from './pages/admin/AdminProfile';
 import AdminNavbar from './components/admin/Navbar';
 import './css/landing.css';
 import './css/login.css';
@@ -79,6 +80,7 @@ export default function App() {
         <Route path="/contracts" element={<ProtectedRoute><AdminLayout><AdminContracts /></AdminLayout></ProtectedRoute>} />
         <Route path="/disputes" element={<ProtectedRoute><AdminLayout><AdminDisputes /></AdminLayout></ProtectedRoute>} />
         <Route path="/audit-logs" element={<ProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><AdminLayout><AdminProfile /></AdminLayout></ProtectedRoute>} />
       </Routes>
     );
   }

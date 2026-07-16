@@ -130,6 +130,7 @@ CapstoneV3-main/
 - **Dispute Management** — expandable cards with milestones, IPFS links, chat, resolution
 - **Audit Logs** — track all system transitions with actor info, filterable by entity/action/actor
 - **System Reports** — stats cards, bar charts, financial summary, recent activity feed
+- **Admin Profile** — account settings, email notifications, TOTP 2FA management
 
 ### Auth & Roles
 - **RBAC** — role assigned at registration, enforced on all endpoints

@@ -123,6 +123,13 @@ async def lifespan(app: FastAPI):
                     f'ALTER TABLE freeledger.users ADD COLUMN IF NOT EXISTS {col} {typ}'
                 )
             )
+
+        # Add email_notifications column if missing
+        await conn.execute(
+            __import__("sqlalchemy").text(
+                "ALTER TABLE freeledger.users ADD COLUMN IF NOT EXISTS email_notifications BOOLEAN DEFAULT TRUE"
+            )
+        )
     yield
     await app.state.redis.close()
     await close_redis()

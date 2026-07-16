@@ -21,6 +21,7 @@ export default function MyProfile() {
   const [availability, setAvailability] = useState('available');
   const [skills, setSkills] = useState([]);
   const [wallet, setWallet] = useState('');
+  const [contracts, setContracts] = useState([]);
   const [skillInput, setSkillInput] = useState('');
   const [avatarCid, setAvatarCid] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -56,9 +57,12 @@ export default function MyProfile() {
         setAvailability(saved.availability || 'available');
         setSkills(saved.skills || []);
         setWallet(saved.wallet || '');
-      } finally {
-        setLoading(false);
       }
+      try {
+        const { data: contractData } = await api.get('/contracts');
+        setContracts(Array.isArray(contractData.contracts) ? contractData.contracts : []);
+      } catch {}
+      setLoading(false);
     })();
   }, []);
 
@@ -162,9 +166,8 @@ export default function MyProfile() {
     }
   }
 
-  const contracts = JSON.parse(localStorage.getItem('fl_my_contracts') || '[]');
   const completed = contracts.filter(c => c.status === 'completed');
-  const earned = completed.reduce((s, c) => s + (c.value || 0), 0);
+  const earned = completed.reduce((s, c) => s + (Number(c.total_amount) || 0), 0);
 
   const availStyle = {
     available: { label: '✅ Available', bg: 'var(--accent-pale)', color: 'var(--accent)', border: '1px solid var(--accent-border)' },

@@ -265,9 +265,8 @@ async def refresh(request: RefreshRequest, db: AsyncSession = Depends(get_db)):
 
     return TokenResponse(
         access_token=access_token,
-        refresh_token=refresh_token,
+        refresh_token=new_refresh_token,
         user=UserResponse.model_validate(user),
-        backup_login=used_backup_code,
     )
 
 
