@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 
 from app.config import settings
 from app.database import engine, Base
@@ -148,6 +149,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.add_middleware(RateLimitMiddleware)
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")

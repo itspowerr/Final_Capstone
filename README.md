@@ -152,6 +152,7 @@ CapstoneV3-main/
 - **Event Listener** — syncs 8 blockchain events back to PostgreSQL automatically
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
 - **Graceful On-chain Failures** — Hardhat restarts don't break the app, warnings logged instead
+- **Global Rate Limiting** — Redis sliding window: 10 req/min (auth), 30 req/min (writes), 100 req/min (reads)
 
 ## Environment
 
