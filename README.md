@@ -154,6 +154,7 @@ CapstoneV3-main/
 - **SIWE Authentication** — Sign-In with Ethereum for wallet-based login
 - **Graceful On-chain Failures** — Hardhat restarts don't break the app, warnings logged instead
 - **Global Rate Limiting** — Redis sliding window: 10 req/min (auth), 60 req/min (writes), 300 req/min (reads); notifications excluded
+- **HTTP Caching** — backend Cache-Control headers (30s SWR for reads) + frontend in-memory 15s request cache with auto-invalidation on mutations
 
 ## Environment
 
