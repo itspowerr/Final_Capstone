@@ -146,7 +146,7 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-# ─── Check Docker (skip in remote mode) ────────────────────────────────────
+# ─── Check Docker (only needed for local mode) ─────────────────────────────
 if [ -z "$REMOTE_HOST" ]; then
   if ! command -v docker >/dev/null 2>&1; then
     echo ""
@@ -236,11 +236,42 @@ log ""
 log "  Detected:"
 log "    Python:  $PYTHON_VERSION"
 log "    Node.js: $NODE_VERSION"
-if [ -n "$REMOTE_HOST" ]; then
-  log "    Docker:  remote ($REMOTE_HOST)"
-else
+if [ -z "$REMOTE_HOST" ]; then
   log "    Docker:  $DOCKER_VERSION"
 fi
+log ""
+
+# ─── Mode selection ───────────────────────────────────────────────────────
+if [ -n "$REMOTE_HOST" ]; then
+  log "  Default mode: Remote Docker ($REMOTE_HOST)"
+else
+  log "  Default mode: Local Docker"
+fi
+log ""
+log "  Select Docker mode:"
+log "    1) Remote Docker (SSH tunnel via Tailscale)"
+log "    2) Local Docker (Docker Desktop)"
+log ""
+read -p "  Enter choice [1/2]: " MODE_CHOICE
+log ""
+
+case "$MODE_CHOICE" in
+  1)
+    if [ -z "$REMOTE_HOST" ]; then
+      REMOTE_HOST="${REMOTE_HOST:-100.89.59.6}"
+      REMOTE_USER="${REMOTE_USER:-capstone}"
+    fi
+    log "  Mode: Remote Docker ($REMOTE_HOST)"
+    ;;
+  2|"")
+    REMOTE_HOST=""
+    log "  Mode: Local Docker"
+    ;;
+  *)
+    warn "Invalid choice '$MODE_CHOICE' — using local Docker"
+    REMOTE_HOST=""
+    ;;
+esac
 log ""
 
 # ─── Kill stale processes on ports 8000 and 3000/3001 ──────────────────────
