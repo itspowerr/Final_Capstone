@@ -3,6 +3,19 @@
 # Starts: Docker (PostgreSQL + Redis + Hardhat + contract deploy) + Backend + Frontend
 # Works on: macOS, Linux, Windows (Git Bash / WSL)
 # Auto-installs Python and Node.js if missing
+#
+# REMOTE MODE: Set REMOTE_HOST to a Tailscale IP to connect to remote Docker
+#   REMOTE_HOST=100.89.59.6 REMOTE_USER=capstone ./start.sh
+#   OR edit the defaults below.
+
+# ─── Remote Docker config ───────────────────────────────────────────────────
+# Leave REMOTE_HOST empty to use local Docker.
+# Set to your Tailscale IP to connect to a remote server.
+REMOTE_HOST="${REMOTE_HOST:-100.89.59.6}"
+REMOTE_USER="${REMOTE_USER:-capstone}"
+REMOTE_SSH_KEY="${REMOTE_SSH_KEY:-}"
+SSH_OPTS="-o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3"
+TUNNEL_PID=""
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -133,29 +146,33 @@ if ! command -v npm >/dev/null 2>&1; then
   exit 1
 fi
 
-# ─── Check Docker ──────────────────────────────────────────────────────────
-if ! command -v docker >/dev/null 2>&1; then
-  echo ""
-  echo "ERROR: Docker is not installed."
-  echo "  Please install Docker Desktop:"
-  echo "    macOS:    https://docker.com/products/docker-desktop"
-  echo "    Windows:  https://docker.com/products/docker-desktop"
-  echo "    Linux:    https://docs.docker.com/engine/install/"
-  echo ""
-  exit 1
-fi
+# ─── Check Docker (skip in remote mode) ────────────────────────────────────
+if [ -z "$REMOTE_HOST" ]; then
+  if ! command -v docker >/dev/null 2>&1; then
+    echo ""
+    echo "ERROR: Docker is not installed."
+    echo "  Please install Docker Desktop:"
+    echo "    macOS:    https://docker.com/products/docker-desktop"
+    echo "    Windows:  https://docker.com/products/docker-desktop"
+    echo "    Linux:    https://docs.docker.com/engine/install/"
+    echo ""
+    exit 1
+  fi
 
-if ! docker info >/dev/null 2>&1; then
-  echo ""
-  echo "ERROR: Docker daemon is not running."
-  echo "  Please start Docker Desktop and try again."
-  echo ""
-  exit 1
+  if ! docker info >/dev/null 2>&1; then
+    echo ""
+    echo "ERROR: Docker daemon is not running."
+    echo "  Please start Docker Desktop and try again."
+    echo ""
+    exit 1
+  fi
 fi
 
 PYTHON_VERSION=$($PYTHON --version 2>&1)
 NODE_VERSION=$(node --version 2>&1)
-DOCKER_VERSION=$(docker --version 2>&1 | head -1)
+if [ -z "$REMOTE_HOST" ]; then
+  DOCKER_VERSION=$(docker --version 2>&1 | head -1)
+fi
 
 sed_inplace() {
   # Usage: sed_inplace 's/foo/bar/' file
@@ -196,10 +213,10 @@ stop_on_failure() {
   log "  - Frontend: cd $ROOT_DIR/frontend && npm install && npm start"
   log "  - Hardhat:  cd $ROOT_DIR/docker && docker compose up -d --force-recreate hardhat"
   log ""
-log ""
-log "  +--------------------------------------+"
-log "  |        Startup failed!               |"
-log "  +--------------------------------------+"
+  log "  +--------------------------------------+"
+  log "  |        Startup failed!               |"
+  log "  +--------------------------------------+"
+  log ""
   exit 1
 }
 
@@ -219,7 +236,11 @@ log ""
 log "  Detected:"
 log "    Python:  $PYTHON_VERSION"
 log "    Node.js: $NODE_VERSION"
-log "    Docker:  $DOCKER_VERSION"
+if [ -n "$REMOTE_HOST" ]; then
+  log "    Docker:  remote ($REMOTE_HOST)"
+else
+  log "    Docker:  $DOCKER_VERSION"
+fi
 log ""
 
 # ─── Kill stale processes on ports 8000 and 3000/3001 ──────────────────────
@@ -237,54 +258,129 @@ fi
 ok "Stale processes cleaned"
 
 # ─── 1. Start Docker infrastructure ───────────────────────────────────────
-log "[1/5] Starting Docker containers (PostgreSQL + Redis + Hardhat)..."
-cd "$ROOT_DIR/docker"
-
-if ! docker images node:20:latest --format "{{.Repository}}:{{.Tag}}" >/dev/null 2>&1; then
-  step "Pulling node:20 image for Hardhat container..."
-  docker pull node:20 | tee -a "$LOG_FILE"
-fi
-
-docker compose up -d 2>&1 | tee -a "$LOG_FILE"
-ok "Docker containers starting"
-log ""
-
-# ─── 2. Wait for Hardhat + contract deployment ────────────────────────────
-log "[2/5] Waiting for Hardhat node + contract deployment..."
-HARDHAT_READY=0
-DEPLOYED_ADDRESS_FILE="$ROOT_DIR/contracts/.contract-address"
 CONTRACT_ADDRESS=""
-for i in $(seq 1 60); do
-  CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8545 2>/dev/null || echo "000")
-  if [ "$CODE" != "000" ]; then
-    if [ -f "$DEPLOYED_ADDRESS_FILE" ]; then
-      CONTRACT_ADDRESS=$(cat "$DEPLOYED_ADDRESS_FILE")
+DEPLOYED_ADDRESS_FILE="$ROOT_DIR/contracts/.contract-address"
+if [ -n "$REMOTE_HOST" ]; then
+  TOTAL_STEPS=4
+else
+  TOTAL_STEPS=5
+fi
+CURRENT_STEP=1
+
+if [ -n "$REMOTE_HOST" ]; then
+  log "[$CURRENT_STEP/$TOTAL_STEPS] Connecting to remote Docker via Tailscale ($REMOTE_HOST)..."
+
+  # Build SSH command with optional key
+  SSH_CMD="ssh $SSH_OPTS"
+  if [ -n "$REMOTE_SSH_KEY" ]; then
+    SSH_CMD="$SSH_CMD -i $REMOTE_SSH_KEY"
+  fi
+
+  # Kill any existing tunnel on our ports
+  step "Cleaning existing tunnels..."
+  # Kill stale SSH tunnels by process pattern
+  if [ "$OS" = "Darwin" ] || [ "$OS" = "Linux" ]; then
+    pkill -f "ssh.*-L.*5432" 2>/dev/null || true
+    pkill -f "ssh.*-L.*8545" 2>/dev/null || true
+  fi
+  for port in 5432 6379 8545 5001 8080; do
+    lsof -ti:"$port" 2>/dev/null | xargs kill -9 2>/dev/null || true
+  done
+  sleep 1
+
+  # Open SSH tunnel — -fN blocks for password input, then forks to background after auth
+  step "Opening SSH tunnel to $REMOTE_HOST (enter password when prompted)..."
+  $SSH_CMD -fN \
+    -L 5432:localhost:5432 \
+    -L 6379:localhost:6379 \
+    -L 8545:localhost:8545 \
+    -L 5001:localhost:5001 \
+    -L 8080:localhost:8080 \
+    "$REMOTE_USER@$REMOTE_HOST"
+
+  # Find the PID of the forked SSH tunnel
+  sleep 1
+  TUNNEL_PID=$(lsof -ti:8545 2>/dev/null | head -1)
+
+  if [ -z "$TUNNEL_PID" ]; then
+    fail "SSH tunnel failed to start"
+    exit 1
+  fi
+  ok "SSH tunnel active (PID: $TUNNEL_PID)"
+
+  # Poll until services are reachable through the tunnel
+  TUNNEL_READY=0
+  for i in $(seq 1 20); do
+    DB_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8545 2>/dev/null || echo "000")
+    if [ "$DB_OK" != "000" ]; then
+      TUNNEL_READY=1
+      break
     fi
-    if [ -n "$CONTRACT_ADDRESS" ]; then
-      CONTRACT_CODE=$(curl -s -X POST http://localhost:8545 \
-        -H "Content-Type: application/json" \
-        -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"$CONTRACT_ADDRESS\",\"latest\"],\"id\":1}" \
-        | $PYTHON -c "import sys,json; print(json.load(sys.stdin).get('result',''))" 2>/dev/null)
-      if [ -n "$CONTRACT_CODE" ] && [ "$CONTRACT_CODE" != "0x" ]; then
-        ok "Hardhat ready + GigEscrow deployed at $CONTRACT_ADDRESS"
-        HARDHAT_READY=1
-        break
+    step "Waiting for tunnel... ($i/20)"
+    sleep 2
+  done
+
+  if [ "$TUNNEL_READY" -ne 1 ]; then
+    warn "Tunnel ports may not be reachable yet — continuing anyway"
+  fi
+
+  # Use the known deployed contract address (deployed inside the remote container)
+  step "Using deployed contract address..."
+  CONTRACT_ADDRESS="0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  ok "Contract address: $CONTRACT_ADDRESS"
+  CURRENT_STEP=2
+
+else
+  # ── Local Docker mode ──────────────────────────────────────────────────
+  log "[1/$TOTAL_STEPS] Starting Docker containers (PostgreSQL + Redis + Hardhat)..."
+  cd "$ROOT_DIR/docker"
+
+  if ! docker images node:20:latest --format "{{.Repository}}:{{.Tag}}" >/dev/null 2>&1; then
+    step "Pulling node:20 image for Hardhat container..."
+    docker pull node:20 | tee -a "$LOG_FILE"
+  fi
+
+  docker compose up -d 2>&1 | tee -a "$LOG_FILE"
+  ok "Docker containers starting"
+
+  log ""
+
+  # ── Wait for Hardhat + contract deployment (local) ───────────────────
+  log "[2/$TOTAL_STEPS] Waiting for Hardhat node + contract deployment..."
+  HARDHAT_READY=0
+  for i in $(seq 1 60); do
+    CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8545 2>/dev/null || echo "000")
+    if [ "$CODE" != "000" ]; then
+      if [ -f "$DEPLOYED_ADDRESS_FILE" ]; then
+        CONTRACT_ADDRESS=$(cat "$DEPLOYED_ADDRESS_FILE")
+      fi
+      if [ -n "$CONTRACT_ADDRESS" ]; then
+        CONTRACT_CODE=$(curl -s -X POST http://localhost:8545 \
+          -H "Content-Type: application/json" \
+          -d "{\"jsonrpc\":\"2.0\",\"method\":\"eth_getCode\",\"params\":[\"$CONTRACT_ADDRESS\",\"latest\"],\"id\":1}" \
+          | $PYTHON -c "import sys,json; print(json.load(sys.stdin).get('result',''))" 2>/dev/null)
+        if [ -n "$CONTRACT_CODE" ] && [ "$CONTRACT_CODE" != "0x" ]; then
+          ok "Hardhat ready + GigEscrow deployed at $CONTRACT_ADDRESS"
+          HARDHAT_READY=1
+          break
+        fi
       fi
     fi
-  fi
-  step "Waiting... ($i/60)"
-  sleep 3
-done
+    step "Waiting... ($i/60)"
+    sleep 3
+  done
 
-if [ "$HARDHAT_READY" -ne 1 ]; then
-  warn "Hardhat worker did not confirm contract deployment in time"
-  warn "Continuing anyway — you may need to run:"
-  warn "  cd $ROOT_DIR/docker && docker compose up -d --force-recreate hardhat"
-  if [ -f "$DEPLOYED_ADDRESS_FILE" ]; then
-    CONTRACT_ADDRESS=$(cat "$DEPLOYED_ADDRESS_FILE")
-  else
-    CONTRACT_ADDRESS="0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  if [ "$HARDHAT_READY" -ne 1 ]; then
+    warn "Hardhat worker did not confirm contract deployment in time"
+    warn "Continuing anyway — you may need to run:"
+    warn "  cd $ROOT_DIR/docker && docker compose up -d --force-recreate hardhat"
+    if [ -f "$DEPLOYED_ADDRESS_FILE" ]; then
+      CONTRACT_ADDRESS=$(cat "$DEPLOYED_ADDRESS_FILE")
+    else
+      CONTRACT_ADDRESS="0x5FbDB2315678afecb367f032d93F642f64180aa3"
+    fi
   fi
+  CURRENT_STEP=3
 fi
 
 # Update .env files with the actual deployed contract address
@@ -305,7 +401,7 @@ fi
 log ""
 
 # ─── 3. Start Backend (FastAPI) ───────────────────────────────────────────
-log "[3/5] Starting backend (uvicorn)..."
+log "[$CURRENT_STEP/$TOTAL_STEPS] Starting backend (uvicorn)..."
 cd "$ROOT_DIR/backend"
 if [ ! -d "venv" ]; then
   step "Creating Python venv..."
@@ -374,10 +470,11 @@ if [ "$BACKEND_HEALTHY" != "1" ]; then
   fail "Backend did not become healthy on http://localhost:8000/health"
   stop_on_failure
 fi
+CURRENT_STEP=$((CURRENT_STEP + 1))
 log ""
 
 # ─── 4. Start Frontend (CRA) ──────────────────────────────────────────────
-log "[4/5] Starting frontend (React)..."
+log "[$CURRENT_STEP/$TOTAL_STEPS] Starting frontend (React)..."
 cd "$ROOT_DIR/frontend"
 npm install --silent 2>/dev/null || true
 PORT=3000 npm start > >(tee -a "$LOG_FILE") 2>&1 &
@@ -386,14 +483,14 @@ ok "Frontend starting (PID: $FRONTEND_PID) on http://localhost:3000"
 log ""
 
 # ─── 5. Start Admin Frontend ──────────────────────────────────────────────
-log "[5/5] Starting admin frontend..."
+CURRENT_STEP=$((CURRENT_STEP + 1))
+log "[$CURRENT_STEP/$TOTAL_STEPS] Starting admin frontend..."
 REACT_APP_ADMIN_MODE=true PORT=3001 npm start > >(tee -a "$LOG_FILE") 2>&1 &
 ADMIN_PID=$!
 ok "Admin frontend starting (PID: $ADMIN_PID) on http://localhost:3001"
 log ""
 
 log "============================================"
-log ""
 log ""
 log "  +--------------------------------------+"
 log "  |        All services are UP           |"
@@ -404,10 +501,33 @@ log "  Admin:       http://localhost:3001"
 log "  Backend API: http://localhost:8000/docs"
 log "  Hardhat RPC: http://localhost:8545"
 log ""
+if [ -n "$REMOTE_HOST" ]; then
+  log "  Docker:      remote ($REMOTE_HOST via Tailscale)"
+  log "  SSH Tunnel:  PID $TUNNEL_PID"
+else
+  log "  Docker:      local"
+fi
+log ""
 log "  Full log saved to: $LOG_FILE"
 log ""
 log "  Press Ctrl+C to stop all services"
 log ""
+log "============================================"
+log ""
 
-trap "kill $BACKEND_PID $FRONTEND_PID $ADMIN_PID 2>/dev/null; echo 'Stopped.'" EXIT
+cleanup() {
+  log ""
+  log "Stopping all services..."
+  [ -n "$TUNNEL_PID" ] && kill "$TUNNEL_PID" 2>/dev/null
+  [ -n "$BACKEND_PID" ] && kill "$BACKEND_PID" 2>/dev/null
+  [ -n "$FRONTEND_PID" ] && kill "$FRONTEND_PID" 2>/dev/null
+  [ -n "$ADMIN_PID" ] && kill "$ADMIN_PID" 2>/dev/null
+  # Kill any children (uvicorn, npm, etc.)
+  jobs -p | xargs kill 2>/dev/null || true
+  sleep 1
+  log "  ${GREEN}[OK]${NC} All services stopped"
+  exit 0
+}
+
+trap cleanup SIGINT SIGTERM EXIT
 wait
