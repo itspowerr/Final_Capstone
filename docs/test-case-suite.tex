@@ -1,0 +1,2126 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{array}
+
+\definecolor{primaryblue}{RGB}{37,99,235}
+\definecolor{darkblue}{RGB}{29,78,216}
+\definecolor{lightblue}{RGB}{219,234,254}
+\definecolor{codebg}{RGB}{248,250,252}
+\definecolor{codeframe}{RGB}{226,232,240}
+\definecolor{keyword}{RGB}{139,92,246}
+\definecolor{string}{RGB}{34,197,94}
+\definecolor{comment}{RGB}{148,163,184}
+\definecolor{function}{RGB}{37,99,235}
+\definecolor{severityhigh}{RGB}{220,38,38}
+\definecolor{severitymed}{RGB}{234,179,8}
+\definecolor{severitylow}{RGB}{34,197,94}
+\definecolor{passgreen}{RGB}{22,163,74}
+\definecolor{failred}{RGB}{220,38,38}
+\definecolor{headerbg}{RGB}{37,99,235}
+\definecolor{rowgray}{RGB}{248,250,252}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=darkblue,
+    urlcolor=primaryblue,
+    citecolor=primaryblue,
+    pdftitle={FreeLedger Test Case Suite},
+    pdfauthor={Pawan Poudel},
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gray}{FreeLedger --- Test Case Suite}}
+\fancyhead[R]{\small\textcolor{gray}{Pawan Poudel}}
+\fancyfoot[C]{\small\textcolor{gray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+\titleformat{\section}
+  {\Large\bfseries\color{primaryblue}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{darkblue}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkblue!80!black}}{\thesubsubsection}{1em}{}
+
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{keyword}\bfseries,
+    stringstyle=\color{string},
+    commentstyle=\color{comment}\itshape,
+    functionstyle=\color{function},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showstringspaces=false,
+    columns=flexible,
+    keepspaces=true,
+}
+
+\lstnewenvironment{python}{\lstset{style=pythonstyle}}{}
+
+\newcommand{\sevhigh}{\textcolor{severityhigh}{\textbf{High}}}
+\newcommand{\sevmed}{\textcolor{severitymed}{\textbf{Medium}}}
+\newcommand{\sevlow}{\textcolor{severitylow}{\textbf{Low}}}
+
+\newcommand{\passresult}{\textcolor{passgreen}{\textbf{PASS}}}
+\newcommand{\failresult}{\textcolor{failred}{\textbf{FAIL}}}
+
+\newcommand{\tcfield}[2]{%
+  \noindent\textbf{#1:} #2\par\vspace{2pt}
+}
+
+\newcommand{\tcbox}[2]{%
+  \noindent\begin{tabular}{|p{0.18\textwidth}|p{0.78\textwidth}|}
+    \hline
+    \rowcolor{lightblue} \textbf{#1} & #2 \\
+    \hline
+  \end{tabular}
+  \vspace{6pt}
+}
+
+\begin{document}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TITLE PAGE
+% ═══════════════════════════════════════════════════════════════════════════
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\Huge\bfseries\textcolor{primaryblue}{FreeLedger}\\[0.3cm]}
+{\LARGE\textcolor{darkblue}{Test Case Suite}\\[0.5cm]
+{\Large\textcolor{gray}{Backend, Database, Storage, and Security}\\[2cm]
+
+\rule{\textwidth}{1.5pt}\\[1.5cm]
+
+{\large\textbf{Author:} Pawan Poudel}\\[0.3cm]
+{\large\textbf{Date:} 03 July 2026}\\[0.3cm]
+{\large\textbf{Document Version:} 1.0}\\[3cm]
+
+\begin{minipage}{0.8\textwidth}
+\centering
+\textbf{Document Information}
+\vspace{0.5cm}
+
+\begin{tabular}{ll}
+\toprule
+\textbf{Project} & FreeLedger --- Decentralized Freelance Protocol \\
+\textbf{Scope} & 35 test cases across Smart Contract Engine (M2), \\
+              & Workflow API (M5), Wallet Auth (M1), Database (M3), \\
+              & and Security (M4) \\
+\textbf{Derived From} & Individual Capstone Report (Chapter 3 \& 4) \\
+\textbf{Mapped To} & 22 Functional \& Non-Functional Requirements \\
+\textbf{Framework} & pytest-asyncio, httpx.AsyncClient, unittest.mock \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+
+\vfill
+{\small\textcolor{gray}{35 test cases covering the blockchain contract lifecycle from wallet authentication \\
+through dispute resolution, mapped to the system's functional and non-functional requirements.}}
+\end{titlepage}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TABLE OF CONTENTS
+% ═══════════════════════════════════════════════════════════════════════════
+\tableofcontents
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% REQUIREMENTS TRACEABILITY MATRIX
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Requirements Traceability Matrix}
+
+\subsection{Functional Requirements (from Chapter 3.3.1)}
+
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Req ID} & \textbf{Module} & \textbf{Description} \\
+\midrule
+FR-DS-01 & M3 & Project metadata, milestones, and user data stored in PostgreSQL \\
+FR-DS-02 & M3 & Consistency between stored data and system states maintained \\
+FR-IPFS-01 & M5 & Users upload project files to IPFS \\
+FR-IPFS-02 & M5 & CID generated for each uploaded file \\
+FR-IPFS-03 & M5 & Uploaded files linked to corresponding milestones \\
+FR-SYNC-01 & M3 & Data synchronized across PostgreSQL, IPFS, and blockchain \\
+FR-SYNC-02 & M3 & Updates propagated correctly across all storage layers \\
+FR-BE-01 & M5 & Backend handles user requests and coordinates DB, IPFS, blockchain \\
+FR-BE-02 & M5 & Async processing to handle blockchain/IPFS delays \\
+FR-SEC-01 & M4 & Role-based access control (RBAC) enforced \\
+FR-SEC-02 & M4 & All incoming requests validated before processing \\
+FR-AUTH-01 & M1 & MetaMask wallet authentication with nonce-based challenge \\
+FR-AUTH-02 & M1 & Email/password authentication as fallback \\
+FR-CON-01 & M2 & Smart contract deployed on-chain with milestone structure \\
+FR-CON-02 & M2 & Contract terms uploaded to IPFS with CID reference \\
+FR-MILE-01 & M2 & Milestone submission records deliverable CID on-chain \\
+FR-MILE-02 & M2 & Milestone approval triggers ETH payout with platform fee \\
+FR-DISP-01 & M2 & Dispute can be raised by contract party, locks escrow \\
+FR-DISP-02 & M2 & Admin-only dispute resolution with refund/release \\
+\bottomrule
+\end{tabularx}
+
+\vspace{0.5cm}
+
+\subsection{Non-Functional Requirements (from Chapter 3.3.2)}
+
+\begin{tabularx}{\textwidth}{llX}
+\toprule
+\textbf{Req ID} & \textbf{Module} & \textbf{Description} \\
+\midrule
+NFR-PERF-01 & M5 & Database queries executed with low latency \\
+NFR-PERF-02 & M5 & Concurrent requests handled without blocking \\
+NFR-SEC-01 & M4 & Sensitive data protected using salting and hashing \\
+NFR-SEC-02 & M4 & Middleware enforced for secure API access \\
+NFR-SCAL-01 & M3 & Blockchain storage reduced by storing only CID on IPFS \\
+NFR-SCAL-02 & M5 & Backend scales with user and data loads \\
+NFR-AVAIL-01 & M3 & IPFS files pinned for availability \\
+NFR-AVAIL-02 & M5 & System remains operational if individual nodes fail \\
+NFR-REL-01 & M3 & Data consistent between off-chain and on-chain components \\
+NFR-REL-02 & M3 & System failures do not result in data loss or inconsistency \\
+\bottomrule
+\end{tabularx}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% MODULE M1 — WALLET AUTHENTICATION
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Module M1 --- Wallet Authentication}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M1-01 --- MetaMask Auth: Nonce Challenge and Signature Verification}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-AUTH-01, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Functional --- Valid partition \\
+\hline
+Precondition & MetaMask installed and unlocked; backend running on port 8000; Redis available for nonce storage; client wallet seeded in PostgreSQL (wallet\_address = \texttt{0x70997970c51812dc3a010c7d01b50e0d17dc79c8}) \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Frontend calls \texttt{GET /api/auth/wallet/challenge?address=0x7099...c8}
+  \item Backend generates 64-character hex nonce
+  \item Nonce stored in Redis with key \texttt{nonce:0x7099...c8}
+  \item Frontend calls \texttt{POST /api/auth/wallet/login} with address, signature, and role
+  \item Backend recovers public key from signature using \texttt{eth\_account.Account.recover\_message}
+  \item Backend compares recovered address to claimed address
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Valid Ethereum address (checksummed): \texttt{0x70997970c51812dc3a010c7d01b50e0d17dc79c8}
+  \item Valid EIP-191 signature (65 bytes, 130 hex chars)
+  \item Role: \texttt{``client''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200 with JSON body
+  \item Response contains \texttt{access\_token} and \texttt{token\_type: ``bearer''}
+  \item Response contains \texttt{user.id} matching seeded client
+  \item Nonce deleted from Redis after successful verification
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if HTTP 200 + token returned + nonce consumed from Redis
+  \item \failresult{} if HTTP 401/403 or nonce not deleted
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M1-02 --- MetaMask Auth: Nonce Uniqueness Per Request}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-AUTH-01, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Functional --- Deterministic uniqueness \\
+\hline
+Precondition & Backend running; Redis available; client wallet address known \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Call \texttt{GET /api/auth/wallet/challenge?address=0x7099...c8} --- store nonce as \texttt{nonce\_1}
+  \item Call \texttt{GET /api/auth/wallet/challenge?address=0x7099...c8} --- store nonce as \texttt{nonce\_2}
+  \item Assert \texttt{nonce\_1 != nonce\_2}
+  \item Assert both nonces are 64 characters long
+  \item Assert both nonces are valid hex strings
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Same wallet address used for both requests
+  \item No authentication header required for challenge endpoint
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Each challenge returns a different 64-character hex nonce
+  \item Second nonce overwrites first in Redis (key is same)
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if two consecutive challenges produce distinct nonces of length 64
+  \item \failresult{} if nonces are identical or malformed
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M1-03 --- Replay Attack: Nonce Invalidation After Use}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-AUTH-01, NFR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Replay attack prevention \\
+\hline
+Precondition & Backend running; Redis available; client wallet address seeded \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Call \texttt{GET /api/auth/wallet/challenge?address=...} to generate nonce
+  \item Call \texttt{POST /api/auth/wallet/login} with valid signature --- expect HTTP 200
+  \item Nonce deleted from Redis after first successful login
+  \item Call \texttt{POST /api/auth/wallet/login} again with same signature --- expect HTTP 401
+  \item Assert error code is \texttt{``CHALLENGE\_EXPIRED''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Same address, signature, and role for both login attempts
+  \item Second attempt reuses already-consumed nonce
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item First login succeeds (HTTP 200)
+  \item Second login fails (HTTP 401) with \texttt{CHALLENGE\_EXPIRED}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if replay attempt returns 401 and nonce is absent from Redis
+  \item \failresult{} if second login succeeds (replay vulnerability)
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M1-04 --- Signature Mismatch Rejection}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-AUTH-01, FR-SEC-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Invalid signature partition \\
+\hline
+Precondition & Backend running; Redis available; client wallet seeded \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Call \texttt{GET /api/auth/wallet/challenge?address=0x7099...c8}
+  \item Mock \texttt{eth\_account.Account.recover\_message} to return wrong address (\texttt{0x000...001})
+  \item Call \texttt{POST /api/auth/wallet/login} with mismatched signature
+  \item Assert HTTP 401
+  \item Assert error code is \texttt{``SIGNATURE\_MISMATCH''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Claimed address: \texttt{0x70997970c51812dc3a010c7d01b50e0d17dc79c8}
+  \item Recovered address (mocked): \texttt{0x0000000000000000000000000000000000000001}
+  \item Signature: \texttt{0xabab...ab} (65 bytes, value irrelevant due to mock)
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 401 with \texttt{SIGNATURE\_MISMATCH} error
+  \item No session created; nonce not consumed
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if mismatched signature returns 401
+  \item \failresult{} if request succeeds or returns non-401 status
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% MODULE M2 — SMART CONTRACT ENGINE
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Module M2 --- Smart Contract Engine}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-01 --- Contract Creation: IPFS Upload + On-Chain Deployment}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-CON-01, FR-CON-02, FR-IPFS-02, FR-BE-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Functional --- Full integration path \\
+\hline
+Precondition & Client authenticated; job \texttt{job\_001} seeded; freelancer \texttt{usr\_freel1} seeded; IPFS mock returning \texttt{\{cid, size\}}; blockchain mock returning \texttt{\{on\_chain\_id, tx\_hash\}} \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts} with job\_id, freelancer\_id, title, total\_amount, milestones array
+  \item Backend uploads contract terms to IPFS via \texttt{upload\_contract\_terms()} --- returns CID
+  \item Backend calls \texttt{create\_contract\_on\_chain()} via \texttt{asyncio.to\_thread} --- returns on\_chain\_id
+  \item Contract saved to PostgreSQL with terms\_cid, on\_chain\_id, status = \texttt{pending\_signatures}
+  \item Milestones saved to PostgreSQL with status \texttt{pending}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \texttt{job\_id}: \texttt{``job\_001''}
+  \item \texttt{freelancer\_id}: \texttt{``usr\_freel1''}
+  \item \texttt{title}: \texttt{``Web3 DApp''}
+  \item \texttt{total\_amount}: 1000.0
+  \item \texttt{milestones}: [\{``Frontend'', 500.0\}, \{``Backend'', 500.0\}]
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201 with \texttt{ContractResponse}
+  \item \texttt{terms\_cid == ``QmTestHash123''} (mocked IPFS CID)
+  \item \texttt{on\_chain\_id == 42} (mocked blockchain ID)
+  \item \texttt{status == ``pending\_signatures''}
+  \item Two milestones created in PostgreSQL
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if contract persisted with IPFS CID + on-chain ID + correct milestone count
+  \item \failresult{} if any field missing or status incorrect
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-02 --- Contract Creation: IPFS Failure Falls Back to Contract CID}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-IPFS-02, NFR-REL-02, NFR-AVAIL-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Edge case --- Degraded mode \\
+\hline
+Precondition & Client authenticated; IPFS mock raises \texttt{Exception(``IPFS down'')}; blockchain mock succeeds \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts} with valid payload
+  \item \texttt{upload\_contract\_terms()} raises Exception
+  \item Backend catches exception, falls back to \texttt{terms\_cid = f``contract\_\{contract\_id\}''}
+  \item Contract still created on-chain with fallback CID
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item IPFS: mocked to raise \texttt{Exception}
+  \item Blockchain: mocked to return \texttt{on\_chain\_id = 99}
+  \item Milestones: [\{``Work'', 500.0\}]
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201 (contract still created)
+  \item \texttt{terms\_cid} starts with \texttt{``contract\_''}
+  \item Contract persisted in PostgreSQL despite IPFS failure
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if contract created with fallback CID when IPFS is unavailable
+  \item \failresult{} if HTTP 500 or contract not persisted
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-03 --- Contract Creation: Milestone Sum Mismatch Rejected}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-02, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Negative testing --- Data integrity \\
+\hline
+Precondition & Client authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts} with total\_amount = 1000 but milestones summing to 600
+  \item Backend validates milestone amounts sum to total\_amount
+  \item Assert HTTP 400
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \texttt{total\_amount}: 1000.0
+  \item \texttt{milestones}: [\{``A'', 300.0\}, \{``B'', 300.0\}] --- sum = 600 $\neq$ 1000
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 400 with \texttt{``MILESTONE\_SUM\_MISMATCH''} error code
+  \item No contract created in PostgreSQL or on-chain
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if mismatched amounts return 400
+  \item \failresult{} if contract created despite mismatch
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-04 --- Contract Creation: Non-Client Blocked}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- RBAC restriction \\
+\hline
+Precondition & Freelancer authenticated (role = \texttt{freelancer}) \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts} with valid payload
+  \item Backend checks \texttt{current\_user.role != client}
+  \item Assert HTTP 403
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Auth token for \texttt{usr\_freel1} (freelancer role)
+  \item Payload: \{title: ``Nope'', total\_amount: 100.0\}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 403 with \texttt{``CLIENT\_ONLY''} error code
+  \item No contract created
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if freelancer receives 403 when attempting contract creation
+  \item \failresult{} if freelancer can create contracts
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-05 --- Contract Creation: IPFS Timeout Graceful Fallback}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-IPFS-02, NFR-REL-02, NFR-AVAIL-01 \\
+\hline
+Priority & \sevmed \\
+\hline
+Technique & Edge case --- Network timeout \\
+\hline
+Precondition & Client authenticated; IPFS mock raises \texttt{httpx.TimeoutException} \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts}
+  \item \texttt{upload\_contract\_terms()} raises \texttt{TimeoutException}
+  \item Backend catches timeout, uses fallback CID
+  \item Contract persisted on-chain with fallback terms\_cid
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item IPFS: mocked to raise \texttt{httpx.TimeoutException(``timeout'')}
+  \item Blockchain: mocked to return \texttt{on\_chain\_id = 1}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201
+  \item \texttt{terms\_cid} starts with \texttt{``contract\_''}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if timeout results in fallback CID, not HTTP 500
+  \item \failresult{} if timeout propagates as unhandled exception
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-06 --- Contract Creation: Full Failure Still Persists Contract}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, NFR-REL-02 \\
+\hline
+Priority & \sevmed \\
+\hline
+Technique & Edge case --- Partial failure recovery \\
+\hline
+Precondition & Client authenticated; both IPFS and blockchain mocks raise exceptions \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts}
+  \item \texttt{upload\_contract\_terms()} raises Exception
+  \item \texttt{asyncio.to\_thread(create\_contract\_on\_chain)} raises Exception
+  \item Backend catches both, persists contract with \texttt{on\_chain\_id = None} and fallback CID
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item IPFS: \texttt{Exception(``IPFS'')}
+  \item Blockchain: \texttt{Exception(``Chain'')}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201
+  \item \texttt{on\_chain\_id is None}
+  \item \texttt{terms\_cid} starts with \texttt{``contract\_''}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if contract persisted in PostgreSQL even when both IPFS and chain fail
+  \item \failresult{} if HTTP 500 or contract not saved
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-07 --- Milestone Submission: Freelancer Submits Deliverable}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-MILE-01, FR-IPFS-03 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Functional --- State transition \\
+\hline
+Precondition & Contract \texttt{ct\_001} active; milestone \texttt{ms\_000} in \texttt{pending} state; freelancer authenticated; blockchain mock returns tx hash \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts/ct\_001/milestones/0/submit}
+  \item Backend verifies milestone is \texttt{pending}
+  \item Backend calls \texttt{submit\_milestone\_on\_chain()} (mocked)
+  \item Milestone status updated to \texttt{submitted}
+  \item \texttt{deliverable\_cid} and \texttt{submission\_notes} saved
+  \item Notification sent to client
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \texttt{deliverable\_cid}: \texttt{``QmDeliverable123''}
+  \item \texttt{submission\_notes}: \texttt{``Done!''}
+  \item Contract ID: \texttt{ct\_001}, Milestone index: 0
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200 with \texttt{MilestoneResponse}
+  \item \texttt{status == ``submitted''}
+  \item \texttt{deliverable\_cid == ``QmDeliverable123''}
+  \item \texttt{submission\_notes == ``Done!''}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if milestone transitions pending $\rightarrow$ submitted with CID recorded
+  \item \failresult{} if status unchanged or CID not stored
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-08 --- Milestone Approval: Client Approves, ETH Released}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-MILE-02, FR-CON-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Functional --- Payment integration \\
+\hline
+Precondition & Contract \texttt{ct\_001} active; milestone \texttt{ms\_000} in \texttt{submitted} state; client authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Set milestone status to \texttt{submitted} in PostgreSQL
+  \item Client calls \texttt{POST /api/contracts/ct\_001/milestones/0/approve}
+  \item Backend verifies milestone is \texttt{submitted}
+  \item Milestone status updated to \texttt{approved}; \texttt{approved\_at} set
+  \item Notification sent to freelancer
+  \item DB committed and refreshed
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Contract ID: \texttt{ct\_001}, Milestone index: 0
+  \item Milestone amount: 500.0 ETH equivalent
+  \item Platform fee: 2.5\% (12.5 ETH)
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200 with \texttt{MilestoneResponse}
+  \item \texttt{status == ``approved''}
+  \item \texttt{approved\_at} is not None
+  \item All milestones approved $\rightarrow$ contract status becomes \texttt{completed}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if milestone approved + timestamp recorded + notification sent
+  \item \failresult{} if status not updated or \texttt{approved\_at} is None
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-09 --- Milestone Approval: Double Approve Rejected}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & NFR-REL-01, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Double-payment prevention \\
+\hline
+Precondition & Milestone already approved once \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Set milestone \texttt{ms\_000} to \texttt{submitted}, approve it (status $\rightarrow$ \texttt{approved})
+  \item Attempt second approval via \texttt{POST /api/contracts/ct\_001/milestones/0/approve}
+  \item Assert HTTP 400
+  \item Assert error code \texttt{``MILESTONE\_NOT\_SUBMITTED''}
+  \item Verify no second payment triggered
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Milestone pre-set to \texttt{approved} state
+  \item Same client token for both calls
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item First approve: HTTP 200
+  \item Second approve: HTTP 400 with \texttt{MILESTONE\_NOT\_SUBMITTED}
+  \item Milestone remains in \texttt{approved} state
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if second approval blocked with 400
+  \item \failresult{} if second approval succeeds (double-spend vulnerability)
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M2-10 --- Milestone Approval: All Milestones Complete Contract}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-MILE-02, FR-DS-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- Full lifecycle \\
+\hline
+Precondition & Contract \texttt{ct\_001} active; both milestones \texttt{ms\_000} and \texttt{ms\_001} in \texttt{submitted} state; client authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client approves \texttt{ms\_000} $\rightarrow$ HTTP 200
+  \item Client approves \texttt{ms\_001} $\rightarrow$ HTTP 200
+  \item Query contract \texttt{ct\_001} from PostgreSQL
+  \item Assert contract status is \texttt{completed}
+  \item Assert both milestones are \texttt{approved}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Two milestones, each 500.0
+  \item Both pre-set to \texttt{submitted}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Both approvals return HTTP 200
+  \item Contract status transitions \texttt{active} $\rightarrow$ \texttt{completed}
+  \item Contract completion notification sent
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if contract status is \texttt{completed} after all milestones approved
+  \item \failresult{} if contract remains \texttt{active} after final approval
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% MODULE M3 — DATABASE \& STATE MANAGEMENT
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Module M3 --- Database \& State Management}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-01 --- Contract State Transition: Active $\rightarrow$ Completed}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-01, FR-DS-02, NFR-REL-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & State machine validation \\
+\hline
+Precondition & Contract \texttt{ct\_001} seeded with status \texttt{active}; two pending milestones \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Query contract \texttt{ct\_001} --- assert initial status is \texttt{active}
+  \item Approve milestone 0 (set to \texttt{submitted} first)
+  \item Query contract again --- assert status is still \texttt{active} (1 of 2 done)
+  \item Approve milestone 1
+  \item Query contract --- assert status is now \texttt{completed}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Contract: \texttt{ct\_001}, milestones: \texttt{ms\_000}, \texttt{ms\_001}
+  \item State transitions: \texttt{active} $\rightarrow$ \texttt{completed} (on all-approved)
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Contract remains \texttt{active} until all milestones approved
+  \item Transitions to \texttt{completed} exactly when last milestone approved
+  \item No intermediate invalid states observed
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if state machine follows: active $\rightarrow$ completed (only on all-approved)
+  \item \failresult{} if premature transition or skipped state
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-02 --- Milestone State Machine: Pending $\rightarrow$ Submitted $\rightarrow$ Approved}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-01, FR-DS-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & State machine validation \\
+\hline
+Precondition & Milestone \texttt{ms\_000} seeded in \texttt{pending} state \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Query \texttt{ms\_000} --- assert status is \texttt{pending}
+  \item Freelancer submits $\rightarrow$ status becomes \texttt{submitted}
+  \item Query \texttt{ms\_000} --- assert status is \texttt{submitted} and \texttt{submitted\_at} is set
+  \item Client approves $\rightarrow$ status becomes \texttt{approved}
+  \item Query \texttt{ms\_000} --- assert status is \texttt{approved} and \texttt{approved\_at} is set
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Valid transitions: pending $\rightarrow$ submitted $\rightarrow$ approved
+  \item Invalid transitions: approved $\rightarrow$ submitted (blocked), pending $\rightarrow$ approved (blocked)
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Only valid state transitions succeed
+  \item Invalid transitions return HTTP 400
+  \item Timestamps recorded at each transition
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if all valid transitions succeed and invalid are rejected
+  \item \failresult{} if out-of-order transitions allowed
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-03 --- Cannot Submit Approved Milestone}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-02, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Edge case --- Invalid state transition \\
+\hline
+Precondition & Milestone \texttt{ms\_001} pre-set to \texttt{approved} state \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts/ct\_001/milestones/1/submit}
+  \item Assert HTTP 400 with \texttt{``MILESTONE\_NOT\_PENDING''}
+  \item Milestone status remains \texttt{approved}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Milestone pre-set to \texttt{approved}
+  \item Deliverable CID: \texttt{``QmLate''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 400 --- cannot re-submit an approved milestone
+  \item Milestone unchanged in database
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if submission on approved milestone returns 400
+  \item \failresult{} if status changes to submitted
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-04 --- Cannot Submit Already Submitted Milestone}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-02, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Edge case --- Duplicate submission prevention \\
+\hline
+Precondition & Milestone \texttt{ms\_000} pre-set to \texttt{submitted} state \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts/ct\_001/milestones/0/submit}
+  \item Assert HTTP 400 with \texttt{``MILESTONE\_NOT\_PENDING''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Milestone pre-set to \texttt{submitted}
+  \item Deliverable CID: \texttt{``QmDup''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 400 --- milestone already submitted, pending review
+  \item No duplicate submission recorded
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if re-submission returns 400
+  \item \failresult{} if duplicate submission accepted
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-05 --- Approve Pending Milestone Rejected}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-02, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Edge case --- Invalid state for approval \\
+\hline
+Precondition & Milestone \texttt{ms\_000} in \texttt{pending} state (not yet submitted) \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/ct\_001/milestones/0/approve}
+  \item Assert HTTP 400 with \texttt{``MILESTONE\_NOT\_SUBMITTED''}
+  \item Milestone remains \texttt{pending}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Milestone in default \texttt{pending} state (from seed)
+  \item Client auth token
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 400 --- cannot approve a milestone that hasn't been submitted
+  \item Status unchanged
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if approval of pending milestone returns 400
+  \item \failresult{} if status changes to approved
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-06 --- Dispute State: Active $\rightarrow$ Disputed}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DISP-01, FR-DS-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & State machine validation \\
+\hline
+Precondition & Contract \texttt{ct\_001} in \texttt{active} state; client authenticated; blockchain mock succeeds \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/ct\_001/disputes} with reason
+  \item Backend calls \texttt{raise\_dispute\_on\_chain()} (mocked)
+  \item Dispute created in PostgreSQL with status \texttt{open}
+  \item Contract status updated to \texttt{disputed}
+  \item Notifications sent to all admins
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Reason: \texttt{``Unacceptable quality''}
+  \item Contract status: \texttt{active}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201 with \texttt{DisputeResponse}
+  \item Dispute \texttt{status == ``open''}, \texttt{raised\_by == ``usr\_client1''}
+  \item Contract \texttt{status == ``disputed''}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if dispute created + contract locked in \texttt{disputed} state
+  \item \failresult{} if contract remains \texttt{active} after dispute raised
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-07 --- Cannot Dispute Completed Contract}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-02, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Edge case --- Invalid state for dispute \\
+\hline
+Precondition & Contract \texttt{ct\_001} pre-set to \texttt{completed} \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/ct\_001/disputes} with reason
+  \item Assert HTTP 400
+  \item Assert error code \texttt{``CONTRACT\_COMPLETED''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Contract status: \texttt{completed}
+  \item Reason: \texttt{``Late''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 400 --- completed contracts cannot be disputed
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if dispute on completed contract returns 400
+  \item \failresult{} if dispute created on completed contract
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M3-08 --- Duplicate Dispute Blocked}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DS-02, FR-SEC-02 \\
+\hline
+Priority & \sevmed \\
+\hline
+Technique & Edge case --- Duplicate prevention \\
+\hline
+Precondition & Contract \texttt{ct\_001} active; existing open dispute already in database \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Insert existing dispute with status \texttt{open} for \texttt{ct\_001}
+  \item Client calls \texttt{POST /api/contracts/ct\_001/disputes}
+  \item Assert HTTP 400 with \texttt{``DISPUTE\_EXISTS''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Existing dispute: \texttt{Dispute(contract\_id=`ct\_001', status=open)}
+  \item New dispute reason: \texttt{``Another''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 400 --- only one active dispute per contract allowed
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if duplicate dispute attempt returns 400
+  \item \failresult{} if second open dispute created
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% MODULE M4 — SECURITY \& RBAC
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Module M4 --- Security \& RBAC}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-01 --- Unauthenticated Request Blocked}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01, FR-SEC-02, NFR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Authentication enforcement \\
+\hline
+Precondition & Backend running; no auth token provided \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Call \texttt{POST /api/contracts/ct\_001/milestones/0/approve} without Authorization header
+  \item Assert HTTP 401
+  \item Verify no milestone state change in database
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item No \texttt{Authorization} header
+  \item Valid contract/milestone IDs
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 401 --- unauthenticated requests rejected
+  \item No state mutation in database
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if unauthenticated request returns 401
+  \item \failresult{} if endpoint accessible without token
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-02 --- Freelancer Cannot Approve Milestones}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01, FR-MILE-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- RBAC restriction \\
+\hline
+Precondition & Milestone \texttt{ms\_000} set to \texttt{submitted}; freelancer authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts/ct\_001/milestones/0/approve}
+  \item Backend checks \texttt{current\_user.role != client}
+  \item Assert HTTP 403 with \texttt{``CLIENT\_ONLY''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Freelancer auth token (\texttt{usr\_freel1})
+  \item Milestone in \texttt{submitted} state
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 403 --- only client can approve milestones
+  \item Milestone remains \texttt{submitted}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if freelancer approval returns 403
+  \item \failresult{} if freelancer can approve (RBAC bypass)
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-03 --- Client Cannot Submit Milestones}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01, FR-MILE-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- RBAC restriction \\
+\hline
+Precondition & Milestone \texttt{ms\_000} in \texttt{pending} state; client authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/ct\_001/milestones/0/submit}
+  \item Backend checks \texttt{current\_user.role != freelancer}
+  \item Assert HTTP 403 with \texttt{``FREELANCER\_ONLY''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Client auth token (\texttt{usr\_client1})
+  \item Deliverable CID: \texttt{``QmBad''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 403 --- only freelancer can submit milestones
+  \item Milestone remains \texttt{pending}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if client submission returns 403
+  \item \failresult{} if client can submit work
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-04 --- Non-Freelancer Cannot Submit Milestones}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Contract party restriction \\
+\hline
+Precondition & Milestone \texttt{ms\_000} in \texttt{pending} state; client authenticated (wrong party) \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/ct\_001/milestones/0/submit}
+  \item Backend checks role $\neq$ freelancer
+  \item Assert HTTP 403 with \texttt{``FREELANCER\_ONLY''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Client auth token (\texttt{usr\_client1})
+  \item Contract assigned to \texttt{usr\_freel1}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 403 --- only the assigned freelancer can submit
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if non-freelancer submission returns 403
+  \item \failresult{} if wrong party can submit
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-05 --- Freelancer Cannot Resolve Disputes}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01, FR-DISP-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Admin-only restriction \\
+\hline
+Precondition & Open dispute exists for \texttt{ct\_001}; freelancer authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Insert open dispute for \texttt{ct\_001}
+  \item Freelancer calls \texttt{POST /api/disputes/\{dispute\_id\}/resolve}
+  \item Assert HTTP 403 with \texttt{``ADMIN\_REQUIRED''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Freelancer auth token
+  \item Dispute in \texttt{open} state
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 403 --- only admin can resolve disputes
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if freelancer resolve attempt returns 403
+  \item \failresult{} if freelancer can resolve disputes
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-06 --- Client Cannot Resolve Disputes}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-SEC-01, FR-DISP-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Admin-only restriction \\
+\hline
+Precondition & Open dispute exists for \texttt{ct\_001}; client authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Insert open dispute for \texttt{ct\_001}
+  \item Client calls \texttt{POST /api/disputes/\{dispute\_id\}/resolve}
+  \item Assert HTTP 403 with \texttt{``ADMIN\_REQUIRED''}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Client auth token (\texttt{usr\_client1})
+  \item Dispute in \texttt{open} state
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 403 --- only admin can resolve disputes
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if client resolve attempt returns 403
+  \item \failresult{} if client can resolve disputes
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-07 --- Freelancer Raises Dispute}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-DISP-01, FR-SEC-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Functional --- Contract party validation \\
+\hline
+Precondition & Contract \texttt{ct\_001} active; freelancer authenticated; blockchain mock succeeds \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts/ct\_001/disputes}
+  \item Backend verifies \texttt{current\_user.id == contract.freelancer\_id}
+  \item Dispute created; contract status $\rightarrow$ \texttt{disputed}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Freelancer auth token (\texttt{usr\_freel1})
+  \item Reason: \texttt{``Client ghosting''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201 --- freelancer (as contract party) can raise dispute
+  \item Dispute \texttt{status == ``open''}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if freelancer dispute creation succeeds (they are a party)
+  \item \failresult{} if freelancer blocked from raising dispute
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M4-08 --- Password Hashing Verification}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & NFR-SEC-01, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & White box --- Cryptographic verification \\
+\hline
+Precondition & User seeded with \texttt{password\_hash} generated via \texttt{passlib} with bcrypt \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Verify \texttt{password\_hash} field is not plaintext
+  \item Verify hash starts with \texttt{\$2b\$} (bcrypt prefix)
+  \item Verify \texttt{pwd\_context.verify(``testpassword123'', hash)} returns True
+  \item Verify \texttt{pwd\_context.verify(``wrongpassword'', hash)} returns False
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Password: \texttt{``testpassword123''}
+  \item Hash generated via \texttt{CryptContext(schemes=[``bcrypt''])}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Password stored as bcrypt hash, never plaintext
+  \item Correct password verifies; wrong password fails
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if bcrypt prefix present + correct/wrong verification behave as expected
+  \item \failresult{} if plaintext stored or verification logic inverted
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% MODULE M5 — WORKFLOW API (FASTAPI)
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Module M5 --- Workflow API (FastAPI)}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-01 --- Health Check Endpoint}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & NFR-AVAIL-02, FR-BE-01 \\
+\hline
+Priority & \sevmed \\
+\hline
+Technique & Functional --- Basic liveness probe \\
+\hline
+Precondition & Backend running on port 8000 \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Call \texttt{GET /api/health}
+  \item Assert HTTP 200
+  \item Assert response contains \texttt{status: ``ok''}
+\end{enumerate} \\
+\hline
+Test Data & None \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200 with \texttt{\{``status'': ``ok''\}}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if health returns 200 + status ok
+  \item \failresult{} if endpoint unreachable or non-200
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-02 --- Create Contract API: Full Integration}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, FR-IPFS-02, FR-CON-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- API endpoint \\
+\hline
+Precondition & Client authenticated; IPFS and blockchain mocked to succeed \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts} with complete payload
+  \item Backend: IPFS upload $\rightarrow$ CID, blockchain deploy $\rightarrow$ on\_chain\_id
+  \item PostgreSQL: contract + milestones persisted
+  \item Response: \texttt{ContractResponse} with all fields
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Payload: \{job\_id, freelancer\_id, title, total\_amount, milestones[]\}
+  \item Client auth token
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201
+  \item Response contains \texttt{terms\_cid}, \texttt{on\_chain\_id}, \texttt{status}, \texttt{milestones[]}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if contract created with IPFS CID + on-chain ID + milestones
+  \item \failresult{} if HTTP 500 or missing fields
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-03 --- Submit Milestone API: Full Integration}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, FR-MILE-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- API endpoint \\
+\hline
+Precondition & Contract active; milestone pending; freelancer authenticated; blockchain mocked \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Freelancer calls \texttt{POST /api/contracts/\{id\}/milestones/\{index\}/submit}
+  \item Backend: verify role + milestone state, call on-chain (mocked), update DB
+  \item Notification sent to client
+  \item Response: \texttt{MilestoneResponse} with updated status
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \texttt{deliverable\_cid}: \texttt{``QmDeliverable123''}
+  \item \texttt{submission\_notes}: \texttt{``Done!''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200; status \texttt{submitted}; CID recorded; notification sent
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if submission accepted + DB updated + notification queued
+  \item \failresult{} if HTTP 500 or status unchanged
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-04 --- Approve Milestone API: Full Integration}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, FR-MILE-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- API endpoint \\
+\hline
+Precondition & Milestone \texttt{submitted}; client authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/\{id\}/milestones/\{index\}/approve}
+  \item Backend: verify role + milestone state, update DB, log transition
+  \item If all milestones approved $\rightarrow$ contract \texttt{completed}
+  \item Notification sent to freelancer
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Client auth token
+  \item Milestone in \texttt{submitted} state
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200; status \texttt{approved}; \texttt{approved\_at} set
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if approval recorded + notification sent
+  \item \failresult{} if HTTP 500 or status unchanged
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-05 --- Raise Dispute API: Full Integration}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, FR-DISP-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- API endpoint \\
+\hline
+Precondition & Contract active; client authenticated; blockchain mock succeeds; admin seeded \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client calls \texttt{POST /api/contracts/\{id\}/disputes}
+  \item Backend: verify party, on-chain dispute (mocked), create DB record
+  \item Contract status $\rightarrow$ \texttt{disputed}
+  \item Notifications sent to all admins
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Reason: \texttt{``Unacceptable quality''}
+  \item Client auth token
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201; dispute \texttt{status == ``open''}; contract \texttt{status == ``disputed''}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if dispute created + contract locked + admin notified
+  \item \failresult{} if HTTP 500 or contract not locked
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-06 --- Admin Resolve Dispute: Release to Freelancer}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, FR-DISP-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- Admin workflow \\
+\hline
+Precondition & Open dispute for \texttt{ct\_001}; admin authenticated; \texttt{AdminAccount} seeded \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Insert open dispute for \texttt{ct\_001}
+  \item Admin calls \texttt{POST /api/disputes/\{id\}/resolve} with \texttt{release\_to\_freelancer: true}
+  \item Backend: admin check, on-chain resolve (mocked), dispute $\rightarrow$ \texttt{resolved}
+  \item Contract $\rightarrow$ \texttt{completed}; \texttt{decision = ``release''}; \texttt{resolved\_by = admin ID}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Admin auth token (\texttt{usr\_admin1})
+  \item \texttt{release\_to\_freelancer}: true
+  \item \texttt{resolution\_notes}: \texttt{``Client fault''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200; \texttt{status == ``resolved''}; \texttt{decision == ``release''}
+  \item \texttt{resolved\_by == ``usr\_admin1''}
+  \item Contract status \texttt{completed}; notifications sent
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if dispute resolved + contract completed + admin recorded
+  \item \failresult{} if resolution fails or contract status unchanged
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-07 --- Admin Resolve Dispute: Refund to Client}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-BE-01, FR-DISP-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Integration --- Admin workflow \\
+\hline
+Precondition & Open dispute for \texttt{ct\_001}; admin authenticated \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Insert open dispute for \texttt{ct\_001}
+  \item Admin calls \texttt{POST /api/disputes/\{id\}/resolve} with \texttt{release\_to\_freelancer: false}
+  \item Dispute $\rightarrow$ \texttt{resolved}; \texttt{decision = ``refund''}
+  \item Contract $\rightarrow$ \texttt{cancelled}; notifications sent
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Admin auth token
+  \item \texttt{release\_to\_freelancer}: false
+  \item \texttt{resolution\_notes}: \texttt{``Freelancer fault''}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 200; \texttt{decision == ``refund''}
+  \item Contract status \texttt{cancelled}
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if refund decision recorded + contract cancelled
+  \item \failresult{} if contract remains disputed or wrong decision
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-08 --- Concurrent Approvals: Race Condition Prevention}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & NFR-PERF-02, NFR-REL-01 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Concurrency --- Race condition \\
+\hline
+Precondition & Milestone \texttt{ms\_000} set to \texttt{submitted}; 5 concurrent approval requests prepared \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Set milestone to \texttt{submitted}
+  \item Fire 5 concurrent \texttt{POST /api/contracts/ct\_001/milestones/0/approve} via \texttt{asyncio.gather}
+  \item Count HTTP 200 responses
+  \item Assert exactly 1 succeeds and 4 return 400
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item 5 concurrent requests, same client token
+  \item Milestone amount: 500.0
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Exactly 1 approval succeeds (HTTP 200)
+  \item 4 approvals rejected (HTTP 400 with \texttt{MILESTONE\_NOT\_SUBMITTED})
+  \item No double-spend: only one ETH transfer triggered
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if exactly 1 of 5 concurrent approvals succeeds
+  \item \failresult{} if 2+ succeed (double-spend vulnerability)
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-09 --- Double Approve: Sequential Rejection}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & NFR-REL-01, FR-SEC-02 \\
+\hline
+Priority & \sevhigh \\
+\hline
+Technique & Security --- Sequential double-approval prevention \\
+\hline
+Precondition & Milestone \texttt{ms\_001} set to \texttt{submitted} \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client approves \texttt{ms\_001} --- expect HTTP 200
+  \item Client approves \texttt{ms\_001} again --- expect HTTP 400
+  \item Assert second response has \texttt{MILESTONE\_NOT\_SUBMITTED}
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item Sequential (non-concurrent) requests
+  \item Same client token
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item First: 200; Second: 400
+  \item Milestone remains \texttt{approved} after both calls
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if second approval blocked
+  \item \failresult{} if second approval succeeds
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\vspace{0.8cm}
+
+% ──────────────────────────────────────────────────────────────────────────
+\subsection{TC ID: TC-M5-10 --- Contract Terms IPFS Upload with Fallback}
+
+\begin{tabular}{|p{0.22\textwidth}|p{0.74\textwidth}|}
+\hline
+\rowcolor{lightblue} \textbf{Field} & \textbf{Value} \\
+\hline
+Req Mapping & FR-IPFS-02, NFR-SCAL-01, NFR-AVAIL-01 \\
+\hline
+Priority & \sevmed \\
+\hline
+Technique & Integration --- IPFS degraded mode \\
+\hline
+Precondition & Client authenticated; IPFS returns timeout; blockchain succeeds \\
+\hline
+Test Steps &
+\begin{enumerate}[nosep, leftmargin=*]
+  \item Client creates contract with valid payload
+  \item IPFS times out; backend uses fallback \texttt{terms\_cid = f``contract\_\{id\}''}
+  \item Blockchain deploy succeeds
+  \item Contract saved with fallback CID
+\end{enumerate} \\
+\hline
+Test Data &
+\begin{itemize}[nosep, leftmargin=*]
+  \item IPFS: \texttt{TimeoutException}
+  \item Blockchain: mocked success with \texttt{on\_chain\_id}
+\end{itemize} \\
+\hline
+Expected Result &
+\begin{itemize}[nosep, leftmargin=*]
+  \item HTTP 201
+  \item \texttt{terms\_cid} starts with \texttt{``contract\_''}
+  \item Contract persisted despite IPFS failure
+\end{itemize} \\
+\hline
+Pass/Fail Criteria &
+\begin{itemize}[nosep, leftmargin=*]
+  \item \passresult{} if fallback CID used and contract created
+  \item \failresult{} if HTTP 500 or contract not persisted
+\end{itemize} \\
+\hline
+\end{tabular}
+
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TEST EXECUTION SUMMARY
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Test Execution Summary}
+
+\subsection{Test Case Distribution}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Module} & \textbf{TC Count} & \textbf{Coverage Area} \\
+\midrule
+M1 --- Wallet Authentication     & 4  & Nonce, signature, replay, uniqueness \\
+M2 --- Smart Contract Engine      & 10 & Create, fund, submit, approve, disputes \\
+M3 --- Database \& State          & 8  & State machines, transitions, CID linking \\
+M4 --- Security \& RBAC          & 8  & Auth enforcement, role checks, hashing \\
+M5 --- Workflow API               & 10 & Endpoints, integration, concurrency \\
+\midrule
+\textbf{Total}                   & \textbf{35} & \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5cm}
+
+\subsection{Priority Distribution}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Priority} & \textbf{Count} & \textbf{Percentage} \\
+\midrule
+High   & 31 & 88.6\% \\
+Medium &  4 & 11.4\% \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5cm}
+
+\subsection{Technique Distribution}
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Technique} & \textbf{Count} & \textbf{Percentage} \\
+\midrule
+Functional / Integration & 14 & 40.0\% \\
+Security / RBAC          & 12 & 34.3\% \\
+Edge Case                &  8 & 22.9\% \\
+Concurrency             &  1 &  2.9\% \\
+\bottomrule
+\end{tabular}
+
+\vspace{0.5cm}
+
+\subsection{Requirements Coverage}
+
+All 29 functional and non-functional requirements from Chapter 3 are covered by at least one test case. The mapping ensures traceability from requirements through test cases to pass/fail criteria.
+
+\begin{tabular}{lcc}
+\toprule
+\textbf{Requirement Category} & \textbf{Reqs} & \textbf{Covered by TCs} \\
+\midrule
+Data Storage (FR-DS)         & 2  & TC-M3-01 to TC-M3-08 \\
+IPFS Storage (FR-IPFS)       & 3  & TC-M2-01, TC-M2-02, TC-M2-05, TC-M5-10 \\
+Data Sync (FR-SYNC)          & 2  & TC-M3-01, TC-M3-02 \\
+Backend Processing (FR-BE)   & 2  & TC-M2-06, TC-M5-01 to TC-M5-10 \\
+Security (FR-SEC)            & 2  & TC-M4-01 to TC-M4-08 \\
+Wallet Auth (FR-AUTH)        & 2  & TC-M1-01 to TC-M1-04 \\
+Smart Contract (FR-CON)      & 2  & TC-M2-01 to TC-M2-06 \\
+Milestone (FR-MILE)          & 2  & TC-M2-07 to TC-M2-10 \\
+Dispute (FR-DISP)            & 2  & TC-M3-06 to TC-M3-08, TC-M5-05 to TC-M5-07 \\
+Performance (NFR-PERF)       & 2  & TC-M5-08, TC-M5-09 \\
+Security (NFR-SEC)           & 2  & TC-M4-08, TC-M1-03, TC-M1-04 \\
+Scalability (NFR-SCAL)       & 2  & TC-M5-10 \\
+Availability (NFR-AVAIL)     & 2  & TC-M2-02, TC-M2-05, TC-M5-10 \\
+Reliability (NFR-REL)        & 2  & TC-M2-06, TC-M5-08, TC-M5-09 \\
+\bottomrule
+\end{tabular}
+
+\end{document}

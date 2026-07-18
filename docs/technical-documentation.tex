@@ -1,0 +1,1562 @@
+\documentclass[12pt,a4paper]{article}
+
+% ─── Packages ──────────────────────────────────────────────────────────────
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{tocloft}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, fit, calc}
+
+% ─── Colors ────────────────────────────────────────────────────────────────
+\definecolor{primaryblue}{RGB}{37,99,235}
+\definecolor{darkblue}{RGB}{29,78,216}
+\definecolor{lightblue}{RGB}{219,234,254}
+\definecolor{codebg}{RGB}{248,250,252}
+\definecolor{codeframe}{RGB}{226,232,240}
+\definecolor{keyword}{RGB}{139,92,246}
+\definecolor{string}{RGB}{34,197,94}
+\definecolor{comment}{RGB}{148,163,184}
+\definecolor{function}{RGB}{37,99,235}
+
+% ─── Hyperref Setup ────────────────────────────────────────────────────────
+\hypersetup{
+    colorlinks=true,
+    linkcolor=darkblue,
+    urlcolor=primaryblue,
+    citecolor=primaryblue,
+    pdftitle={FreeLedger Technical Documentation},
+    pdfauthor={Pawan Poudel},
+}
+
+% ─── Header/Footer ────────────────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{gray}{FreeLedger Technical Documentation}}
+\fancyhead[R]{\small\textcolor{gray}{Pawan Poudel}}
+\fancyfoot[C]{\small\textcolor{gray}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ─── Section Formatting ───────────────────────────────────────────────────
+\titleformat{\section}
+  {\Large\bfseries\color{primaryblue}}{\thesection}{1em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{darkblue}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{darkblue!80!black}}{\thesubsubsection}{1em}{}
+
+% ─── Code Listings ─────────────────────────────────────────────────────────
+\lstdefinestyle{pythonstyle}{
+    language=Python,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{keyword}\bfseries,
+    stringstyle=\color{string},
+    commentstyle=\color{comment}\itshape,
+    functionstyle=\color{function},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    breaklines=true,
+    breakatwhitespace=true,
+    tabsize=4,
+    showstringspaces=false,
+    columns=flexible,
+    keepspaces=true,
+    morekeywords={self,async,await,Depends,HTTPException,Optional,List,Dict,None,True,False},
+}
+
+\lstdefinestyle{soliditystyle}{
+    language=Java,
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{keyword}\bfseries,
+    stringstyle=\color{string},
+    commentstyle=\color{comment}\itshape,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    breaklines=true,
+    tabsize=4,
+    showstringspaces=false,
+    columns=flexible,
+    keepspaces=true,
+    morekeywords={function,require,return,if,else,for,struct,mapping,event,modifier,external,internal,view,pure,payable,storage,memory,public,private,constructor,enum,contract,modifier,revert},
+}
+
+\lstdefinestyle{apistyle}{
+    backgroundcolor=\color{codebg},
+    frame=single,
+    rulecolor=\color{codeframe},
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{keyword}\bfseries,
+    stringstyle=\color{string},
+    breaklines=true,
+    tabsize=2,
+    columns=flexible,
+    keepspaces=true,
+}
+
+\lstnewenvironment{python}{\lstset{style=pythonstyle}}{}
+\lstnewenvironment{solidity}{\lstset{style=soliditystyle}}{}
+\lstnewenvironment{apicode}{\lstset{style=apistyle}}{}
+
+% ─── Document ──────────────────────────────────────────────────────────────
+\begin{document}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TITLE PAGE
+% ═══════════════════════════════════════════════════════════════════════════
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\Huge\bfseries\textcolor{primaryblue}{FreeLedger}\\[0.3cm]}
+{\LARGE\textcolor{darkblue}{Technical Documentation}\\[0.5cm]}
+{\Large\textcolor{gray}{Blockchain-Based Freelance Escrow Platform}\\[2cm]
+
+\rule{\textwidth}{1.5pt}\\[1.5cm]
+
+{\large\textbf{Author:} Pawan Poudel}\\[0.3cm]
+{\large\textcolor{gray}{\today}}\\[3cm]
+
+\begin{minipage}{0.8\textwidth}
+\centering
+\textbf{Document Information}
+\vspace{0.5cm}
+
+\begin{tabular}{ll}
+\toprule
+\textbf{Project} & FreeLedger --- Gig Economy Escrow Platform \\
+\textbf{Version} & 3.0 (Capstone Final) \\
+\textbf{Stack} & React, FastAPI, PostgreSQL, Solidity, IPFS \\
+\textbf{Blockchain} & Ethereum (Hardhat Local Network) \\
+\textbf{License} & MIT \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+
+\vfill
+{\small\textcolor{gray}{This document provides a comprehensive technical overview of the FreeLedger platform, \\
+covering system architecture, smart contract design, API reference, and core business flows.}}
+\end{titlepage}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% TABLE OF CONTENTS
+% ═══════════════════════════════════════════════════════════════════════════
+\tableofcontents
+\newpage
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 1. INTRODUCTION
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Introduction}
+
+\subsection{Project Overview}
+FreeLedger is a decentralized freelance marketplace that uses Ethereum smart contracts to enforce escrow-based payments between clients and freelancers. The platform eliminates the need for trusted intermediaries by holding client funds in a smart contract that automatically releases payment upon milestone approval.
+
+\subsection{Core Value Proposition}
+\begin{itemize}[nosep]
+    \item \textbf{Trustless Escrow:} Client funds are locked in a smart contract, not held by the platform.
+    \item \textbf{Milestone-Based Payments:} Granular payment release tied to deliverable verification.
+    \item \textbf{Immutable Audit Trail:} All contract state changes are recorded on-chain.
+    \item \textbf{Dispute Resolution:} Platform administrators can adjudicate disputes with on-chain fund release.
+    \item \textbf{IPFS Integration:} Contract terms and deliverables stored on the InterPlanetary File System.
+\end{itemize}
+
+\subsection{Technology Stack}
+\begin{table}[h]
+\centering
+\begin{tabular}{lll}
+\toprule
+\textbf{Layer} & \textbf{Technology} & \textbf{Version} \\
+\midrule
+Frontend & React (CRA) & 18.x \\
+API Backend & FastAPI (async) & 0.115+ \\
+ORM & SQLAlchemy (async) & 2.0 \\
+Database & PostgreSQL & 15 \\
+Cache / Queue & Redis & 7 \\
+Blockchain & Ethereum (Hardhat) & 2.19+ \\
+Smart Contract & Solidity & 0.8.20 \\
+Web3 Library & Web3.py / ethers.js & 6.x / 6.x \\
+File Storage & IPFS (Kubo) & 0.28+ \\
+Containerization & Docker Compose & 2.x \\
+\bottomrule
+\end{tabular}
+\caption{Technology Stack}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 2. SYSTEM ARCHITECTURE
+% ═══════════════════════════════════════════════════════════════════════════
+\section{System Architecture}
+
+\subsection{High-Level Architecture}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    node distance=1.2cm,
+    box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=1cm, align=center, font=\small},
+    db/.style={cylinder, draw, shape border rotate=90, aspect=0.25, minimum width=2cm, minimum height=1cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=3mm]}, thick, primaryblue},
+]
+\node[box, fill=lightblue] (browser) {User Browser\\(React SPA)};
+\node[box, fill=lightblue, right=2cm of browser] (metamask) {MetaMask\\Wallet};
+
+\node[box, fill=yellow!15, below=1.5cm of browser] (backend) {FastAPI Backend\\(async)};
+\node[box, fill=yellow!15, right=2cm of backend] (ws) {WebSocket\\Server};
+
+\node[db, fill=green!10, below left=1.5cm and 0.5cm of backend] (pg) {PostgreSQL};
+\node[db, fill=red!5, below=1.5cm of backend] (redis) {Redis};
+\node[box, fill=orange!10, below right=1.5cm and 0.5cm of backend] (ipfs) {IPFS Node};
+\node[box, fill=purple!10, below=1.5cm of ws] (hardhat) {Hardhat\\(GigEscrow.sol)};
+
+\draw[arr] (browser) -- (backend) node[midway, left, font=\scriptsize] {REST API};
+\draw[arr] (browser) -- (ws) node[midway, right, font=\scriptsize] {WS};
+\draw[arr] (metamask) -- (hardhat) node[midway, right, font=\scriptsize, xshift=0.3cm] {ethers.js};
+\draw[arr] (backend) -- (pg);
+\draw[arr] (backend) -- (redis);
+\draw[arr] (backend) -- (ipfs);
+\draw[arr] (backend) -- (hardhat) node[midway, right, font=\scriptsize] {Web3.py};
+\end{tikzpicture}
+\caption{System Architecture Diagram}
+\end{figure}
+
+\subsection{Request Lifecycle}
+\begin{enumerate}[nosep]
+    \item User interacts with React SPA in browser.
+    \item SPA sends HTTP REST request with JWT Bearer token to FastAPI backend.
+    \item Backend validates JWT, executes business logic, writes to PostgreSQL.
+    \item For blockchain operations, backend calls Hardhat via Web3.py using server-side private keys.
+    \item For user-signed transactions, MetaMask signs and submits directly to Hardhat.
+    \item Background event listener polls Hardhat every 5 seconds, syncing on-chain events to PostgreSQL.
+    \item Real-time updates delivered via WebSocket connections.
+\end{enumerate}
+
+\subsection{Docker Infrastructure}
+\begin{table}[h]
+\centering
+\begin{tabular}{llcl}
+\toprule
+\textbf{Service} & \textbf{Image} & \textbf{Port} & \textbf{Purpose} \\
+\midrule
+PostgreSQL & postgres:15 & 5432 & Application database \\
+Redis & redis:7 & 6379 & Caching, nonces, event state \\
+Hardhat & node:20 & 8545 & Local Ethereum node \\
+IPFS & ipfs/kubo:v0.28.0 & 5001, 8080 & Decentralized file storage \\
+\bottomrule
+\end{tabular}
+\caption{Docker Services}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 3. DATABASE DESIGN
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Database Design}
+
+\subsection{Schema: \texttt{freeledger}}
+All tables reside in the \texttt{freeledger} PostgreSQL schema. The database uses SQLAlchemy 2.0 async ORM with \texttt{asyncpg} driver.
+
+\subsection{Entity Relationship Diagram}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    entity/.style={rectangle, draw, rounded corners, minimum width=2.8cm, minimum height=0.8cm, align=center, font=\small\bfseries, fill=lightblue},
+    field/.style={font=\scriptsize, align=left},
+    relation/.style={-{Stealth[length=2mm]}, thick, gray!70},
+    node distance=1.5cm,
+]
+
+\node[entity] (user) {User};
+\node[entity, right=3cm of user] (job) {Job};
+\node[entity, below=1.2cm of user] (proposal) {Proposal};
+\node[entity, below=1.2cm of job] (contract) {Contract};
+\node[entity, below=1.2cm of proposal] (milestone) {ContractMilestone};
+\node[entity, right=3cm of contract] (dispute) {Dispute};
+\node[entity, below=1.2cm of milestone] (message) {Message};
+\node[entity, right=3cm of dispute] (audit) {AuditLog};
+
+\draw[relation] (user) -- (job) node[midway, above, font=\scriptsize] {creates};
+\draw[relation] (user) -- (proposal) node[midway, left, font=\scriptsize] {submits};
+\draw[relation] (job) -- (proposal) node[midway, above, font=\scriptsize] {receives};
+\draw[relation] (job) -- (contract) node[midway, right, font=\scriptsize] {linked to};
+\draw[relation] (contract) -- (milestone) node[midway, left, font=\scriptsize] {contains};
+\draw[relation] (contract) -- (dispute) node[midway, above, font=\scriptsize] {may have};
+\draw[relation] (user) -- (message) node[midway, left, font=\scriptsize] {sends};
+
+\end{tikzpicture}
+\caption{Simplified Entity Relationship Diagram}
+\end{figure}
+
+\subsection{Core Tables}
+
+\subsubsection{users}
+\begin{lstlisting}[language=SQL, basicstyle=\ttfamily\scriptsize]
+CREATE TABLE freeledger.users (
+    id              VARCHAR(50) PRIMARY KEY,  -- usr_<hex>
+    email           VARCHAR(255) UNIQUE,
+    username        VARCHAR(100),
+    password_hash   VARCHAR(255),
+    auth_method     VARCHAR(20),   -- 'email' or 'wallet'
+    wallet_address  VARCHAR(42),   -- MetaMask address (not unique)
+    role            VARCHAR(20),   -- 'client', 'freelancer', 'admin'
+    bio             TEXT,
+    skills          JSONB,
+    hourly_rate     DECIMAL(10,2),
+    rating          DECIMAL(3,2) DEFAULT 0,
+    avatar_cid      VARCHAR(100),
+    totp_enabled    BOOLEAN DEFAULT FALSE,
+    totp_secret     VARCHAR(64),
+    totp_backup_codes JSONB,
+    email_notifications BOOLEAN DEFAULT TRUE,
+    location        VARCHAR(255),
+    github_url      VARCHAR(500),
+    linkedin_url    VARCHAR(500),
+    portfolio_url   VARCHAR(500),
+    is_active       BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    updated_at      TIMESTAMP DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsubsection{contracts}
+\begin{lstlisting}[language=SQL, basicstyle=\ttfamily\scriptsize]
+CREATE TABLE freeledger.contracts (
+    id              VARCHAR(50) PRIMARY KEY,  -- ct_<hex>
+    job_id          VARCHAR(50) REFERENCES jobs(id),
+    client_id       VARCHAR(50) REFERENCES users(id),
+    freelancer_id   VARCHAR(50) REFERENCES users(id),
+    title           VARCHAR(255),
+    description     TEXT,
+    total_amount    DECIMAL(12,2),
+    deadline        TIMESTAMP,
+    terms_cid       VARCHAR(100),   -- IPFS CID for contract terms
+    on_chain_id     INTEGER UNIQUE, -- GigEscrow contract ID
+    contract_address VARCHAR(42),
+    status          VARCHAR(30),    -- pending_signatures -> active -> completed
+    client_signed   BOOLEAN DEFAULT FALSE,
+    freelancer_signed BOOLEAN DEFAULT FALSE,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    updated_at      TIMESTAMP DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsubsection{contract\_milestones}
+\begin{lstlisting}[language=SQL, basicstyle=\ttfamily\scriptsize]
+CREATE TABLE freeledger.contract_milestones (
+    id              VARCHAR(50) PRIMARY KEY,  -- ms_<hex>
+    contract_id     VARCHAR(50) REFERENCES contracts(id),
+    "index"         INTEGER,
+    description     TEXT,
+    amount          DECIMAL(12,2),
+    due_date        TIMESTAMP,
+    deliverable_cid VARCHAR(100),   -- IPFS CID of deliverable
+    submission_notes TEXT,
+    rejection_reason TEXT,
+    status          VARCHAR(20),    -- pending -> submitted -> approved/rejected
+    submitted_at    TIMESTAMP,
+    approved_at     TIMESTAMP,
+    created_at      TIMESTAMP DEFAULT NOW(),
+    UNIQUE(contract_id, "index")
+);
+\end{lstlisting}
+
+\subsection{Enums}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Enum Type} & \textbf{Values} \\
+\midrule
+UserRole & client, freelancer, admin \\
+AuthMethod & email, wallet \\
+ContractStatus & draft, pending\_review, pending\_signatures, pending\_funding, active, delivered, revision\_requested, completed, cancelled, disputed \\
+MilestoneStatus & pending, submitted, approved, rejected, paid \\
+DisputeStatus & open, under\_review, resolved \\
+DisputeDecision & refund, release \\
+\bottomrule
+\end{tabular}
+\caption{Database Enum Types}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 4. SMART CONTRACT
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Smart Contract Design}
+
+\subsection{Overview}
+The \texttt{GigEscrow} contract is a Solidity 0.8.20 smart contract deployed on the Hardhat local network. It implements a milestone-based escrow system with a 2.5\% platform fee, using OpenZeppelin's \texttt{ReentrancyGuard} and \texttt{Ownable} for security.
+
+\subsection{State Variables}
+
+\begin{lstlisting}[style=soliditystyle]
+uint256 public constant PLATFORM_FEE_BPS = 250;  // 2.5%
+uint256 public contractCounter;
+
+mapping(uint256 => EscrowContract) public contracts;
+mapping(uint256 => mapping(uint256 => Milestone)) public milestones;
+mapping(address => uint256[]) public clientContracts;
+mapping(address => uint256[]) public freelancerContracts;
+mapping(uint256 => bool) public contractExists;
+\end{lstlisting}
+
+\subsection{Data Structures}
+
+\begin{lstlisting}[style=soliditystyle]
+enum ContractStatus { Created, InProgress, Completed, Cancelled, Disputed }
+enum MilestoneStatus { Pending, Funded, Submitted, Approved, Rejected }
+
+struct EscrowContract {
+    address client;
+    address freelancer;
+    string title;
+    string termsCID;
+    uint256 totalAmount;
+    uint256 deadline;
+    ContractStatus status;
+    uint256 milestoneCount;
+    uint256 completedMilestones;
+}
+
+struct Milestone {
+    string description;
+    uint256 amount;
+    string deliverableCID;
+    MilestoneStatus status;
+    uint256 submittedAt;
+    uint256 approvedAt;
+}
+\end{lstlisting}
+
+\subsection{Access Control}
+
+Four modifiers control function access:
+
+\begin{lstlisting}[style=soliditystyle]
+modifier onlyClient(uint256 _contractId) {
+    require(
+        msg.sender == contracts[_contractId].client ||
+        msg.sender == owner(),
+        "Only client"
+    );
+    _;
+}
+
+modifier onlyFreelancer(uint256 _contractId) {
+    require(
+        msg.sender == contracts[_contractId].freelancer ||
+        msg.sender == owner(),
+        "Only freelancer"
+    );
+    _;
+}
+
+modifier onlyContractParty(uint256 _contractId) {
+    require(
+        msg.sender == contracts[_contractId].client ||
+        msg.sender == contracts[_contractId].freelancer ||
+        msg.sender == owner(),
+        "Not a contract party or owner"
+    );
+    _;
+}
+
+modifier contractExistsMod(uint256 _contractId) {
+    require(contractExists[_contractId], "Contract does not exist");
+    _;
+}
+\end{lstlisting}
+
+\textbf{Design Decision:} Both \texttt{onlyClient} and \texttt{onlyFreelancer} allow the \texttt{owner()} (the platform backend) to execute operations. This enables server-side transaction signing for operations like milestone submission and dispute resolution without requiring MetaMask for every action.
+
+\subsection{Contract Lifecycle Functions}
+
+\subsubsection{createContract}
+Deploys a new escrow contract with milestones. Validates that milestone amounts sum to the total.
+
+\begin{lstlisting}[style=soliditystyle]
+function createContract(
+    address _client,
+    address _freelancer,
+    string memory _title,
+    string memory _termsCID,
+    uint256 _totalAmount,
+    uint256 _deadline,
+    string[] memory _milestoneDescriptions,
+    uint256[] memory _milestoneAmounts
+) external returns (uint256) {
+    require(_client != address(0));
+    require(_client != _freelancer);
+    require(_milestoneDescriptions.length > 0);
+    require(totalMilestoneAmount == _totalAmount);
+
+    contractCounter++;
+    // Store EscrowContract + Milestone structs
+    // Emit ContractCreated + MilestoneAdded events
+    return contractId;
+}
+\end{lstlisting}
+
+\subsubsection{fundContract}
+Client funds the contract with ETH. Transitions status from \texttt{Created} to \texttt{InProgress} and all milestones from \texttt{Pending} to \texttt{Funded}.
+
+\begin{lstlisting}[style=soliditystyle]
+function fundContract(uint256 _contractId)
+    external payable onlyClient(_contractId)
+{
+    require(escrow.status == ContractStatus.Created);
+    require(msg.value == escrow.totalAmount);
+
+    escrow.status = ContractStatus.InProgress;
+    for (uint256 i = 0; i < escrow.milestoneCount; i++) {
+        milestones[_contractId][i].status = MilestoneStatus.Funded;
+    }
+}
+\end{lstlisting}
+
+\subsubsection{submitMilestone}
+Freelancer submits deliverable IPFS CID. Requires \texttt{InProgress} status and \texttt{Funded} milestone.
+
+\begin{lstlisting}[style=soliditystyle]
+function submitMilestone(
+    uint256 _contractId,
+    uint256 _milestoneIndex,
+    string memory _deliverableCID
+) external onlyFreelancer(_contractId) {
+    require(escrow.status == ContractStatus.InProgress);
+    require(milestone.status == MilestoneStatus.Funded);
+    require(bytes(_deliverableCID).length > 0);
+
+    milestone.deliverableCID = _deliverableCID;
+    milestone.status = MilestoneStatus.Submitted;
+    milestone.submittedAt = block.timestamp;
+}
+\end{lstlisting}
+
+\subsubsection{approveMilestone}
+Client approves a submitted milestone. Transfers payment to freelancer minus 2.5\% platform fee. Auto-completes contract when all milestones are approved.
+
+\begin{lstlisting}[style=soliditystyle]
+function approveMilestone(
+    uint256 _contractId,
+    uint256 _milestoneIndex
+) external onlyClient(_contractId) nonReentrant {
+    require(milestone.status == MilestoneStatus.Submitted);
+
+    milestone.status = MilestoneStatus.Approved;
+    escrow.completedMilestones++;
+
+    uint256 fee = (milestone.amount * PLATFORM_FEE_BPS) / 10000;
+    uint256 payout = milestone.amount - fee;
+
+    payable(escrow.freelancer).transfer(payout);
+    payable(owner()).transfer(fee);
+
+    if (escrow.completedMilestones == escrow.milestoneCount) {
+        _completeContract(_contractId);
+    }
+}
+\end{lstlisting}
+
+\subsubsection{resolveDispute}
+Admin-only function to resolve disputes. Releases funds to freelancer or refunds to client.
+
+\begin{lstlisting}[style=soliditystyle]
+function resolveDispute(
+    uint256 _contractId,
+    bool _releaseToFreelancer
+) external onlyOwner nonReentrant {
+    require(escrow.status == ContractStatus.Disputed);
+
+    if (_releaseToFreelancer) {
+        uint256 balance = address(this).balance;
+        uint256 fee = (balance * PLATFORM_FEE_BPS) / 10000;
+        payable(escrow.freelancer).transfer(balance - fee);
+        payable(owner()).transfer(fee);
+    } else {
+        payable(escrow.client).transfer(address(this).balance);
+    }
+}
+\end{lstlisting}
+
+\subsection{Events}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Event} & \textbf{Parameters} \\
+\midrule
+ContractCreated & contractId (indexed), client (indexed), freelancer (indexed), totalAmount \\
+MilestoneAdded & contractId (indexed), milestoneIndex \\
+MilestoneSubmitted & contractId (indexed), milestoneIndex, deliverableCID \\
+MilestoneApproved & contractId (indexed), milestoneIndex, amount \\
+MilestoneRejected & contractId (indexed), milestoneIndex \\
+ContractCompleted & contractId (indexed) \\
+ContractCancelled & contractId (indexed) \\
+DisputeRaised & contractId (indexed), raisedBy \\
+DisputeResolved & contractId (indexed), winner \\
+FreelancerSet & contractId (indexed), freelancer (indexed) \\
+\bottomrule
+\end{tabular}
+\caption{Smart Contract Events}
+\end{table}
+
+\subsection{State Machine}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    state/.style={rectangle, draw, rounded corners, minimum width=2cm, minimum height=0.7cm, align=center, font=\small, fill=lightblue},
+    decision/.style={diamond, draw, aspect=2, minimum width=1.5cm, font=\scriptsize, fill=yellow!20},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    node distance=1.8cm,
+]
+\node[state] (created) {Created};
+\node[state, right=2.5cm of created] (inprog) {InProgress};
+\node[state, right=2.5cm of inprog] (completed) {Completed};
+\node[state, below=1.5cm of inprog] (cancelled) {Cancelled};
+\node[state, below=1.5cm of completed] (disputed) {Disputed};
+
+\draw[arr] (created) -- node[above, font=\scriptsize] {fundContract()} (inprog);
+\draw[arr] (created) -- node[right, font=\scriptsize] {cancelContract()} (cancelled);
+\draw[arr] (inprog) -- node[above, font=\scriptsize] {all approved} (completed);
+\draw[arr] (inprog) -- node[right, font=\scriptsize] {raiseDispute()} (disputed);
+\draw[arr] (disputed) -- node[right, font=\scriptsize] {resolveDispute(true)} (completed);
+\draw[arr] (disputed) |- node[right, font=\scriptsize, near start] {resolveDispute(false)} (cancelled);
+\end{tikzpicture}
+\caption{Contract State Machine}
+\end{figure}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 5. AUTHENTICATION
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Authentication System}
+
+FreeLedger supports three authentication methods: email/password, MetaMask wallet (SIWE), and optional TOTP two-factor authentication.
+
+\subsection{Email/Password Authentication}
+
+\subsubsection{Registration}
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/register", response_model=TokenResponse)
+async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db)):
+    user = User(
+        email=request.email.lower(),
+        password_hash=hash_password(request.password),  # bcrypt
+        auth_method="email",
+        username=request.username or request.email.split("@")[0],
+        role=request.role.lower(),
+    )
+    db.add(user)
+    await db.flush()
+    access_token = create_access_token(user.id)   # JWT, 30-min expiry
+    refresh_token = create_refresh_token(user.id)  # JWT, 7-day expiry
+    return TokenResponse(access_token=access_token, refresh_token=refresh_token, ...)
+\end{lstlisting}
+
+\subsubsection{Login with TOTP Flow}
+When TOTP 2FA is enabled, the login endpoint returns a temporary token instead of a full JWT:
+
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/login", response_model=TokenResponse)
+async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
+    user = # SELECT by email
+    if not verify_password(request.password, user.password_hash):
+        raise HTTPException(status_code=401)
+
+    if user.totp_enabled and user.totp_secret:
+        totp_token = create_temp_token(user.id)  # 5-min JWT, type="totp_pending"
+        return TokenResponse(requires_totp=True, totp_token=totp_token)
+
+    return TokenResponse(access_token=..., refresh_token=..., user=...)
+\end{lstlisting}
+
+\subsection{MetaMask SIWE Authentication}
+
+Sign-In with Ethereum (SIWE) flow using ECDSA signature verification:
+
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/auth/wallet/login")
+async def wallet_login(request, body, db):
+    # 1. Retrieve single-use nonce from Redis
+    nonce = await redis.get(f"nonce:{address}")
+    await redis.delete(f"nonce:{address}")
+
+    # 2. Verify ECDSA signature
+    message = encode_defunct(text=nonce)
+    recovered = Account.recover_message(message, signature=signature)
+    if recovered.lower() != address:
+        raise HTTPException(status_code=401)
+
+    # 3. Three flows:
+    #    A: Pure MetaMask (no email) -- auto-generate credentials
+    #    B: Wallet + email signup -- create new user
+    #    C: Link wallet to existing email -- verify password first
+
+    return { access_token, refresh_token, user }
+\end{lstlisting}
+
+\textbf{Wallet Uniqueness Rule:} A single wallet address can connect to a maximum of 2 accounts (1 freelancer + 1 client). The \texttt{wallet\_address} column is \emph{not} unique; the uniqueness check is enforced at the application layer.
+
+\subsection{TOTP Two-Factor Authentication}
+
+\begin{lstlisting}[style=pythonstyle]
+# Rate limiting: 5 attempts per 60 seconds per user
+totp_rate_limit: dict[str, list[float]] = defaultdict(list)
+
+@router.post("/auth/totp/validate")
+async def totp_validate(data: TOTPValidateRequest, db=Depends(get_db)):
+    user_id = verify_temp_token(data.totp_token)
+
+    # Rate limit check
+    rate_key = f"totp_{user_id}"
+    totp_rate_limit[rate_key] = [t for t in totp_rate_limit[rate_key]
+                                  if now - t < TOTP_RATE_WINDOW]
+    if len(totp_rate_limit[rate_key]) >= TOTP_MAX_ATTEMPTS:
+        raise HTTPException(status_code=429)
+
+    if not verify_code(user.totp_secret, data.code):
+        totp_rate_limit[rate_key].append(now)
+        raise HTTPException(status_code=401)
+
+    # Issue full JWT
+    access_token = create_access_token(user_id, backup_login=used_backup_code)
+    return TokenResponse(access_token=access_token, ...)
+\end{lstlisting}
+
+\textbf{Backup Codes:} 8 single-use codes in \texttt{XXXX-XXXX} format, SHA-256 hashed. A \texttt{backup\_login} flag is encoded in the JWT to allow the user to reset 2FA via the \texttt{/auth/totp/reset} endpoint.
+
+\subsection{JWT Token Structure}
+
+\begin{lstlisting}[style=pythonstyle]
+# Access Token (30-minute expiry)
+{
+    "sub": "usr_a1b2c3d4",
+    "exp": 1700000000,
+    "type": "access",
+    "iat": 1699998200,
+    "jti": "unique_token_id",
+    "backup_login": false  # true when logged in via backup code
+}
+
+# Refresh Token (7-day expiry)
+{
+    "sub": "usr_a1b2c3d4",
+    "exp": 1700604800,
+    "type": "refresh",
+    "iat": 1699998200
+}
+
+# TOTP Temp Token (5-minute expiry)
+{
+    "sub": "usr_a1b2c3d4",
+    "exp": 1700000300,
+    "type": "totp_pending"
+}
+\end{lstlisting}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 6. CORE BUSINESS FLOWS
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Core Business Flows}
+
+\subsection{Job Posting and Discovery}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    step/.style={rectangle, draw, rounded corners, minimum width=2.8cm, minimum height=0.7cm, align=center, font=\small, fill=lightblue},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    node distance=1.2cm,
+]
+\node[step] (post) {Client Posts\\Job};
+\node[step, right=1.5cm of post] (db) {Saved to\\PostgreSQL};
+\node[step, right=1.5cm of db] (browse) {Freelancers\\Browse};
+\node[step, right=1.5cm of browse] (apply) {Freelancer\\Applies};
+
+\draw[arr] (post) -- (db);
+\draw[arr] (db) -- (browse);
+\draw[arr] (browse) -- (apply);
+\end{tikzpicture}
+\caption{Job Posting Flow}
+\end{figure}
+
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/jobs", response_model=JobResponse, status_code=201)
+async def create_job(job_data: JobCreate, db=Depends(get_db),
+                     current_user: User = Depends(get_current_user)):
+    if current_user.role.value != "client":
+        raise HTTPException(status_code=403)
+
+    job = Job(
+        client_id=current_user.id,
+        title=job_data.title,
+        description=job_data.description,
+        budget=job_data.budget,
+        category=job_data.category,
+        skills=job_data.skills,
+        duration_days=job_data.duration_days,
+    )
+    db.add(job)
+    await db.commit()
+    return job
+\end{lstlisting}
+
+Jobs support filtering by status, category, search term, and client ID. The listing endpoint computes \texttt{applicants\_count} and \texttt{has\_ired} via SQL JOINs.
+
+\subsection{Proposal Submission and Acceptance}
+
+\subsubsection{Freelancer Submits Proposal}
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/proposals", response_model=ProposalResponse, status_code=201)
+async def create_proposal(data: ProposalCreate, db, current_user):
+    if current_user.role.value != "freelancer":
+        raise HTTPException(status_code=403)
+
+    # Enforce one proposal per freelancer per job
+    existing = await db.execute(
+        select(Proposal).where(
+            Proposal.job_id == data.job_id,
+            Proposal.freelancer_id == current_user.id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Already applied")
+
+    proposal = Proposal(
+        job_id=data.job_id,
+        freelancer_id=current_user.id,
+        cover_letter=data.cover_letter,
+        bid_amount=data.bid_amount,
+        estimated_days=data.estimated_days,
+    )
+    db.add(proposal)
+    await db.commit()
+    return proposal
+\end{lstlisting}
+
+\subsubsection{Client Accepts Proposal}
+This is the most complex flow in the system. It orchestrates database updates, on-chain deployment, IPFS upload, and real-time messaging:
+
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/proposals/{proposal_id}/accept", response_model=ProposalResponse)
+async def accept_proposal(proposal_id, db, current_user):
+    # 1. Find contract for this job without a freelancer
+    contract = # SELECT Contract WHERE job_id AND freelancer_id IS NULL
+
+    # 2. Assign freelancer to contract
+    contract.freelancer_id = proposal.freelancer_id
+    proposal.status = "accepted"
+
+    # 3. Reject all other pending proposals
+    for p in remaining_proposals:
+        p.status = "rejected"
+
+    # 4. Deploy or update on-chain contract
+    if contract.on_chain_id is not None:
+        set_freelancer_on_chain(contract.on_chain_id, freelancer_wallet)
+    else:
+        # Upload terms to IPFS
+        ipfs_result = await upload_contract_terms(terms_doc)
+        # Deploy new escrow contract via backend
+        on_chain = await asyncio.to_thread(create_contract_on_chain, ...)
+        contract.on_chain_id = on_chain["on_chain_id"]
+
+    # 5. Send hire notification via WebSocket
+    hire_msg = Message(content=f"You've been hired for \"{job.title}\"!")
+    await msg_manager.broadcast_to_both(client_id, freelancer_id, {...})
+
+    return proposal
+\end{lstlisting}
+
+\subsection{Contract Signing and Funding}
+
+\subsubsection{Signing}
+Both parties must sign the contract before funding:
+
+\begin{lstlisting}[style=pythonstyle]
+async def sign_contract(db, contract_id, user_id):
+    if contract.client_id == user_id:
+        contract.client_signed = True
+    elif contract.freelancer_id == user_id:
+        contract.freelancer_signed = True
+
+    if contract.client_signed and contract.freelancer_signed:
+        if contract.on_chain_id is not None:
+            contract.status = ContractStatus.pending_funding
+\end{lstlisting}
+
+\subsubsection{Funding}
+The client funds the contract, which transitions it to \texttt{active}:
+
+\begin{lstlisting}[style=pythonstyle]
+async def fund_contract(db, contract_id, user_id):
+    on_chain_state = await asyncio.to_thread(get_contract_state, on_chain_id)
+    if on_chain_status == 1:  # InProgress on-chain
+        contract.status = ContractStatus.active
+\end{lstlisting}
+
+\subsection{Milestone Lifecycle}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    step/.style={rectangle, draw, rounded corners, minimum width=2.2cm, minimum height=0.6cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    node distance=1.5cm,
+]
+\node[step, fill=gray!10] (pending) {Pending};
+\node[step, fill=green!10, right=1.5cm of pending] (funded) {Funded};
+\node[step, fill=blue!10, right=1.5cm of funded] (submitted) {Submitted};
+\node[step, fill=green!20, right=1.5cm of submitted] (approved) {Approved};
+\node[step, fill=red!10, below=1.2cm of submitted] (rejected) {Rejected};
+
+\draw[arr] (pending) -- node[above, font=\scriptsize] {fundContract()} (funded);
+\draw[arr] (funded) -- node[above, font=\scriptsize] {submitMilestone()} (submitted);
+\draw[arr] (submitted) -- node[above, font=\scriptsize] {approveMilestone()} (approved);
+\draw[arr] (submitted) -- node[right, font=\scriptsize] {rejectMilestone()} (rejected);
+\draw[arr] (rejected) |- node[near start, font=\scriptsize] {resubmit} (submitted);
+\end{tikzpicture}
+\caption{Milestone State Machine}
+\end{figure}
+
+\subsubsection{Freelancer Submits Milestone}
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/{contract_id}/milestones/{index}/submit")
+async def submit_milestone(contract_id, index, data, db, current_user):
+    ms.status = MilestoneStatus.submitted
+    ms.deliverable_cid = data.deliverable_cid
+    ms.submitted_at = func.now()
+
+    # Submit on-chain (non-fatal if blockchain is down)
+    if contract.on_chain_id is not None:
+        try:
+            await asyncio.to_thread(
+                blockchain_service.submit_milestone_on_chain, ...)
+        except Exception as exc:
+            print(f"[WARN] On-chain submission failed: {exc}")
+
+    # Notify client
+    await create_notification(db, user_id=contract.client_id,
+        type="milestone_submitted", ...)
+\end{lstlisting}
+
+\subsubsection{Client Approves Milestone (Payment Release)}
+\begin{lstlisting}[style=pythonstyle]
+@router.post("/{contract_id}/milestones/{index}/approve")
+async def approve_milestone(contract_id, index, db, current_user):
+    ms.status = MilestoneStatus.approved
+    ms.approved_at = func.now()
+
+    # Check if all milestones done -> complete contract
+    all_ms = await db.execute(select(ContractMilestone)...)
+    all_done = all(m.status == MilestoneStatus.approved for m in all_ms)
+    if all_done:
+        contract.status = ContractStatus.completed
+
+    await create_notification(db, user_id=contract.freelancer_id,
+        type="milestone_approved",
+        message="Payment released!", ...)
+\end{lstlisting}
+
+\textbf{On-Chain Payment:} The actual ETH transfer happens via the smart contract's \texttt{approveMilestone()} function. The backend updates the database state; the frontend triggers the MetaMask transaction for payment release.
+
+\subsection{Payment and Escrow Flow}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    box/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=0.7cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    node distance=1.3cm,
+]
+\node[box, fill=blue!10] (client) {Client\\(pays ETH)};
+\node[box, fill=yellow!15, right=3cm of client] (escrow) {Escrow\\Contract};
+\node[box, fill=green!10, right=3cm of escrow] (freelancer) {Freelancer\\(receives ETH)};
+\node[box, fill=red!10, below=1.5cm of escrow] (platform) {Platform\\(2.5\% fee)};
+
+\draw[arr] (client) -- node[above, font=\scriptsize] {fundContract()} (escrow);
+\draw[arr] (escrow) -- node[above, font=\scriptsize] {approveMilestone()} (freelancer);
+\draw[arr] (escrow) -- (platform) node[right, font=\scriptsize] {fee};
+\end{tikzpicture}
+\caption{Payment Flow}
+\end{figure}
+
+\textbf{Fee Structure:}
+\begin{itemize}[nosep]
+    \item Platform fee: 2.5\% (250 basis points)
+    \item Freelancer receives: \texttt{amount - (amount * 250 / 10000)}
+    \item Platform receives: \texttt{amount * 250 / 10000}
+\end{itemize}
+
+\subsection{Dispute Resolution}
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+    step/.style={rectangle, draw, rounded corners, minimum width=2.5cm, minimum height=0.7cm, align=center, font=\small},
+    arr/.style={-{Stealth[length=2.5mm]}, thick},
+    node distance=1.5cm,
+]
+\node[step, fill=orange!15] (raise) {Party Raises\\Dispute};
+\node[step, fill=yellow!15, right=1.5cm of raise] (notify) {Admins\\Notified};
+\node[step, fill=blue!10, right=1.5cm of notify] (chat) {Dispute\\Chat};
+\node[step, fill=green!15, right=1.5cm of chat] (resolve) {Admin\\Resolves};
+
+\node[step, fill=green!20, below=1.5cm of resolve] (release) {Release to\\Freelancer};
+\node[step, fill=red!10, below=1.5cm of chat] (refund) {Refund\\to Client};
+
+\draw[arr] (raise) -- (notify);
+\draw[arr] (notify) -- (chat);
+\draw[arr] (chat) -- (resolve);
+\draw[arr] (resolve) -- (release);
+\draw[arr] (resolve) -- (refund);
+\end{tikzpicture}
+\caption{Dispute Resolution Flow}
+\end{figure}
+
+\begin{lstlisting}[style=pythonstyle]
+# Raising a dispute
+@router.post("/contracts/{contract_id}/disputes")
+async def create_dispute(contract_id, data, db, current_user):
+    # Validate contract state
+    if contract.status in [ContractStatus.completed, ContractStatus.cancelled]:
+        raise HTTPException(status_code=400)
+
+    # Raise on-chain
+    if contract.on_chain_id is not None:
+        await asyncio.to_thread(blockchain_service.raise_dispute_on_chain, ...)
+
+    dispute = Dispute(contract_id=contract_id, raised_by=current_user.id,
+                      status=DisputeStatus.open, reason=data.reason)
+    contract.status = ContractStatus.disputed
+
+    # Notify all admins
+    admins = await db.execute(select(AdminAccount))
+    for admin in admins.scalars().all():
+        await create_notification(db, user_id=admin.user_id,
+            type="dispute_raised", ...)
+
+# Resolving a dispute (admin only)
+@router.post("/disputes/{dispute_id}/resolve")
+async def resolve_dispute(dispute_id, data, db, current_user):
+    await _require_admin(current_user, db)
+
+    # Resolve on-chain
+    await asyncio.to_thread(blockchain_service.resolve_dispute_on_chain,
+        contract.on_chain_id, data.release_to_freelancer)
+
+    dispute.status = DisputeStatus.resolved
+    dispute.decision = "release" if data.release_to_freelancer else "refund"
+    contract.status = (ContractStatus.completed
+                       if data.release_to_freelancer
+                       else ContractStatus.cancelled)
+
+    # Notify both parties
+    await create_notification(db, user_id=contract.client_id, ...)
+    await create_notification(db, user_id=contract.freelancer_id, ...)
+\end{lstlisting}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 7. API REFERENCE
+% ═══════════════════════════════════════════════════════════════════════════
+\section{API Reference}
+
+\subsection{Authentication Endpoints}
+
+\begin{longtable}{lllX}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Description} \\
+\midrule
+\endhead
+POST & /api/auth/register & None & Register with email/password \\
+POST & /api/auth/login & None & Login, returns TOTP token if 2FA enabled \\
+POST & /api/auth/admin/login & None & Admin login (username-based) \\
+POST & /api/auth/refresh & Refresh Token & Refresh JWT pair \\
+GET & /api/auth/me & Bearer & Get current user profile \\
+POST & /api/auth/wallet/challenge & None & Generate SIWE nonce \\
+GET & /api/auth/wallet/status & None & Check wallet account status \\
+POST & /api/auth/wallet/login & None & Verify SIWE signature, login \\
+GET & /api/auth/totp/status & Bearer & Check 2FA status \\
+POST & /api/auth/totp/setup & Bearer & Generate TOTP secret + QR + backup codes \\
+POST & /api/auth/totp/verify & Bearer & Verify code to enable 2FA \\
+POST & /api/auth/totp/validate & None & Validate TOTP during login (rate-limited) \\
+POST & /api/auth/totp/disable & Bearer & Disable 2FA \\
+POST & /api/auth/totp/reset & Bearer* & Reset 2FA (requires backup\_login JWT) \\
+\bottomrule
+\end{longtable}
+
+\subsection{Job Endpoints}
+
+\begin{longtable}{lllX}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Description} \\
+\midrule
+\endhead
+GET & /api/jobs & Bearer & List jobs with filters and pagination \\
+POST & /api/jobs & Bearer (client) & Create a new job \\
+GET & /api/jobs/\{id\} & Bearer & Get job detail with milestones \\
+PUT & /api/jobs/\{id\} & Bearer (owner) & Update job \\
+DELETE & /api/jobs/\{id\} & Bearer (owner/admin) & Delete job \\
+PUT & /api/jobs/\{id\}/on-chain-id & Bearer (owner) & Set on-chain contract ID \\
+\bottomrule
+\end{longtable}
+
+\subsection{Contract Endpoints}
+
+\begin{longtable}{lllX}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Description} \\
+\midrule
+\endhead
+POST & /api/contracts & Bearer (client) & Create contract, deploy on-chain \\
+GET & /api/contracts & Bearer & List user's contracts with milestones \\
+GET & /api/contracts/\{id\} & Bearer (party) & Get contract detail \\
+POST & /api/contracts/\{id\}/sign & Bearer (party) & Sign contract \\
+POST & /api/contracts/\{id\}/fund & Bearer (client) & Fund contract \\
+POST & /api/contracts/\{id\}/milestones/\{i\}/submit & Bearer (freelancer) & Submit milestone \\
+POST & /api/contracts/\{id\}/milestones/\{i\}/approve & Bearer (client) & Approve milestone \\
+POST & /api/contracts/\{id\}/milestones/\{i\}/reject & Bearer (client) & Reject milestone \\
+POST & /api/contracts/\{id\}/disputes & Bearer (party) & Raise dispute \\
+\bottomrule
+\end{longtable}
+
+\subsection{Messaging Endpoints}
+
+\begin{longtable}{lllX}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Description} \\
+\midrule
+\endhead
+WS & /api/messages/ws/\{user\_id\} & None & WebSocket for real-time messaging \\
+POST & /api/messages/send & Bearer & Send message to another user \\
+GET & /api/messages/inbox & Bearer & Get all messages for current user \\
+POST & /api/messages/\{id\}/read & Bearer & Mark single message as read \\
+POST & /api/messages/thread/\{partner\_id\}/read & Bearer & Mark entire thread as read \\
+GET & /api/messages/unread-count & Bearer & Get total unread count \\
+DELETE & /api/messages/thread/\{partner\_id\} & Bearer & Delete thread (guarded by contract status) \\
+\bottomrule
+\end{longtable}
+
+\subsection{Admin Endpoints}
+
+\begin{longtable}{lllX}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Auth} & \textbf{Description} \\
+\midrule
+\endhead
+GET & /api/admin/dashboard & Admin & Platform statistics \\
+GET & /api/admin/reports & Admin & Comprehensive analytics \\
+GET & /api/admin/users & Admin & List non-admin users \\
+POST & /api/admin/users & Admin & Create user \\
+PUT & /api/admin/users/\{id\} & Admin & Update user \\
+DELETE & /api/admin/users/\{id\} & Admin & Delete user \\
+GET & /api/admin/jobs & Admin & List all jobs \\
+GET & /api/admin/contracts & Admin & List all contracts \\
+GET & /api/admin/disputes & Admin & List disputes with contract details \\
+GET & /api/admin/audit-logs & Admin & Query audit logs \\
+GET & /api/disputes & Bearer & List disputes for user's contracts \\
+POST & /api/disputes/\{id\}/resolve & Admin & Resolve dispute \\
+\bottomrule
+\end{longtable}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 8. BACKEND SERVICES
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Backend Services}
+
+\subsection{Blockchain Service}
+Wraps all Web3.py interactions with the GigEscrow contract. Uses lazy singletons for \texttt{Web3} and contract instances.
+
+\begin{lstlisting}[style=pythonstyle]
+# Key functions
+create_contract_on_chain(...)      # Deploy new escrow
+set_freelancer_on_chain(...)       # Assign freelancer address
+fund_contract_on_chain(...)        # Fund with ETH
+submit_milestone_on_chain(...)     # Submit deliverable CID
+approve_milestone_on_chain(...)    # Release payment
+reject_milestone_on_chain(...)     # Reset milestone
+raise_dispute_on_chain(...)        # Set status to Disputed
+resolve_dispute_on_chain(...)      # Release or refund
+get_contract_state(on_chain_id)    # Read on-chain details
+build_contract_tx(fn, address)     # Auto-estimate gas (1.5x buffer)
+sign_and_send(tx, private_key)     # Sign and broadcast
+\end{lstlisting}
+
+\textbf{Resilience Design:} On-chain failures (submit, reject) are non-fatal. The database always updates regardless of blockchain state. This ensures the application remains functional when the Hardhat node restarts.
+
+\subsection{Event Listener}
+Background service polling Hardhat every 5 seconds:
+
+\begin{lstlisting}[style=pythonstyle]
+async def poll_events():
+    while True:
+        last_block = await _get_last_block(redis)
+        current_block = w3.eth.block_number
+
+        if current_block <= last_block:
+            await asyncio.sleep(POLL_INTERVAL)
+            continue
+
+        # Poll 8 event types
+        event_handlers = [
+            "ContractCreated", "MilestoneSubmitted",
+            "MilestoneApproved", "MilestoneRejected",
+            "ContractCompleted", "ContractCancelled",
+            "DisputeRaised", "DisputeResolved",
+        ]
+
+        # Sync on-chain events to PostgreSQL
+        for event_name, events in all_events:
+            for evt in events:
+                # Route to handler, update DB
+                pass
+
+        await _set_last_block(redis, current_block)
+\end{lstlisting}
+
+\subsection{IPFS Service}
+\begin{lstlisting}[style=pythonstyle]
+upload_file(file, filename)        # Upload to IPFS via /api/v0/add
+upload_file_bytes(data, filename)  # Upload bytes via temp file
+download_file(cid)                 # Download from IPFS via /api/v0/cat
+pin_file(cid)                      # Pin content
+file_exists(cid)                   # Check existence
+upload_contract_terms(data)        # Serialize + upload contract terms JSON
+\end{lstlisting}
+
+\subsection{Rate Limiting Middleware}
+Redis sliding window rate limiter with per-IP tracking:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Endpoint Category} & \textbf{Limit} \\
+\midrule
+Authentication (login, register) & 10 requests/minute \\
+Write operations (POST, PUT, DELETE) & 60 requests/minute \\
+Read operations (GET) & 300 requests/minute \\
+Health checks, notifications & Excluded \\
+\bottomrule
+\end{tabular}
+\caption{Rate Limits}
+\end{table}
+
+Returns \texttt{429 Too Many Requests} with \texttt{Retry-After}, \texttt{X-RateLimit-Limit}, and \texttt{X-RateLimit-Remaining} headers.
+
+\subsection{Caching Middleware}
+Backend adds \texttt{Cache-Control} headers:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lc}
+\toprule
+\textbf{Resource} & \textbf{Cache Duration} \\
+\midrule
+Jobs, Users, Reports & 30s (stale-while-revalidate) \\
+Contracts & 10s \\
+/users/me & No-cache \\
+Auth, Messages, Notifications & No-store \\
+\bottomrule
+\end{tabular}
+\caption{Cache Headers}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 9. FRONTEND ARCHITECTURE
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Frontend Architecture}
+
+\subsection{Application Structure}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+frontend/src/
+  App.js                    # Route definitions (client, freelancer, admin)
+  context/AppContext.js     # Global state (wallet, user, auth)
+  hooks/useAuth.js          # MetaMask authentication hook
+  services/
+    api.js                  # Axios with JWT interceptor, 15s request cache
+    auth.js                 # MetaMask SIWE helpers
+    web3.js                 # ethers.js v6 providers
+    ipfs.js                 # IPFS upload/gateway
+    contractAbi.js          # GigEscrow ABI constant
+  pages/
+    Login.js                # Combined Sign In/Create Account + TOTP flow
+    Landing.js              # Marketing landing page
+    client/                 # Client-specific pages
+    freelancer/             # Freelancer-specific pages
+    admin/                  # Admin-specific pages
+    shared/Messages.js      # Shared messaging component
+  components/
+    shared/                 # TOTPSettings, NotificationBell, Skeleton
+    client/Navbar.js        # Client navigation
+    freelancer/Navbar.js    # Freelancer navigation
+    admin/Navbar.js         # Admin navigation
+\end{lstlisting}
+
+\subsection{Route Map}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{ll}
+\toprule
+\textbf{Path} & \textbf{Component} \\
+\midrule
+\multicolumn{2}{l}{\textit{Client Routes}} \\
+/client/dashboard & ClientDashboard \\
+/client/explore-jobs & ExploreJobs \\
+/client/browse-freelancers & BrowseFreelancers \\
+/client/my-contracts & MyContracts \\
+/client/profile & ClientProfile \\
+/client/messages & Messages \\
+\midrule
+\multicolumn{2}{l}{\textit{Freelancer Routes}} \\
+/freelancer/dashboard & FreelancerDashboard \\
+/freelancer/jobs & FindJobs \\
+/freelancer/contracts & MyContracts \\
+/freelancer/my-profile & MyProfile \\
+/freelancer/messages & Messages \\
+\midrule
+\multicolumn{2}{l}{\textit{Admin Routes (port 3001)}} \\
+/dashboard & AdminDashboard \\
+/users & AdminUsers \\
+/user-search & UserSearch \\
+/jobs & AdminJobs \\
+/proposals & AdminProposals \\
+/contracts & AdminContracts \\
+/disputes & AdminDisputes \\
+/audit-logs & AuditLogs \\
+/reports & Report \\
+/profile & AdminProfile \\
+\bottomrule
+\end{tabular}
+\caption{Frontend Routes}
+\end{table}
+
+\subsection{API Client with Caching}
+\begin{lstlisting}[style=pythonstyle]
+# Frontend API client (api.js)
+import axios from 'axios';
+
+const cache = new Map();
+const CACHE_TTL = 15000; // 15 seconds
+
+const api = axios.create({ baseURL: config.apiUrl });
+
+// Custom adapter: short-circuit HTTP on cache hit
+api.defaults.adapter = async (config) => {
+    if (config.method === 'get') {
+        const key = config.url + JSON.stringify(config.params || {});
+        const cached = cache.get(key);
+        if (cached && Date.now() - cached.time < CACHE_TTL) {
+            return { data: cached.data, status: 200, statusText: 'OK',
+                     headers: {}, config };
+        }
+    }
+    // ... normal axios request
+    // Auto-invalidate related entries on mutations
+};
+
+// Clear on logout
+api.clearCache = () => cache.clear();
+\end{lstlisting}
+
+\subsection{WebSocket Integration}
+Real-time messaging uses WebSocket connections:
+
+\begin{lstlisting}[style=pythonstyle]
+// Backend ConnectionManager
+class ConnectionManager:
+    def __init__(self):
+        self.active: dict[str, WebSocket] = {}
+
+    async def connect(self, websocket, user_id):
+        await websocket.accept()
+        self.active[user_id] = websocket
+
+    async def broadcast_to_both(self, user_a, user_b, message):
+        for uid in [user_a, user_b]:
+            if uid in self.active:
+                await self.active[uid].send_json(message)
+\end{lstlisting}
+
+Events: \texttt{new\_message}, \texttt{message\_read}, \texttt{thread\_deleted}, \texttt{dispute\_message}, \texttt{dispute\_chat\_deleted}.
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 10. SECURITY
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Security}
+
+\subsection{Authentication Security}
+\begin{itemize}[nosep]
+    \item Passwords hashed with bcrypt (cost factor from passlib defaults)
+    \item JWT tokens signed with HS256, 30-minute access / 7-day refresh expiry
+    \item SIWE nonces stored in Redis with 5-minute TTL, single-use
+    \item TOTP 2FA with rate limiting (5 attempts/60 seconds)
+    \item Backup codes SHA-256 hashed, single-use
+    \item JWT \texttt{backup\_login} flag prevents 2FA bypass after recovery
+\end{itemize}
+
+\subsection{Smart Contract Security}
+\begin{itemize}[nosep]
+    \item OpenZeppelin \texttt{ReentrancyGuard} on payment functions (\texttt{approveMilestone}, \texttt{resolveDispute}, \texttt{cancelContract})
+    \item \texttt{Ownable} for admin-only operations
+    \item Input validation: zero-address checks, self-contract prevention, array length matching
+    \item State machine enforcement: each function validates current contract status
+    \item Exact funding amount validation: \texttt{msg.value == escrow.totalAmount}
+\end{itemize}
+
+\subsection{API Security}
+\begin{itemize}[nosep]
+    \item CORS configuration with explicit origin whitelist
+    \item Redis sliding window rate limiting per IP
+    \item Role-based access control (RBAC) on all endpoints
+    \item Contract party verification: users can only access their own contracts
+    \item Chat deletion guarded by contract/dispute status
+\end{itemize}
+
+\subsection{Infrastructure Security}
+\begin{itemize}[nosep]
+    \item Database credentials in environment variables (not committed)
+    \item Private keys stored in \texttt{.env}, never exposed to frontend
+    \item IPFS content pinned to prevent garbage collection
+    \item Docker containers with memory limits
+\end{itemize}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 11. DEPLOYMENT
+% ═══════════════════════════════════════════════════════════════════════════
+\section{Deployment}
+
+\subsection{Quick Start}
+
+\begin{lstlisting}[basicstyle=\ttfamily\small]
+# Clone repository
+git clone https://github.com/Dumb-o/CapstoneV3.git
+cd CapstoneV3
+
+# Start all services (auto-installs Python/Node.js if missing)
+chmod +x start.sh
+./start.sh
+\end{lstlisting}
+
+The \texttt{start.sh} script:
+\begin{enumerate}[nosep]
+    \item Checks/installs Python 3 and Node.js (via brew/apt/yum/winget/choco)
+    \item Starts Docker containers (PostgreSQL, Redis, Hardhat, IPFS)
+    \item Creates Python venv and installs dependencies
+    \item Runs startup migrations (schema evolution)
+    \item Starts FastAPI backend on port 8000
+    \item Installs frontend dependencies
+    \item Starts React dev server on port 3000
+\end{enumerate}
+
+\subsection{Environment Configuration}
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+# backend/.env
+DATABASE_URL=postgresql+asyncpg://freeledger:freeledger_dev@localhost:5432/freeledger
+REDIS_URL=redis://localhost:6379
+RPC_URL=http://127.0.0.1:8545
+CONTRACT_ADDRESS=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+CLIENT_PRIVATE_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+IPFS_API_URL=http://127.0.0.1:5001
+
+# frontend/.env
+REACT_APP_CONTRACT_ADDRESS=0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9
+REACT_APP_BLOCKCHAIN_RPC=http://127.0.0.1:8545
+REACT_APP_CHAIN_ID=31337
+REACT_APP_API_URL=http://127.0.0.1:8000/api
+REACT_APP_IPFS_GATEWAY=http://localhost:8080
+\end{lstlisting}
+
+\subsection{Startup Migrations}
+The backend runs inline database migrations at startup, tracked via a \texttt{schema\_migrations} table:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{ll}
+\toprule
+\textbf{Version} & \textbf{Description} \\
+\midrule
+v2 & Clear stale on\_chain\_ids after contract redeployment \\
+v3 & Relax wallet\_address UNIQUE constraint (max 2 accounts per wallet) \\
+v4 & Clear on\_chain\_ids after Hardhat restart \\
+v5 & Add email\_notifications column to users \\
+\bottomrule
+\end{tabular}
+\caption{Database Migrations}
+\end{table}
+
+% ═══════════════════════════════════════════════════════════════════════════
+% 12. APPENDIX
+% ═══════════════════════════════════════════════════════════════════════════
+\section*{Appendix}
+\addcontentsline{toc}{section}{Appendix}
+
+\subsection{Project Directory Structure}
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+CapstoneV3/
+  start.sh                     # One-command startup script
+  admin.sh                     # Admin account manager
+  fund.sh                      # Test wallet funder
+  README.md                    # Project documentation
+  backend/
+    app/
+      main.py                  # FastAPI application entry
+      config.py                # Pydantic settings
+      database.py              # SQLAlchemy async engine
+      models.py                # ORM models (11 tables)
+      schemas.py               # Pydantic request/response schemas
+      redis_client.py          # Redis async client
+      routers/                 # 14 API router modules
+      services/                # 10 service modules
+      middleware/               # Rate limiting + caching
+  frontend/
+    src/
+      App.js                   # Route definitions
+      context/AppContext.js    # Global state provider
+      hooks/useAuth.js         # MetaMask auth hook
+      services/                # API client, web3, IPFS
+      pages/                   # Page components
+      components/              # Shared UI components
+      css/                     # Scoped stylesheets
+  contracts/
+    contracts/GigEscrow.sol    # Solidity smart contract
+    scripts/deploy.js          # Deployment script
+  docker/
+    docker-compose.yml         # Infrastructure containers
+  scripts/
+    fund-wallet.js             # Test ETH funder
+\end{lstlisting}
+
+\vfill
+\begin{center}
+\textcolor{gray}{\rule{0.5\textwidth}{0.4pt}}\\[0.5cm]
+{\small\textcolor{gray}{FreeLedger Technical Documentation --- Pawan Poudel --- \today}}
+\end{center}
+
+\end{document}

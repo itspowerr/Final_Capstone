@@ -57,6 +57,10 @@ async def _find_contract_by_chain_id(chain_id: int, db):
 
 
 async def process_contract_created(contract_id: int, client_address: str, db):
+    existing = await db.execute(select(Job).where(Job.on_chain_job_id == contract_id))
+    if existing.scalar_one_or_none():
+        return
+
     result = await db.execute(
         select(Job).where(
             Job.on_chain_job_id.is_(None)
