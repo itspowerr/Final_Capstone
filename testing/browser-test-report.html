@@ -1,0 +1,11 @@
+<!doctype html><html><body><h1>FreeLedger Browser Smoke Test Report</h1><table border="1" cellspacing="0" cellpadding="6"><thead><tr><th>Scenario</th><th>Type</th><th>Status</th><th>Remarks</th><th>Execution Time</th></tr></thead><tbody><tr><td>Homepage renders in browser</td><td>System Testing</td><td>PASS</td><td>Root route loaded with HTTP 200 and FreeLedger branding visible.</td><td>1520 ms</td></tr>
+<tr><td>Landing sign-in navigation opens login form</td><td>System Testing</td><td>PASS</td><td>Sign-in button changed the client-side route to /login and displayed login inputs.</td><td>702 ms</td></tr>
+<tr><td>Empty login form displays validation messages</td><td>System Testing</td><td>PASS</td><td>Empty email/password showed configured validation messages.</td><td>392 ms</td></tr>
+<tr><td>Invalid credentials display API error</td><td>Integration Testing</td><td>PASS</td><td>Login form called backend and displayed invalid credential error.</td><td>928 ms</td></tr>
+<tr><td>Valid client login redirects to dashboard</td><td>Integration Testing</td><td>PASS</td><td>Valid login stored session and redirected to /client/dashboard.</td><td>690 ms</td></tr>
+<tr><td>Dashboard navigation reaches jobs, contracts, messages, and profile</td><td>System Testing</td><td>PASS</td><td>Authenticated client navigation reached Jobs, Contracts, Messages, and Profile routes.</td><td>2100 ms</td></tr>
+<tr><td>Logout returns user to login page</td><td>System Testing</td><td>PASS</td><td>Logout menu redirected to /login.</td><td>766 ms</td></tr>
+<tr><td>Direct browser access to authenticated route loads app shell</td><td>System Testing</td><td>PASS</td><td>Direct browser request to /client/dashboard returned the React app shell with HTTP 200.</td><td>403 ms</td></tr>
+<tr><td>Responsive homepage smoke check - desktop</td><td>System Testing</td><td>PASS</td><td>desktop viewport rendered homepage and branding.</td><td>1117 ms</td></tr>
+<tr><td>Responsive homepage smoke check - tablet</td><td>System Testing</td><td>PASS</td><td>tablet viewport rendered homepage and branding.</td><td>1097 ms</td></tr>
+<tr><td>Responsive homepage smoke check - mobile</td><td>System Testing</td><td>PASS</td><td>mobile viewport rendered homepage and branding.</td><td>942 ms</td></tr></tbody></table></body></html>

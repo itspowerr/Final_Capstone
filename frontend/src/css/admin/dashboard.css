@@ -1,0 +1,144 @@
+.admin-dashboard-shell {
+  width: min(1280px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 46px 0 80px;
+}
+
+.admin-dashboard-state {
+  width: min(1280px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 72px 0;
+  color: var(--text-3);
+  text-align: center;
+}
+.admin-dashboard-error { color: var(--red); }
+
+.admin-hero-card {
+  min-height: 212px;
+  margin-bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 42px 44px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: radial-gradient(circle at 82% 18%, rgba(37, 99, 235, .16), transparent 34%), linear-gradient(135deg, #fff, #f4f8ff);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.admin-hero-copy h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  line-height: 1.05;
+  letter-spacing: -.8px;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+.admin-hero-copy p {
+  max-width: 680px;
+  color: var(--text-2);
+  font-size: 16px;
+}
+.admin-hero-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.admin-stats-grid { margin-bottom: 24px; }
+.admin-stat-card {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+.admin-stat-card .s-icon { color: var(--accent); }
+.admin-stat-card.accent-card .s-icon { color: #fff; }
+.s-badge.danger { background: #fef2f2; color: #dc2626; }
+
+.admin-dashboard-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, .75fr);
+  gap: 24px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.admin-dashboard-card { border-radius: 20px; overflow: hidden; }
+.admin-dashboard-card .dash-card-header p {
+  margin-top: 3px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.admin-fee-display {
+  min-height: 132px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 10px 0 6px;
+}
+.admin-fee-display strong {
+  font-size: clamp(34px, 5vw, 52px);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  color: var(--accent);
+}
+.admin-fee-display span { color: var(--text-2); font-size: 14px; }
+
+.admin-role-row {
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.admin-role-row:last-child { border-bottom: 0; }
+.admin-role-name { text-transform: capitalize; font-size: 14px; font-weight: 700; color: var(--text-2); }
+.admin-role-row strong { font-size: 17px; font-weight: 800; }
+.role-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 5px var(--accent-pale); }
+.role-dot.admin { background: #ef4444; box-shadow: 0 0 0 5px #fef2f2; }
+.role-dot.freelancer { background: #10b981; box-shadow: 0 0 0 5px #ecfdf5; }
+
+.admin-user-row {
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.admin-user-row:last-child { border-bottom: 0; }
+.admin-user-main { min-width: 0; display: grid; gap: 2px; }
+.admin-user-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 800;
+}
+.admin-user-main span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-3);
+  font-size: 12px;
+  font-weight: 600;
+}
+.admin-user-main em { margin-left: 8px; font-style: normal; }
+.admin-user-row time { color: var(--text-3); font-size: 12px; font-weight: 700; }
+
+@media (max-width: 900px) {
+  .admin-dashboard-shell,
+  .admin-dashboard-state { width: min(100% - 32px, 1280px); }
+  .admin-hero-card { align-items: flex-start; flex-direction: column; padding: 30px 24px; }
+  .admin-dashboard-grid { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 560px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .admin-user-row { grid-template-columns: 38px 1fr; }
+  .admin-user-row time { grid-column: 2; }
+}

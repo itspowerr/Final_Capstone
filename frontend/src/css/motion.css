@@ -1,0 +1,161 @@
+/* Subtle app motion for portal navigation and tab/page switches */
+.route-transition-shell {
+  min-height: 100vh;
+  animation: fl-route-enter .24s cubic-bezier(.2, .8, .2, 1) both;
+  transform-origin: top center;
+  will-change: opacity, transform;
+}
+
+@keyframes fl-route-enter {
+  from {
+    opacity: .82;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fl-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(.996);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes fl-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fl-pop-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dash-body,
+.page-body,
+.messages-shell,
+.admin-page,
+.profile-page,
+.contracts-page {
+  animation: fl-page-enter .32s cubic-bezier(.2, .8, .2, 1) both;
+  transform-origin: top center;
+}
+
+.stats-grid > *,
+.dash-grid > *,
+.jobs-grid > *,
+.freelancers-grid > *,
+.contract-list > *,
+.contract-card,
+.job-card,
+.freelancer-card,
+.dash-card,
+.stat-card {
+  animation: fl-card-enter .36s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.stats-grid > *:nth-child(1),
+.jobs-grid > *:nth-child(1),
+.freelancers-grid > *:nth-child(1) { animation-delay: 20ms; }
+.stats-grid > *:nth-child(2),
+.jobs-grid > *:nth-child(2),
+.freelancers-grid > *:nth-child(2) { animation-delay: 45ms; }
+.stats-grid > *:nth-child(3),
+.jobs-grid > *:nth-child(3),
+.freelancers-grid > *:nth-child(3) { animation-delay: 70ms; }
+.stats-grid > *:nth-child(4),
+.jobs-grid > *:nth-child(4),
+.freelancers-grid > *:nth-child(4) { animation-delay: 95ms; }
+
+.client-nav-links a,
+.freelancer-nav-links a,
+.dash-nav-links a {
+  transition: color .18s ease, background-color .18s ease, transform .18s ease;
+}
+
+.client-nav-links a:hover,
+.freelancer-nav-links a:hover,
+.dash-nav-links a:hover {
+  transform: translateY(-1px);
+}
+
+.client-nav-links a::after,
+.freelancer-nav-links a::after {
+  transition: left .22s ease, right .22s ease, opacity .22s ease, transform .22s ease;
+}
+
+.client-nav-links a.active::after,
+.freelancer-nav-links a.active::after {
+  animation: fl-card-enter .22s cubic-bezier(.2, .8, .2, 1) both;
+}
+
+.client-notification-panel,
+.freelancer-notification-panel,
+.client-user-dropdown,
+.freelancer-user-dropdown,
+.message-inbox-menu,
+.thread-menu,
+.guide-modal,
+.modal-box {
+  animation: fl-pop-enter .18s cubic-bezier(.2, .8, .2, 1) both;
+  transform-origin: top right;
+}
+
+button,
+.btn,
+.stat-link,
+.view-all,
+.nav-bell,
+.user-chip {
+  transition: transform .16s ease, box-shadow .16s ease, background-color .16s ease, border-color .16s ease, color .16s ease;
+}
+
+button:hover,
+.btn:hover,
+.stat-link:hover,
+.view-all:hover,
+.nav-bell:hover,
+.user-chip:hover {
+  transform: translateY(-1px);
+}
+
+button:active,
+.btn:active,
+.stat-link:active,
+.view-all:active,
+.nav-bell:active,
+.user-chip:active {
+  transform: translateY(0) scale(.985);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .001ms !important;
+  }
+}

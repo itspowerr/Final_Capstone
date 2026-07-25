@@ -1,0 +1,92 @@
+﻿{
+    "generated_at":  "2026-07-18 14:59:28 +05:45",
+    "backend_health":  200,
+    "backend_api_health":  {
+                               "status":  "ok",
+                               "version":  "1.0.0",
+                               "services":  {
+                                                "database":  {
+                                                                 "status":  "ok"
+                                                             },
+                                                "redis":  {
+                                                              "status":  "ok"
+                                                          },
+                                                "ipfs":  {
+                                                             "status":  "ok",
+                                                             "last_checked":  "2026-07-18T09:14:18.818525+00:00",
+                                                             "consecutive_failures":  0,
+                                                             "version":  "0.28.0"
+                                                         },
+                                                "blockchain":  {
+                                                                   "status":  "ok",
+                                                                   "chain_id":  31337,
+                                                                   "block_number":  1
+                                                               },
+                                                "event_listener":  {
+                                                                       "status":  "disabled",
+                                                                       "detail":  "no private key configured"
+                                                                   }
+                                            }
+                           },
+    "frontend_root":  200,
+    "direct_http_routes":  [
+                               {
+                                   "Route":  "/",
+                                   "Status":  200
+                               },
+                               {
+                                   "Route":  "/login",
+                                   "Status":  404
+                               },
+                               {
+                                   "Route":  "/client/dashboard",
+                                   "Status":  404
+                               },
+                               {
+                                   "Route":  "/freelancer/dashboard",
+                                   "Status":  404
+                               },
+                               {
+                                   "Route":  "/client/messages",
+                                   "Status":  404
+                               },
+                               {
+                                   "Route":  "/freelancer/jobs",
+                                   "Status":  404
+                               }
+                           ],
+    "openapi_routes":  [
+                           {
+                               "Route":  "/api/auth/login",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/auth/register",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/auth/google",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/jobs",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/contracts",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/messages/threads",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/admin/dashboard",
+                               "Registered":  true
+                           },
+                           {
+                               "Route":  "/api/users/me",
+                               "Registered":  true
+                           }
+                       ]
+}

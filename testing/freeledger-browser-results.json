@@ -1,0 +1,79 @@
+[
+  {
+    "name": "Homepage renders in browser",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "Root route loaded with HTTP 200 and FreeLedger branding visible.",
+    "ms": 1520
+  },
+  {
+    "name": "Landing sign-in navigation opens login form",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "Sign-in button changed the client-side route to /login and displayed login inputs.",
+    "ms": 702
+  },
+  {
+    "name": "Empty login form displays validation messages",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "Empty email/password showed configured validation messages.",
+    "ms": 392
+  },
+  {
+    "name": "Invalid credentials display API error",
+    "type": "Integration Testing",
+    "status": "PASS",
+    "remarks": "Login form called backend and displayed invalid credential error.",
+    "ms": 928
+  },
+  {
+    "name": "Valid client login redirects to dashboard",
+    "type": "Integration Testing",
+    "status": "PASS",
+    "remarks": "Valid login stored session and redirected to /client/dashboard.",
+    "ms": 690
+  },
+  {
+    "name": "Dashboard navigation reaches jobs, contracts, messages, and profile",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "Authenticated client navigation reached Jobs, Contracts, Messages, and Profile routes.",
+    "ms": 2100
+  },
+  {
+    "name": "Logout returns user to login page",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "Logout menu redirected to /login.",
+    "ms": 766
+  },
+  {
+    "name": "Direct browser access to authenticated route loads app shell",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "Direct browser request to /client/dashboard returned the React app shell with HTTP 200.",
+    "ms": 403
+  },
+  {
+    "name": "Responsive homepage smoke check - desktop",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "desktop viewport rendered homepage and branding.",
+    "ms": 1117
+  },
+  {
+    "name": "Responsive homepage smoke check - tablet",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "tablet viewport rendered homepage and branding.",
+    "ms": 1097
+  },
+  {
+    "name": "Responsive homepage smoke check - mobile",
+    "type": "System Testing",
+    "status": "PASS",
+    "remarks": "mobile viewport rendered homepage and branding.",
+    "ms": 942
+  }
+]

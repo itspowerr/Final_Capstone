@@ -1,0 +1,7 @@
+{
+  "name": "Freelancer workflow: login, browse jobs, open details, submit proposal, receive confirmation",
+  "type": "End-to-End Testing",
+  "status": "PASS",
+  "remarks": "Freelancer logged in, browsed jobs, opened created job details, submitted proposal, and saw confirmation.",
+  "ms": 4539
+}

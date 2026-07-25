@@ -1,0 +1,16 @@
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+sqlalchemy==2.0.51
+asyncpg==0.31.0
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.3.0
+python-dotenv==1.0.1
+pydantic==2.13.4
+pydantic-settings==2.8.1
+email-validator==2.1.0
+web3==7.8.0
+eth-account>=0.13.1
+redis==5.0.1
+httpx==0.27.0
+lru-dict==1.4.1
+pytest==9.1.1

@@ -1,0 +1,47 @@
+﻿[
+    {
+        "Test":  "Register via backend API",
+        "Status":  "PASS",
+        "Remarks":  "Created frontend.integration.20260718145201@example.com and received token"
+    },
+    {
+        "Test":  "Login via backend API",
+        "Status":  "PASS",
+        "Remarks":  "Token returned"
+    },
+    {
+        "Test":  "Authenticated /auth/me",
+        "Status":  "PASS",
+        "Remarks":  "HTTP 200"
+    },
+    {
+        "Test":  "Jobs list API",
+        "Status":  "PASS",
+        "Remarks":  "HTTP 200"
+    },
+    {
+        "Test":  "Contracts list API",
+        "Status":  "PASS",
+        "Remarks":  "HTTP 200"
+    },
+    {
+        "Test":  "Profile API",
+        "Status":  "PASS",
+        "Remarks":  "HTTP 200"
+    },
+    {
+        "Test":  "Messages threads API",
+        "Status":  "PASS",
+        "Remarks":  "HTTP 200"
+    },
+    {
+        "Test":  "Failed login handling API",
+        "Status":  "PASS",
+        "Remarks":  "Rejected invalid credentials with HTTP 401"
+    },
+    {
+        "Test":  "Invalid Google token API handling",
+        "Status":  "PASS",
+        "Remarks":  "Rejected invalid Google credential with HTTP 401"
+    }
+]
