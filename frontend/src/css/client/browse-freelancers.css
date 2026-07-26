@@ -1,45 +1,52 @@
 .fl-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 16px;
+  gap: 24px;
 }
 
 .fl-card {
-  background: var(--white);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow);
-  transition: all .2s ease;
+  transition: all .3s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
   overflow: hidden;
+  position: relative;
+}
+.fl-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
+  opacity: 0; transition: opacity 0.3s ease;
 }
 
 .fl-card:hover {
-  border-color: #bfdbfe;
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
+  border-color: rgba(36, 87, 230, 0.2); box-shadow: var(--shadow-hover);
+  transform: translateY(-4px);
 }
+.fl-card:hover::before { opacity: 1; }
 
 .fl-card-top {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 20px 20px 0;
+  gap: 16px;
+  padding: 24px 24px 0; position: relative; z-index: 1;
 }
 
 .fl-avatar {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-weight: 700;
-  font-size: 18px;
+  font-weight: 800;
+  font-size: 20px;
   flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .fl-info {
@@ -48,15 +55,15 @@
 }
 
 .fl-name {
-  font-weight: 700;
-  font-size: 15px;
-  color: var(--text);
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--navy); font-family: 'Manrope', sans-serif;
 }
 
 .fl-headline {
-  font-size: 12px;
-  color: var(--text-2);
-  margin-top: 1px;
+  font-size: 13px;
+  color: var(--text-2); font-weight: 500;
+  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -68,67 +75,67 @@
 }
 
 .fl-rate {
-  font-weight: 700;
-  font-size: 14px;
-  color: var(--green);
+  font-weight: 800;
+  font-size: 16px; font-family: 'Manrope', sans-serif;
+  color: var(--accent);
 }
 
 .fl-level {
-  font-size: 11px;
-  color: var(--text-3);
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  color: var(--text-3); margin-top: 2px;
 }
 
 .fl-skills {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
-  padding: 0 20px;
+  gap: 8px;
+  padding: 0 24px; position: relative; z-index: 1;
 }
 
 .fl-bio {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-2);
-  line-height: 1.5;
-  padding: 0 20px;
+  line-height: 1.6;
+  padding: 0 24px; position: relative; z-index: 1;
 }
 
 .fl-meta {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 0 20px;
+  padding: 0 24px; position: relative; z-index: 1; margin-top: auto;
 }
 
 .fl-rating {
-  font-size: 12px;
-  color: var(--amber);
+  font-size: 14px;
+  color: #f59e0b;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 4px; letter-spacing: 2px;
 }
 
 .fl-rating span {
   color: var(--text-2);
-  font-weight: 600;
-  font-size: 11px;
+  font-weight: 700;
+  font-size: 13px; letter-spacing: 0; margin-left: 4px;
 }
 
 .fl-avail-yes {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--green);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .fl-avail-no {
-  font-size: 11px;
-  color: var(--text-3);
+  font-size: 12px;
+  color: var(--text-3); font-weight: 600;
 }
 
 .fl-avail-check {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 13px; font-weight: 500;
   color: var(--text-2);
   cursor: pointer;
   white-space: nowrap;
@@ -137,10 +144,10 @@
 
 .fl-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   justify-content: flex-end;
-  padding: 10px 20px;
-  border-top: 1px solid var(--border);
+  padding: 16px 24px;
+  border-top: 1px solid rgba(0,0,0,0.05); position: relative; z-index: 1; margin-top: 8px;
 }
 
 .pagination {

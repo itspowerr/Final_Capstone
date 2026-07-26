@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/client/Navbar';
 import { SkeletonCard } from '../../components/shared/Skeleton';
@@ -201,7 +202,7 @@ export default function BrowseFreelancers() {
           </>
         )}
 
-        {inviteModal && (
+        {inviteModal && createPortal(
           <div className="modal-overlay open" onClick={() => setInviteModal(null)}>
             <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
               <button className="modal-close" onClick={() => setInviteModal(null)}>
@@ -238,7 +239,7 @@ export default function BrowseFreelancers() {
               )}
             </div>
           </div>
-        )}
+        , document.body)}
       </div>
     </>
   );

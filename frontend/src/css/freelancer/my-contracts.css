@@ -1,48 +1,214 @@
-.badge {
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: 20px;
-  font-size: 11px; font-weight: 700; letter-spacing: .3px;
-  text-transform: uppercase; white-space: nowrap;
-}
-.badge-active    { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; }
-.badge-pending   { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-.badge-draft     { background: var(--surface); color: var(--text-3); border: 1px solid var(--border); }
-.badge-completed { background: #eff6ff; color: var(--accent); border: 1px solid #bfdbfe; }
-.badge-disputed  { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+/* ============================================================
+   FreeLedger — My Contracts Theme (Aligned with Landing Page)
+   ============================================================ */
 
 .fl-tabs {
-  display: flex; gap: 4px; background: var(--white);
-  border: 1px solid var(--border); border-radius: 10px;
-  padding: 5px; margin-bottom: 20px; flex-wrap: wrap;
+  display: flex;
+  gap: 8px;
+  background: var(--landing-mist, #f7f9fc);
+  border: 1px solid var(--landing-line, #e4e7ec);
+  border-radius: 12px;
+  padding: 6px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  width: fit-content;
 }
+
 .fl-tab {
-  padding: 8px 16px; border: none; border-radius: 7px; font-family: inherit;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-  color: var(--text-2); background: transparent; transition: all .15s;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--landing-muted, #667085);
+  background: transparent;
+  transition: all 0.2s ease;
   white-space: nowrap;
 }
-.fl-tab:hover  { background: var(--accent-pale); color: var(--accent); }
-.fl-tab.active { background: var(--accent); color: #fff; }
 
-.match-badge {
-  background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;
-  font-size: 11px; font-weight: 700; padding: 2px 8px;
-  border-radius: 4px; white-space: nowrap;
+.fl-tab:hover {
+  background: rgba(36, 87, 230, 0.05);
+  color: var(--landing-blue, #2457e6);
 }
-.applied-badge {
-  background: #eff6ff; color: var(--accent); border: 1px solid #bfdbfe;
-  font-size: 11px; font-weight: 700; padding: 2px 8px;
-  border-radius: 4px; white-space: nowrap;
+
+.fl-tab.active {
+  background: var(--landing-white, #ffffff);
+  color: var(--landing-navy, #101828);
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.05);
 }
-.new-tag {
-  position: absolute; top: 14px; right: 14px;
-  background: var(--green); color: #fff;
-  font-size: 10px; font-weight: 700; padding: 2px 7px;
-  border-radius: 4px; letter-spacing: .3px;
+
+.contract-card {
+  background: var(--landing-white, #ffffff);
+  border: 1px solid var(--landing-line, #e4e7ec);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.02);
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 20px;
+  align-items: start;
 }
-.skill-tag.match {
-  background: #ecfdf5; border-color: #a7f3d0; color: #059669;
+
+.contract-card:hover {
+  transform: translateY(-4px);
+  border-color: #bfd0fb;
+  box-shadow: 0 12px 24px -10px rgba(36, 87, 230, 0.15);
 }
-.job-card.applied {
-  border-left: 3px solid var(--accent);
+
+.contract-title {
+  font-family: var(--landing-display, 'Manrope', sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--landing-navy, #101828);
 }
+
+.contract-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--landing-muted, #667085);
+  margin: 12px 0 16px 0;
+  flex-wrap: wrap;
+  font-weight: 500;
+}
+
+.contract-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.contract-meta-item svg {
+  color: var(--landing-blue, #2457e6);
+}
+
+.prog-bar {
+  background: var(--landing-mist, #f7f9fc);
+  height: 8px;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.prog-fill {
+  height: 100%;
+  background: var(--landing-blue, #2457e6);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.badge-active { background: #ecfdf3; color: #027a48; border: 1px solid #abefc6; }
+.badge-pending { background: #fffaeb; color: #b54708; border: 1px solid #fef0c7; }
+.badge-pending_signatures, .badge-pending_funding { background: #fffaeb; color: #b54708; border: 1px solid #fef0c7; }
+.badge-draft { background: var(--landing-mist, #f7f9fc); color: var(--landing-muted, #667085); border: 1px solid var(--landing-line, #e4e7ec); }
+.badge-completed, .badge-delivered { background: var(--landing-blue-soft, #edf3ff); color: var(--landing-blue-dark, #173aa6); border: 1px solid #bfd0fb; }
+.badge-disputed { background: #fef3f2; color: #b42318; border: 1px solid #fecaca; }
+
+.milestone-item {
+  background: var(--landing-mist, #f7f9fc);
+  border: 1px solid var(--landing-line, #e4e7ec);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.milestone-item.rejected {
+  background: #fef3f2;
+  border-color: #fecaca;
+}
+
+.milestone-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.milestone-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  background: var(--landing-white, #ffffff);
+  border: 2px solid var(--landing-line, #e4e7ec);
+  color: var(--landing-muted, #667085);
+}
+.milestone-icon.paid { background: #ecfdf3; border-color: #027a48; color: #027a48; }
+.milestone-icon.rejected { background: #fef3f2; border-color: #b42318; color: #b42318; }
+.milestone-icon.submitted { background: var(--landing-blue-soft, #edf3ff); border-color: var(--landing-blue, #2457e6); color: var(--landing-blue, #2457e6); }
+
+.upload-box {
+  border: 2px dashed #bfd0fb;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: var(--landing-blue-soft, #edf3ff);
+  margin-bottom: 16px;
+  transition: all 0.2s ease;
+}
+.upload-box:hover {
+  background: #e2eafd;
+  border-color: var(--landing-blue, #2457e6);
+}
+
+/* Modal styles copied from find jobs */
+.modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(16, 24, 40, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+}
+.modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+.modal-box {
+  background: var(--landing-white, #ffffff);
+  border-radius: 24px;
+  width: 100%; max-width: 600px; max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  padding: 32px;
+  box-shadow: 0 32px 64px -12px rgba(16, 24, 40, 0.2);
+  transform: translateY(20px) scale(0.98);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.modal-overlay.open .modal-box { transform: translateY(0) scale(1); }
+
+.modal-close {
+  position: absolute; top: 20px; right: 20px;
+  background: var(--landing-mist, #f7f9fc);
+  border: none; width: 36px; height: 36px; border-radius: 12px;
+  display: grid; place-items: center; cursor: pointer; color: var(--landing-muted);
+  transition: all 0.2s;
+}
+.modal-close:hover { background: #fee2e2; color: #dc2626; transform: rotate(90deg); }

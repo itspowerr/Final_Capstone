@@ -4,6 +4,8 @@ import Navbar from '../../components/freelancer/Navbar';
 import { SkeletonCard, SkeletonLine } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import TOTPSettings from '../../components/shared/TOTPSettings';
+import '../../css/freelancer/dashboard.css';
+import '../../css/freelancer/profile.css';
 
 export default function MyProfile() {
   const navigate = useNavigate();
@@ -26,6 +28,7 @@ export default function MyProfile() {
   const [skillInput, setSkillInput] = useState('');
   const [avatarCid, setAvatarCid] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -125,25 +128,34 @@ export default function MyProfile() {
   }
 
   async function saveProfile() {
+    setSaving(true);
     try {
       await api.put('/users/me', {
-        username: fullName || undefined,
-        headline: title || undefined,
-        bio: bio || undefined,
-        skills: skills.length > 0 ? skills : undefined,
-        hourly_rate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-        experience_level: experience || undefined,
+        username: fullName || null,
+        headline: title || null,
+        bio: bio || null,
+        skills: skills,
+        hourly_rate: hourlyRate ? parseFloat(hourlyRate) : 0,
+        experience_level: experience || 'mid',
         is_available: availability === 'available',
-        location: location || undefined,
-        github_url: github || undefined,
-        linkedin_url: linkedin || undefined,
-        portfolio_url: portfolio || undefined,
-        wallet_address: wallet || undefined,
-        avatar_cid: avatarCid || undefined,
+        location: location || null,
+        github_url: github || null,
+        linkedin_url: linkedin || null,
+        portfolio_url: portfolio || null,
+        wallet_address: wallet || null,
+        avatar_cid: avatarCid || null,
       });
-      showToast('Profile saved!');
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (fullName) u.username = fullName;
+        localStorage.setItem('user', JSON.stringify(u));
+      }
+      showToast('✨ Your professional profile is now live and updated!', '🚀');
     } catch {
       showToast('Failed to save. Try again.', '⚠️');
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -171,14 +183,14 @@ export default function MyProfile() {
   const earned = completed.reduce((s, c) => s + (Number(c.total_amount) || 0), 0);
 
   const availStyle = {
-    available: { label: '✅ Available', bg: 'var(--accent-pale)', color: 'var(--accent)', border: '1px solid var(--accent-border)' },
-    busy: { label: '🔴 Busy', bg: '#fef2f2', color: '#dc2626', border: '1px solid #fecaca' },
-    part: { label: '🟡 Part-time', bg: '#fffbeb', color: '#d97706', border: '1px solid #fde68a' },
-  }[availability] || { label: '✅ Available', bg: 'var(--accent-pale)', color: 'var(--accent)', border: '1px solid var(--accent-border)' };
+    available: { label: '✅ Available for work', bg: '#ecfdf3', color: '#027a48', border: '1px solid #abefc6' },
+    busy: { label: '🔴 Currently busy', bg: '#fef3f2', color: '#b42318', border: '1px solid #fecaca' },
+    part: { label: '🟡 Part-time only', bg: '#fffaeb', color: '#b54708', border: '1px solid #fef0c7' },
+  }[availability] || { label: '✅ Available for work', bg: '#ecfdf3', color: '#027a48', border: '1px solid #abefc6' };
 
   const nameDisplay = fullName || 'Unnamed';
   const initials = nameDisplay.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  const walletDisplay = wallet ? wallet.slice(0, 8) + '…' + wallet.slice(-6) : 'No wallet connected';
+  const walletDisplay = wallet ? wallet.slice(0, 8) + '...' + wallet.slice(-6) : 'No wallet connected';
   const rating = completed.length > 0 ? (3.5 + completed.length * 0.3).toFixed(1) : '—';
 
   const quickSkills = ['Solidity', 'React', 'Web3.js', 'Ethers.js', 'Figma', 'Node.js', 'TypeScript', 'IPFS', 'Hardhat', 'Python', 'Vue.js', 'PostgreSQL'];
@@ -188,21 +200,18 @@ export default function MyProfile() {
 
   if (loading) {
     return (
-      <div>
+      <div style={{ background: 'var(--landing-mist)', minHeight: '100vh' }}>
         <Navbar activePage="profile" />
-        <div className="page-body" style={{ maxWidth: 680, margin: '0 auto', padding: '32px 24px' }}>
+        <div className="page-body" style={{ maxWidth: 800, margin: '0 auto', padding: '32px 24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28 }}>
-            <div className="skeleton-circle" style={{ width: 80, height: 80, borderRadius: '50%' }} />
+            <div className="skeleton-circle" style={{ width: 120, height: 120, borderRadius: '50%' }} />
             <div style={{ flex: 1 }}>
-              <SkeletonLine width="40%" height={20} />
-              <SkeletonLine width="25%" height={14} style={{ marginTop: 8 }} />
+              <SkeletonLine width="40%" height={24} />
+              <SkeletonLine width="25%" height={16} style={{ marginTop: 12 }} />
             </div>
           </div>
           <SkeletonCard rows={5} />
-          <div style={{ marginTop: 20 }}>
-            <SkeletonCard rows={2} />
-          </div>
-          <div style={{ marginTop: 20 }}>
+          <div style={{ marginTop: 24 }}>
             <SkeletonCard rows={3} />
           </div>
         </div>
@@ -211,15 +220,15 @@ export default function MyProfile() {
   }
 
   return (
-    <div>
+    <div style={{ background: 'var(--landing-mist)', minHeight: '100vh' }}>
       <Navbar activePage="profile" />
       <div className="page-body">
-        <div className="page-header">
+        <div className="page-header" style={{ marginBottom: 32 }}>
           <div>
             <h1 className="page-title">My Profile</h1>
             <p className="page-sub">Your decentralized identity — visible to clients on the platform</p>
           </div>
-          <button className="btn btn-primary" onClick={saveProfile}>Save Changes</button>
+          <button className="btn btn-primary" style={{ padding: '0 24px' }} onClick={saveProfile} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
         </div>
 
         <div className="fl-profile-layout">
@@ -228,20 +237,23 @@ export default function MyProfile() {
               <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
                 {avatarCid ? (
-                  <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
+                  <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--landing-mist)', marginBottom: 16 }} />
                 ) : (
                   <div className="fl-profile-avatar-lg">{initials}</div>
                 )}
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)', fontSize: 12, color: 'white' }}>
+                <div style={{ position: 'absolute', bottom: 16, right: 0, width: 32, height: 32, borderRadius: '50%', background: 'var(--landing-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid var(--landing-white)', fontSize: 14, color: 'white', boxShadow: '0 2px 8px rgba(36, 87, 230, 0.3)' }}>
                   {uploadingAvatar ? '...' : '📷'}
                 </div>
               </label>
               <div className="fl-profile-name">{nameDisplay}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 12 }}>{title || 'Add your title'}</div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, background: availStyle.bg, color: availStyle.color, border: availStyle.border, marginBottom: 16 }}>
+              <div style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 16, fontWeight: 500 }}>{title || 'Add your professional title'}</div>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, fontSize: 12, fontWeight: 800, background: availStyle.bg, color: availStyle.color, border: availStyle.border, marginBottom: 20 }}>
                 {availStyle.label}
               </div>
-              <div className="fl-profile-wallet">{walletDisplay}</div>
+              <div style={{display: 'block'}}>
+                <div className="fl-profile-wallet">{walletDisplay}</div>
+              </div>
+              
               <div className="fl-profile-stats">
                 <div className="fl-pstat"><div className="val">{contracts.length}</div><div className="lbl">Contracts</div></div>
                 <div className="fl-pstat"><div className="val">{earned > 0 ? earned.toLocaleString() + ' ETH' : '0 ETH'}</div><div className="lbl">Earned</div></div>
@@ -261,8 +273,8 @@ export default function MyProfile() {
                 </select>
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Hourly Rate ($)</label>
-                <input className="form-input" type="number" placeholder="e.g. 45" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} />
+                <label className="form-label">Hourly Rate (ETH)</label>
+                <input className="form-input" type="number" placeholder="e.g. 0.05" step="0.01" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} />
               </div>
             </div>
           </div>
@@ -282,14 +294,14 @@ export default function MyProfile() {
               </div>
               <div className="form-group">
                 <label className="form-label">Bio</label>
-                <textarea className="form-input" rows="4" placeholder="Describe your expertise, the kinds of projects you enjoy, and what you bring to the table…" style={{ resize: 'vertical' }} value={bio} onChange={e => setBio(e.target.value)}></textarea>
+                <textarea className="form-input" rows="4" placeholder="Describe your expertise, the kinds of projects you enjoy, and what you bring to the table..." style={{ resize: 'vertical' }} value={bio} onChange={e => setBio(e.target.value)}></textarea>
               </div>
-              <div className="form-row">
-                <div className="form-group">
+              <div className="form-row" style={{marginBottom: 0}}>
+                <div className="form-group" style={{marginBottom: 0}}>
                   <label className="form-label">Location</label>
                   <input className="form-input" placeholder="e.g. Kathmandu, Nepal" value={location} onChange={e => setLocation(e.target.value)} />
                 </div>
-                <div className="form-group">
+                <div className="form-group" style={{marginBottom: 0}}>
                   <label className="form-label">Experience Level</label>
                   <select className="form-input" value={experience} onChange={e => setExperience(e.target.value)}>
                     {expLevels.map(l => (
@@ -304,17 +316,17 @@ export default function MyProfile() {
               <h3>Skills</h3>
               <div className="fl-skills-list">
                 {skills.length === 0 ? (
-                  <span style={{ fontSize: 13, color: 'var(--text-3)' }}>No skills added yet.</span>
+                  <span style={{ fontSize: 14, color: 'var(--landing-muted)' }}>No skills added yet.</span>
                 ) : skills.map(s => (
                   <span key={s} className="fl-skill-pill">{s}<button onClick={() => removeSkill(s)} title="Remove">×</button></span>
                 ))}
               </div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <input className="form-input" placeholder="Add a skill (e.g. Solidity, React, Figma…)" value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { addSkill(); e.preventDefault(); } }} />
-                <button className="btn btn-primary btn-sm" onClick={addSkill}>+ Add</button>
+              <div style={{ display: 'flex', gap: 12, marginTop: 12 }}>
+                <input className="form-input" placeholder="Add a skill (e.g. Solidity, React, Figma...)" value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { addSkill(); e.preventDefault(); } }} />
+                <button className="btn btn-primary" style={{padding: '0 20px'}} onClick={addSkill}>Add Skill</button>
               </div>
-              <div style={{ marginTop: 10, lineHeight: 2 }}>
-                <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Quick add: </span>
+              <div style={{ marginTop: 16, lineHeight: 2.2 }}>
+                <span style={{ fontSize: 13, color: 'var(--landing-text)', fontWeight: 600, marginRight: 8 }}>Quick add: </span>
                 {quickSkills.map(s => (
                   <button key={s} className="fl-quick-skill-btn" onClick={() => addSkillQuick(s)}>{s}</button>
                 ))}
@@ -341,22 +353,22 @@ export default function MyProfile() {
 
             <div className="fl-profile-section">
               <h3>Wallet Identity (MetaMask)</h3>
-              <p style={{ fontSize: 13, color: 'var(--text-2)', marginBottom: 16 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform — no username or password needed.</p>
-              <div style={{ padding: 14, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, marginBottom: 14 }}>
+              <p style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 20, lineHeight: 1.5 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform — no username or password needed.</p>
+              <div style={{ padding: 16, background: 'var(--landing-mist)', border: '1px solid var(--landing-line)', borderRadius: 16, marginBottom: 20 }}>
                 {wallet ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }}></div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#027a48', boxShadow: '0 0 0 4px #ecfdf3' }}></div>
                     <div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)' }}>Wallet Connected</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-3)', fontFamily: "'DM Mono', monospace" }}>{wallet}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--landing-navy)' }}>Wallet Connected</div>
+                      <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontFamily: "'DM Mono', monospace", marginTop: 2 }}>{wallet}</div>
                     </div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 13, color: 'var(--text-3)' }}>No wallet connected</div>
+                  <div style={{ fontSize: 14, color: 'var(--landing-muted)', fontWeight: 500 }}>No wallet connected</div>
                 )}
               </div>
-              <button className="btn btn-outline" onClick={connectMetaMask}>
-                <svg width="18" height="18" viewBox="0 0 35 33" fill="none" style={{ marginRight: 4 }}>
+              <button className="btn btn-outline" style={{width: '100%', height: 48, fontSize: 15}} onClick={connectMetaMask}>
+                <svg width="20" height="20" viewBox="0 0 35 33" fill="none" style={{ marginRight: 8 }}>
                   <path d="M32.9582 1L19.8241 10.7183L22.2665 4.99099L32.9582 1Z" fill="#E17726"/>
                   <path d="M2.04187 1L15.0646 10.8048L12.7336 4.99098L2.04187 1Z" fill="#E27625"/>
                   <path d="M28.1341 23.5433L24.6903 28.9135L32.2169 30.9913L34.3577 23.6586L28.1341 23.5433Z" fill="#E27625"/>
@@ -366,18 +378,25 @@ export default function MyProfile() {
               </button>
             </div>
 
-            <TOTPSettings />
+            <div style={{marginBottom: 24}}>
+              <TOTPSettings />
+            </div>
 
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button className="btn btn-primary" style={{ flex: 1 }} onClick={saveProfile}>Save Profile</button>
-              <button className="btn btn-outline" onClick={() => navigate('/freelancer/dashboard')}>Back to Dashboard</button>
+            <div style={{ display: 'flex', gap: 16 }}>
+              <button className="btn btn-outline" style={{ flex: 1, height: 52, fontSize: 15 }} onClick={() => navigate('/freelancer/dashboard')}>Back to Dashboard</button>
+              <button className="btn btn-primary" style={{ flex: 1, height: 52, fontSize: 15 }} onClick={saveProfile} disabled={saving}>{saving ? 'Saving...' : 'Save Profile'}</button>
             </div>
           </div>
         </div>
       </div>
 
       {toast && (
-        <div className="toast show">
+        <div className="toast show" style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#101828', color: '#fff', padding: '12px 24px', borderRadius: '12px',
+          display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 12px 32px rgba(16,24,40,0.2)',
+          fontFamily: "var(--landing-body)", fontSize: 14, fontWeight: 700, zIndex: 9999
+        }}>
           <span className="toast-icon">{toast.icon}</span><span>{toast.msg}</span>
         </div>
       )}

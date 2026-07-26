@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Navbar from '../../components/client/Navbar';
 import { SkeletonTable } from '../../components/shared/Skeleton';
 import api from '../../services/api.js';
@@ -483,7 +484,7 @@ export default function MyContracts() {
         }
       </div>
 
-      {modalContract && (
+      {modalContract && createPortal(
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) { setModalContract(null); setSelectedProposal(null); } }}>
           <div className="modal-box modal-box-wide">
             <button className="modal-close" onClick={() => { setModalContract(null); setSelectedProposal(null); }}>
@@ -709,9 +710,9 @@ export default function MyContracts() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {rejecting && (
+      {rejecting && createPortal(
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setRejecting(null); }}>
           <div className="modal-box" style={{ maxWidth: 450 }}>
             <button className="modal-close" onClick={() => setRejecting(null)}>
@@ -736,9 +737,9 @@ export default function MyContracts() {
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {disputeModal && (
+      {disputeModal && createPortal(
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setDisputeModal(null); }}>
           <div className="modal-box" style={{ maxWidth: 450 }}>
             <button className="modal-close" onClick={() => setDisputeModal(null)}>
@@ -767,7 +768,7 @@ export default function MyContracts() {
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {toast && (
         <div className={`toast${toast ? ' show' : ''}`}>

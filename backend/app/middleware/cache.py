@@ -16,8 +16,8 @@ from starlette.requests import Request
 CACHE_RULES = {
     "/api/jobs":             (30, 60),
     "/api/contracts":        (10, 30),
-    "/api/users":            (30, 60),
     "/api/users/me":         (0, 0),
+    "/api/users":            (30, 60),
     "/api/admin/dashboard":  (15, 30),
     "/api/admin/reports":    (30, 60),
 }

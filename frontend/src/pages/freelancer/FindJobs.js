@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import api from '../../services/api';
 import { SkeletonCard } from '../../components/shared/Skeleton';
+import '../../css/freelancer/dashboard.css';
+import '../../css/freelancer/find-jobs.css';
 
 function loadArray(key) {
   try { return JSON.parse(localStorage.getItem(key) || '[]'); } catch (e) { return []; }
@@ -52,6 +55,15 @@ export default function FindJobs() {
     const profile = JSON.parse(localStorage.getItem('fl_freelancer_profile') || '{}');
     setMySkills((profile.skills || []).map(s => s.toLowerCase()));
   }, []);
+
+  useEffect(() => {
+    if (modalJob) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [modalJob]);
 
   const fetchJobs = useCallback(async (params = {}) => {
     setLoading(true);
@@ -177,8 +189,6 @@ export default function FindJobs() {
   function renderJobCard(job) {
     const client = usersMap[job.client_id] || {};
     const name = client.username || client.email || '';
-    const initialsVal = initials(name, 'CL');
-    const colorVal = colorFor(name || job.client_id, '#999');
     const posted = relativeDate(job.created_at);
     const isNew = (Date.now() - new Date(job.created_at).getTime()) < 86400000 * 3;
     const mp = matchPct(job);
@@ -186,10 +196,10 @@ export default function FindJobs() {
     const isSaved = savedJobs.includes(job.id);
 
     return (
-      <div key={job.id} className={'job-card' + (isApplied ? ' applied' : '') + (currentView === 'list' ? ' list-card' : '')} onClick={() => openModal(job)} style={{ cursor: 'pointer', position: 'relative' }}>
+      <div key={job.id} className={'job-card' + (isApplied ? ' applied' : '') + (currentView === 'list' ? ' list-card' : '')} onClick={() => openModal(job)} style={{ cursor: 'pointer' }}>
         {isNew ? <span className="new-tag">NEW</span> : null}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <span className={'job-category ' + catClass(job.category)}>{job.category || 'General'}</span>
+          <span className={'job-category'}>{job.category || 'General'}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             {mp > 0 ? <span className="match-badge">{mp}% match</span> : null}
             {isApplied ? <span className="applied-badge">✓ Applied</span> : null}
@@ -198,7 +208,7 @@ export default function FindJobs() {
         </div>
         <div>
           <div className="job-title">{job.title}</div>
-          <div className="job-desc" style={{ marginTop: 6 }}>{job.description}</div>
+          <div className="job-desc">{job.description}</div>
         </div>
         <div className="job-skills">
           {Array.isArray(job.skills) ? job.skills.map(s => <span key={s} className={'skill-tag' + (mySkills.includes(s.toLowerCase()) ? ' match' : '')}>{s}</span>) : null}
@@ -206,11 +216,11 @@ export default function FindJobs() {
         <div className="job-footer">
           <div>
             <div className="job-budget">{formatCurrency(job.budget)}</div>
-            <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Posted {posted}</div>
+            <div style={{ fontSize: 11, color: 'var(--landing-muted)', marginTop: 2, fontWeight: 600 }}>Posted {posted}</div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>👥 {job.applicants_count || 0} applicant{job.applicants_count !== 1 ? 's' : ''}</span>
-            <span style={{ fontSize: 12, color: 'var(--text-3)' }}>{client ? `· ${name}` : ''}</span>
+            <span style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600 }}>👥 {job.applicants_count || 0} applicant{job.applicants_count !== 1 ? 's' : ''}</span>
+            <span style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600 }}>{client && name ? `· ${name}` : ''}</span>
           </div>
         </div>
       </div>
@@ -218,27 +228,27 @@ export default function FindJobs() {
   }
 
   return (
-    <div>
+    <div style={{ background: 'var(--landing-mist)', minHeight: '100vh' }}>
       <Navbar activePage="find-jobs" />
       <div className="page-body">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Find Jobs</h1>
-            <p className="page-sub">Browse <span>{loading ? '...' : displayed.length}</span> open projects — matched skills are highlighted</p>
+            <h1>Find Jobs</h1>
+            <p>Browse <span style={{fontWeight: 700, color: 'var(--landing-navy)'}}>{loading ? '...' : displayed.length}</span> open projects — matched skills are highlighted</p>
           </div>
           <div className="view-toggle">
             <button className={'view-btn' + (currentView === 'grid' ? ' active' : '')} onClick={() => setCurrentView('grid')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             </button>
             <button className={'view-btn' + (currentView === 'list' ? ' active' : '')} onClick={() => setCurrentView('list')}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/></svg>
             </button>
           </div>
         </div>
 
         <div className="filters-bar">
           <div className="search-wrap">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input type="text" className="search-input" placeholder="Search title, skill, keyword…" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <select className="filter-select" value={fCat} onChange={e => setFCat(e.target.value)}>
@@ -262,26 +272,28 @@ export default function FindJobs() {
           <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear</button>
         </div>
 
-        {error && <div style={{ padding: 12, background: '#fee2e2', color: '#991b1b', borderRadius: 10, marginBottom: 16 }}>{error} <button className="btn btn-outline btn-sm" onClick={() => fetchJobs({ status: 'open', category: fCat || null, search: search || null, page: 1, limit: 20 })}>Retry</button></div>}
+        {error && <div style={{ padding: 12, background: '#fef3f2', color: '#b42318', border: '1px solid #fecaca', borderRadius: 12, marginBottom: 16 }}>{error} <button className="btn btn-outline btn-sm" style={{marginLeft: 10}} onClick={() => fetchJobs({ status: 'open', category: fCat || null, search: search || null, page: 1, limit: 20 })}>Retry</button></div>}
         {loading && <div style={{ padding: 24 }}><div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>{Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} rows={3} />)}</div></div>}
 
         <div className={'jobs-grid' + (currentView === 'list' ? ' list-view' : '')}>
           {!loading && displayed.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">🔍</div>
-              <h3>No jobs found</h3>
-              <p>Try adjusting your filters or search terms.</p>
-              <button className="btn btn-outline btn-sm" onClick={clearFilters}>Clear Filters</button>
+              <div className="empty-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              </div>
+              <h3 className="empty-title">No jobs found</h3>
+              <p className="empty-desc">Try adjusting your filters or search terms.</p>
+              <button className="btn btn-outline" onClick={clearFilters}>Clear Filters</button>
             </div>
           ) : displayed.map(job => renderJobCard(job))}
         </div>
       </div>
 
-      {modalJob && (
+      {modalJob && createPortal(
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setModalJob(null); }}>
           <div className="modal-box" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setModalJob(null)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
             {(() => {
               const job = modalJob;
@@ -290,58 +302,63 @@ export default function FindJobs() {
               const initialsVal = initials(name, 'CL');
               const colorVal = colorFor(name || job.client_id, '#999');
               const posted = job.created_at ? relativeDate(job.created_at) : 'recently';
-              const isNew = job.created_at && (Date.now() - new Date(job.created_at).getTime()) < 86400000 * 3;
               const mp = matchPct(job);
               return (
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-                    <span className={'job-category ' + catClass(job.category)}>{job.category || 'General'}</span>
+                    <span className="job-category">{job.category || 'General'}</span>
                     {mp > 0 ? <span className="match-badge">{mp}% skill match</span> : null}
-                    <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Posted {posted}</span>
+                    <span style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600 }}>Posted {posted}</span>
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-.5px', marginBottom: 10 }}>{job.title}</div>
+                  <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 16, color: 'var(--landing-navy)', fontFamily: "var(--landing-display)" }}>{job.title}</h2>
                   {name ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: '50%', background: colorVal, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff' }}>{initialsVal}</div>
-                      <span style={{ fontSize: 13, color: 'var(--text-2)' }}>Posted by <strong>{name}</strong></span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
+                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: colorVal, display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800, color: '#fff', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>{initialsVal}</div>
+                      <span style={{ fontSize: 14, color: 'var(--landing-muted)', fontWeight: 500 }}>Posted by <strong style={{color: 'var(--landing-navy)'}}>{name}</strong></span>
                     </div>
                   ) : null}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 20 }}>
-                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Budget</div>
-                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(job.budget)}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 28 }}>
+                    <div style={{ background: 'var(--landing-mist)', border: '1px solid var(--landing-line)', borderRadius: '16px', padding: '16px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--landing-muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.05em' }}>Budget</div>
+                      <div style={{ fontSize: 20, fontWeight: 800, color: 'var(--landing-blue)', fontFamily: "var(--landing-display)" }}>{formatCurrency(job.budget)}</div>
                     </div>
-                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Status</div>
-                      <div style={{ fontSize: 16, fontWeight: 800 }}>{job.status ? job.status.replace(/\b\w/g, c => c.toUpperCase()) : 'Open'}</div>
+                    <div style={{ background: 'var(--landing-mist)', border: '1px solid var(--landing-line)', borderRadius: '16px', padding: '16px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--landing-muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.05em' }}>Status</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--landing-navy)', fontFamily: "var(--landing-display)" }}>{job.status ? job.status.replace(/\b\w/g, c => c.toUpperCase()) : 'Open'}</div>
                     </div>
-                    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, padding: 14 }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', marginBottom: 4 }}>Applicants</div>
-                      <div style={{ fontSize: 18, fontWeight: 800 }}>{job.applicants_count || 0}</div>
+                    <div style={{ background: 'var(--landing-mist)', border: '1px solid var(--landing-line)', borderRadius: '16px', padding: '16px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--landing-muted)', textTransform: 'uppercase', marginBottom: 4, letterSpacing: '0.05em' }}>Applicants</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--landing-navy)', fontFamily: "var(--landing-display)" }}>{job.applicants_count || 0}</div>
                     </div>
                   </div>
-                  <div style={{ marginBottom: 18 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 8 }}>Description</div>
-                    <p style={{ fontSize: 14, color: 'var(--text-2)', lineHeight: 1.7 }}>{job.description}</p>
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 12 }}>Description</div>
+                    <p style={{ fontSize: 15, color: 'var(--landing-text)', lineHeight: 1.7, margin: 0 }}>{job.description}</p>
                   </div>
-                  <div style={{ marginBottom: 20 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 8 }}>Required Skills</div>
-                    <div className="job-skills">{Array.isArray(job.skills) ? job.skills.map(s => <span key={s} className={'skill-tag' + (mySkills.includes(s.toLowerCase()) ? ' match' : '')}>{s}</span>) : null}</div>
+                  <div style={{ marginBottom: 24 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 12 }}>Required Skills</div>
+                    <div className="job-skills" style={{marginTop: 0}}>
+                      {Array.isArray(job.skills) ? job.skills.map(s => <span key={s} className={'skill-tag' + (mySkills.includes(s.toLowerCase()) ? ' match' : '')}>{s}</span>) : null}
+                    </div>
                   </div>
-
                   {!appliedJobs.includes(job.id) ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.5px' }}>Apply to this job</div>
-                      <textarea className="search-input" rows={4} placeholder="Short cover letter…" value={applyForm.cover_letter} onChange={e => setApplyForm(f => ({ ...f, cover_letter: e.target.value }))} style={{ background: '#f7f7f8', borderRadius: 14, padding: '14px 16px' }}></textarea>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 18 }}>
-                        <input type="number" className="search-input" placeholder="Bid amount" min="0" step="0.01" value={applyForm.bid_amount} onChange={e => setApplyForm(f => ({ ...f, bid_amount: e.target.value }))} style={{ background: '#f7f7f8', borderRadius: 14, padding: '12px 12px' }} />
-                        <input type="number" className="search-input" placeholder="Est. days" min="1" step="1" value={applyForm.estimated_days} onChange={e => setApplyForm(f => ({ ...f, estimated_days: e.target.value }))} style={{ background: '#f7f7f8', borderRadius: 14, padding: '12px 12px' }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, paddingTop: 24, borderTop: '1px solid var(--landing-line)' }}>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--landing-navy)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Apply to this job</div>
+                      <textarea className="search-input" rows={4} placeholder="Write a short cover letter..." value={applyForm.cover_letter} onChange={e => setApplyForm(f => ({ ...f, cover_letter: e.target.value }))}></textarea>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                        <input type="number" className="search-input" placeholder="Bid amount (ETH)" min="0" step="0.01" value={applyForm.bid_amount} onChange={e => setApplyForm(f => ({ ...f, bid_amount: e.target.value }))} />
+                        <input type="number" className="search-input" placeholder="Est. duration (days)" min="1" step="1" value={applyForm.estimated_days} onChange={e => setApplyForm(f => ({ ...f, estimated_days: e.target.value }))} />
                       </div>
-                      <button className="btn btn-primary" style={{ flex: 1, marginTop: 12 }} onClick={submitApplication} disabled={applySubmitting}>{applySubmitting ? 'Submitting…' : 'Apply Now →'}</button>
+                      <button className="btn btn-primary" style={{ width: '100%', marginTop: 8, height: 52, fontSize: 15 }} onClick={submitApplication} disabled={applySubmitting}>
+                        {applySubmitting ? 'Submitting...' : 'Apply Now'}
+                      </button>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-                      <button className="btn btn-primary" style={{ flex: 1 }} disabled>✓ Already Applied</button>
+                    <div style={{ display: 'flex', gap: 16, paddingTop: 24, borderTop: '1px solid var(--landing-line)' }}>
+                      <button className="btn btn-primary" style={{ flex: 1, opacity: 0.8 }} disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" style={{marginRight: 6}}><polyline points="20 6 9 17 4 12"/></svg>
+                        Already Applied
+                      </button>
                       <button className="btn btn-outline" onClick={() => setModalJob(null)}>Close</button>
                     </div>
                   )}
@@ -350,17 +367,18 @@ export default function FindJobs() {
             })()}
           </div>
         </div>
-      )}
+      , document.body)}
 
       {toast && (
-        <div className="toast show">
+        <div className="toast show" style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#101828', color: '#fff', padding: '12px 24px', borderRadius: '12px',
+          display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 12px 32px rgba(16,24,40,0.2)',
+          fontFamily: "var(--landing-body)", fontSize: 14, fontWeight: 700, zIndex: 9999
+        }}>
           <span className="toast-icon">{toast.icon}</span><span>{toast.msg}</span>
         </div>
       )}
     </div>
   );
-}
-
-function catClass(cat) {
-  return 'cat-' + String(cat || '').toLowerCase().replace(/[^a-z]/g,'-').replace(/-+/g,'-');
 }

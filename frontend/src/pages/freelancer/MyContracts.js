@@ -1,26 +1,18 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import { SkeletonTable } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import { uploadFile } from '../../services/ipfs';
+import '../../css/freelancer/dashboard.css';
+import '../../css/freelancer/my-contracts.css';
 
 function statusGroup(status) {
   const s = (status || '').toLowerCase();
   if (['completed', 'delivered', 'cancelled', 'disputed'].includes(s)) return 'archived';
   if (s === 'active') return 'active';
   return 'pending';
-}
-
-function milestoneLabel(status) {
-  const map = {
-    pending: 'Pending',
-    submitted: 'Submitted',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    paid: 'Paid',
-  };
-  return map[status] || status || 'Pending';
 }
 
 function fmtDate(iso) {
@@ -89,7 +81,7 @@ export default function MyContracts() {
   }, [loadContracts]);
 
   const tabs = [
-    { key: 'all', label: 'All' },
+    { key: 'all', label: 'All Contracts' },
     { key: 'active', label: 'Active' },
     { key: 'pending', label: 'Pending' },
     { key: 'archived', label: 'Archived' },
@@ -120,17 +112,26 @@ export default function MyContracts() {
       setShowDisputeChat(false);
       setDisputeChatMessages([]);
       setDisputeChatInitiated(false);
-      return;
-    }
-    if (detail.status === 'disputed') {
-      api.get('/disputes', { params: { page: 1, limit: 50 } }).then(res => {
-        const dispute = (res.data?.disputes || []).find(d => d.contract_id === detail.id);
-        setModalDisputeId(dispute ? dispute.id : null);
-      }).catch(() => setModalDisputeId(null));
     } else {
-      setModalDisputeId(null);
+      if (detail.status === 'disputed') {
+        api.get('/disputes', { params: { page: 1, limit: 50 } }).then(res => {
+          const dispute = (res.data?.disputes || []).find(d => d.contract_id === detail.id);
+          setModalDisputeId(dispute ? dispute.id : null);
+        }).catch(() => setModalDisputeId(null));
+      } else {
+        setModalDisputeId(null);
+      }
     }
   }, [detail]);
+
+  useEffect(() => {
+    if (detail || disputeModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => { document.body.style.overflow = 'auto'; };
+  }, [detail, disputeModal]);
 
   function showToast(msg, icon) {
     setToast({ msg, icon: icon || '✅' });
@@ -281,7 +282,7 @@ export default function MyContracts() {
   };
 
   return (
-    <div>
+    <div style={{ background: 'var(--landing-mist)', minHeight: '100vh' }}>
       <Navbar activePage="my-contracts" />
       <div className="page-body">
         <div className="page-header">
@@ -291,32 +292,34 @@ export default function MyContracts() {
           </div>
         </div>
 
-        <div className="stats-grid" style={{ marginBottom: 28 }}>
+        <div className="stats-grid" style={{ marginBottom: 32 }}>
           <div className="stat-card">
-            <div className="s-top"><span className="s-label">Total</span>
-              <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg></div>
+            <div className="s-top"><span className="s-label">Total Contracts</span>
+              <div className="s-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg></div>
             </div>
-            <div className="s-val">{stats.total}</div><div className="s-sub">All time</div>
+            <div className="s-val">{stats.total}</div>
+            <div className="s-sub">All time</div>
           </div>
           <div className="stat-card">
             <div className="s-top"><span className="s-label">Active</span>
-              <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg></div>
+              <div className="s-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg></div>
             </div>
-            <div className="s-val">{stats.active}</div><div className="s-badge">In progress</div>
+            <div className="s-val">{stats.active}</div>
+            <div className="s-badge" style={{display: 'inline-block', marginTop: 8}}>In progress</div>
           </div>
           <div className="stat-card">
             <div className="s-top"><span className="s-label">Total Earned</span>
-              <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg></div>
+              <div className="s-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" /></svg></div>
             </div>
             <div className="s-val">{stats.earned > 0 ? stats.earned.toLocaleString() + ' ETH' : '0 ETH'}</div>
-            <div style={{ fontSize: 12, color: 'var(--accent)', marginTop: 4, fontWeight: 600 }}>Via Escrow</div>
+            <div className="s-sub" style={{color: 'var(--landing-blue)'}}>Via Escrow</div>
           </div>
           <div className="stat-card">
             <div className="s-top"><span className="s-label">Completed</span>
-              <div className="s-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg></div>
+              <div className="s-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg></div>
             </div>
             <div className="s-val">{stats.completed}</div>
-            <div className="s-sub">{stats.completed > 0 ? stats.earned.toLocaleString() + ' ETH paid' : '–'}</div>
+            <div className="s-sub">{stats.completed > 0 ? 'Successfully finished' : '–'}</div>
           </div>
         </div>
 
@@ -335,156 +338,173 @@ export default function MyContracts() {
             <div className="empty-icon" style={{ fontSize: 32 }}>⚠️</div>
             <h3>Failed to load contracts</h3>
             <p>{error}</p>
-            <button className="btn btn-outline btn-sm" onClick={() => window.location.reload()}>Retry</button>
+            <button className="btn btn-outline" onClick={() => window.location.reload()}>Retry</button>
           </div>
         ) : displayed.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-icon">📄</div>
+            <div className="empty-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+            </div>
             <h3>{currentTab === 'pending' ? 'No pending items' : 'No contracts here'}</h3>
             <p>Apply to jobs to start getting contracts.</p>
-            <button className="btn btn-primary btn-sm" onClick={() => navigate('/freelancer/jobs')}>Browse Jobs →</button>
+            <button className="btn btn-primary" onClick={() => navigate('/freelancer/jobs')}>Browse Jobs →</button>
           </div>
         ) : (
-          displayed.map(c => {
-            const user = users[c.client_id];
-            const clientName = user?.username || c.client_id?.slice(0, 12) || 'Client';
-            const done = c.milestones.filter(m => ['approved', 'paid'].includes((m.status || '').toLowerCase())).length;
-            const p = c.milestones.length ? Math.round(done / c.milestones.length * 100) : 0;
-            const deliverableCount = c.milestones.filter(m => m.deliverable_cid).length;
-            return (
-              <div key={c.id}
-                style={{ background: 'var(--white)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 22, boxShadow: 'var(--shadow)', marginBottom: 14, cursor: 'pointer', transition: 'all .2s', display: 'grid', gridTemplateColumns: '1fr auto', gap: 16, alignItems: 'start' }}
-                onClick={() => setDetailId(c.id)}
-                onMouseOver={e => e.currentTarget.style.borderColor = 'var(--accent-border)'}
-                onMouseOut={e => e.currentTarget.style.borderColor = 'var(--border)'}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 16, fontWeight: 700 }}>{c.title}</span>
-                    <span className={'badge badge-' + c.status}>{c.status}</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: 'var(--text-3)', marginBottom: 12, flexWrap: 'wrap' }}>
-                    <span>👤 {clientName}</span>
-                    {c.deadline ? <span>📅 Due {fmtDate(c.deadline)}</span> : null}
-                    <span>✓ {done}/{c.milestones.length} milestones</span>
-                    {deliverableCount > 0 ? <span>📦 {deliverableCount} deliverable{deliverableCount > 1 ? 's' : ''}</span> : null}
-                  </div>
-                  {c.status === 'active' ? (
-                    <div>
-                      <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: 5 }}>Progress: {p}%</div>
-                      <div className="prog-bar"><div className="prog-fill" style={{ width: p + '%' }}></div></div>
+          <div>
+            {displayed.map(c => {
+              const user = users[c.client_id];
+              const clientName = user?.username || c.client_id?.slice(0, 12) || 'Client';
+              const done = c.milestones.filter(m => ['approved', 'paid'].includes((m.status || '').toLowerCase())).length;
+              const p = c.milestones.length ? Math.round(done / c.milestones.length * 100) : 0;
+              const deliverableCount = c.milestones.filter(m => m.deliverable_cid).length;
+              return (
+                <div key={c.id} className="contract-card" onClick={() => setDetailId(c.id)}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                      <span className="contract-title">{c.title}</span>
+                      <span className={'badge badge-' + c.status}>{c.status.replace(/_/g, ' ')}</span>
                     </div>
-                  ) : null}
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--accent)' }}>{Number(c.total_amount || 0).toLocaleString()} ETH</div>
-                  <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>Contract value</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 12 }}>
+                    <div className="contract-meta">
+                      <div className="contract-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        {clientName}
+                      </div>
+                      {c.deadline ? (
+                        <div className="contract-meta-item">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                          Due {fmtDate(c.deadline)}
+                        </div>
+                      ) : null}
+                      <div className="contract-meta-item">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        {done}/{c.milestones.length} milestones
+                      </div>
+                      {deliverableCount > 0 ? (
+                        <div className="contract-meta-item">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+                          {deliverableCount} deliverable{deliverableCount > 1 ? 's' : ''}
+                        </div>
+                      ) : null}
+                    </div>
                     {c.status === 'active' ? (
-                      <button className="btn btn-primary btn-sm" onClick={e => { e.stopPropagation(); const firstPending = c.milestones.findIndex(m => (m.status || '').toLowerCase() === 'pending'); setDetailId(c.id); setExpandedIdx(firstPending >= 0 ? firstPending : 0); }}>Submit Work</button>
+                      <div style={{ maxWidth: 300 }}>
+                        <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 700, marginBottom: 4 }}>Progress: {p}%</div>
+                        <div className="prog-bar"><div className="prog-fill" style={{ width: p + '%' }}></div></div>
+                      </div>
                     ) : null}
-                    {c.status === 'pending_signatures' && !c.freelancer_signed ? (
-                      <button className="btn btn-primary btn-sm" onClick={e => { e.stopPropagation(); signContract(c.id); }}>Sign Contract</button>
-                    ) : null}
-                    {c.status === 'pending_signatures' && c.freelancer_signed ? (
-                      <span className="btn btn-outline btn-sm" style={{ opacity: 0.7, cursor: 'default' }}>Signed</span>
-                    ) : null}
-                    <button className="btn btn-outline btn-sm" onClick={e => { e.stopPropagation(); setDetailId(c.id); }}>Details</button>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--landing-blue)', fontFamily: 'var(--landing-display)' }}>{Number(c.total_amount || 0).toLocaleString()} ETH</div>
+                    <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600, marginTop: 4 }}>Contract value</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16 }}>
+                      {c.status === 'active' ? (
+                        <button className="btn btn-primary" style={{padding: '8px 16px'}} onClick={e => { e.stopPropagation(); const firstPending = c.milestones.findIndex(m => (m.status || '').toLowerCase() === 'pending'); setDetailId(c.id); setExpandedIdx(firstPending >= 0 ? firstPending : 0); }}>Submit Work</button>
+                      ) : null}
+                      {c.status === 'pending_signatures' && !c.freelancer_signed ? (
+                        <button className="btn btn-primary" style={{padding: '8px 16px'}} onClick={e => { e.stopPropagation(); signContract(c.id); }}>Sign Contract</button>
+                      ) : null}
+                      {c.status === 'pending_signatures' && c.freelancer_signed ? (
+                        <span className="btn btn-outline" style={{ opacity: 0.7, cursor: 'default', padding: '8px 16px' }}>Signed</span>
+                      ) : null}
+                      <button className="btn btn-outline" style={{padding: '8px 16px'}} onClick={e => { e.stopPropagation(); setDetailId(c.id); }}>Details</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {detail && (
+      {detail && createPortal(
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) { setDetailId(null); setExpandedIdx(null); } }}>
           <div className="modal-box" style={{ maxWidth: 720 }}>
             <button className="modal-close" onClick={() => { setDetailId(null); setExpandedIdx(null); }}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <span className={'badge badge-' + detail.status}>{detail.status}</span>
+              <span className={'badge badge-' + detail.status}>{detail.status.replace(/_/g, ' ')}</span>
             </div>
-            <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12 }}>{detail.title}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+            <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 16, color: 'var(--landing-navy)', fontFamily: 'var(--landing-display)' }}>{detail.title}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--landing-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, color: '#fff' }}>
                 {(users[detail.client_id]?.username || 'C').split(' ').map(w => w[0]).join('').slice(0, 2)}
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{users[detail.client_id]?.username || detail.client_id?.slice(0, 12)}</div>
-                <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Client</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--landing-navy)' }}>{users[detail.client_id]?.username || detail.client_id?.slice(0, 12)}</div>
+                <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600 }}>Client</div>
               </div>
             </div>
-            <div style={{ background: 'linear-gradient(135deg,#064e3b,#065f46)', borderRadius: 12, padding: 20, color: '#fff', marginBottom: 20 }}>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.5)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase' }}>Escrow Amount</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: '#6ee7b7' }}>{Number(detail.total_amount || 0).toLocaleString()} ETH</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,.4)', marginTop: 2 }}>Released per milestone</div>
+            <div style={{ background: 'linear-gradient(135deg, #2457e6, #173aa6)', borderRadius: 20, padding: 24, color: '#fff', marginBottom: 24, boxShadow: '0 12px 24px rgba(36, 87, 230, 0.2)' }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 4, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Escrow Amount</div>
+              <div style={{ fontSize: 32, fontWeight: 800, fontFamily: 'var(--landing-display)' }}>{Number(detail.total_amount || 0).toLocaleString()} ETH</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4, fontWeight: 500 }}>Safely held in smart contract</div>
             </div>
             {detail.status === 'active' ? (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text-3)', marginBottom: 5 }}><span>Overall Progress</span><span>{detail.milestones.length ? Math.round(detail.milestones.filter(m => ['approved', 'paid'].includes((m.status || '').toLowerCase())).length / detail.milestones.length * 100) : 0}%</span></div>
-                <div className="prog-bar"><div className="prog-fill" style={{ width: detail.milestones.length ? Math.round(detail.milestones.filter(m => ['approved', 'paid'].includes((m.status || '').toLowerCase())).length / detail.milestones.length * 100) : 0 + '%' }}></div></div>
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--landing-navy)', fontWeight: 800, marginBottom: 8 }}><span>Overall Progress</span><span>{detail.milestones.length ? Math.round(detail.milestones.filter(m => ['approved', 'paid'].includes((m.status || '').toLowerCase())).length / detail.milestones.length * 100) : 0}%</span></div>
+                <div className="prog-bar" style={{height: 10}}><div className="prog-fill" style={{ width: detail.milestones.length ? Math.round(detail.milestones.filter(m => ['approved', 'paid'].includes((m.status || '').toLowerCase())).length / detail.milestones.length * 100) : 0 + '%' }}></div></div>
               </div>
             ) : null}
-            <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 10 }}>Milestones</h4>
+            <h4 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 16 }}>Milestones</h4>
             {detail.milestones.map((m, i) => {
               const isOpen = expandedIdx === i;
               const canSubmit = detail.status === 'active' && (m.status || '').toLowerCase() === 'pending';
               const isPaid = (m.status || '').toLowerCase() === 'approved' || (m.status || '').toLowerCase() === 'paid';
               const isRejected = m.rejection_reason && (m.status || '').toLowerCase() === 'pending';
               return (
-                <div key={i} style={{ background: 'var(--surface)', border: '1px solid ' + (isRejected ? '#fecaca' : 'var(--border)'), borderRadius: 8, marginBottom: 8, overflow: 'hidden' }}>
-                  <div onClick={() => toggleExpand(i)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, cursor: 'pointer' }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, background: isPaid ? '#ecfdf5' : isRejected ? '#fef2f2' : (m.status === 'submitted' ? 'var(--accent-pale)' : 'var(--surface)'), border: '2px solid ' + (isPaid ? 'var(--accent)' : isRejected ? '#dc2626' : (m.status === 'submitted' ? 'var(--accent)' : 'var(--border)')), color: isPaid ? 'var(--accent)' : isRejected ? '#dc2626' : (m.status === 'submitted' ? 'var(--accent)' : 'var(--text-3)') }}>
-                      {isPaid ? '✓' : isRejected ? '✕' : (m.status === 'submitted' ? '▶' : '○')}
+                <div key={i} className={`milestone-item ${isRejected ? 'rejected' : ''}`}>
+                  <div className="milestone-header" onClick={() => toggleExpand(i)}>
+                    <div className={`milestone-icon ${isPaid ? 'paid' : isRejected ? 'rejected' : m.status === 'submitted' ? 'submitted' : ''}`}>
+                      {isPaid ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg> : isRejected ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> : m.status === 'submitted' ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> : (i+1)}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700 }}>{m.description}</div>
-                      <div style={{ fontSize: 12, color: 'var(--text-3)' }}>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--landing-navy)' }}>{m.description}</div>
+                      <div style={{ fontSize: 13, color: 'var(--landing-muted)', fontWeight: 500, marginTop: 2 }}>
                         {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' ? 'Rejected' : m.rejection_reason ? 'Rejected — resubmit below' : 'Pending'}
                       </div>
                     </div>
-                    <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--accent)' }}>{Number(m.amount || 0).toLocaleString()} ETH</div>
-                    <button className="btn btn-outline btn-sm" onClick={e => { e.stopPropagation(); toggleExpand(i); }} style={{ padding: '4px 10px', minHeight: 'auto' }}>
+                    <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--landing-blue)' }}>{Number(m.amount || 0).toLocaleString()} ETH</div>
+                    <button className="btn btn-outline" onClick={e => { e.stopPropagation(); toggleExpand(i); }} style={{ padding: '6px 12px', minHeight: 'auto', fontSize: 12 }}>
                       {isOpen ? 'Hide' : 'Details'}
                     </button>
                   </div>
                   {isOpen && (
-                    <div style={{ padding: '14px 16px', borderTop: '1px solid var(--border)' }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 10 }}>Deliverables</div>
+                    <div style={{ padding: '16px 20px', borderTop: '1px solid var(--landing-line)', background: 'var(--landing-white)' }}>
+                      <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 12 }}>Deliverables</div>
                       {m.rejection_reason && (
-                        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: 12, marginBottom: 14 }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', marginBottom: 4 }}>⚠ Rejected by client</div>
-                          <div style={{ fontSize: 12, color: '#991b1b' }}>{m.rejection_reason}</div>
+                        <div style={{ background: '#fef3f2', border: '1px solid #fecaca', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#b42318', marginBottom: 4 }}>⚠ Rejected by client</div>
+                          <div style={{ fontSize: 13, color: '#b42318', fontWeight: 500 }}>{m.rejection_reason}</div>
                         </div>
                       )}
                       {m.deliverable_cid || m.submission_notes || m.submitted_at ? (
-                        <div style={{ marginBottom: 14 }}>
-                          {m.deliverable_cid ? <div style={{ fontSize: 12, marginBottom: 6, fontFamily: "'DM Mono', monospace" }}>CID: {m.deliverable_cid}</div> : null}
-                          {m.submission_notes ? <div style={{ fontSize: 13, marginBottom: 6, color: 'var(--text-2)' }}>{m.submission_notes}</div> : null}
-                          {m.submitted_at ? <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Submitted: {fmtDate(m.submitted_at)}</div> : null}
-                          {m.approved_at ? <div style={{ fontSize: 12, color: 'var(--text-3)' }}>Approved: {fmtDate(m.approved_at)}</div> : null}
+                        <div style={{ marginBottom: 16, background: 'var(--landing-mist)', padding: 16, borderRadius: 12, border: '1px solid var(--landing-line)' }}>
+                          {m.deliverable_cid ? <div style={{ fontSize: 13, marginBottom: 8, fontFamily: "'DM Mono', monospace", color: 'var(--landing-navy)', wordBreak: 'break-all' }}><strong>CID:</strong> {m.deliverable_cid}</div> : null}
+                          {m.submission_notes ? <div style={{ fontSize: 14, marginBottom: 8, color: 'var(--landing-text)' }}>{m.submission_notes}</div> : null}
+                          <div style={{display: 'flex', gap: 16, marginTop: 12}}>
+                            {m.submitted_at ? <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600 }}>Submitted: {fmtDate(m.submitted_at)}</div> : null}
+                            {m.approved_at ? <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 600 }}>Approved: {fmtDate(m.approved_at)}</div> : null}
+                          </div>
                         </div>
                       ) : (
-                        <div style={{ fontSize: 12, color: 'var(--text-3)', marginBottom: isOpen && canSubmit ? 14 : 0 }}>No deliverables submitted yet.</div>
+                        <div style={{ fontSize: 13, color: 'var(--landing-muted)', fontWeight: 500, marginBottom: isOpen && canSubmit ? 16 : 0 }}>No deliverables submitted yet.</div>
                       )}
                       {canSubmit && (
                         <form onSubmit={e => { e.preventDefault(); e.stopPropagation(); submitMilestone(detail.id, m.index); }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 8 }}>Submit Deliverable</div>
-                          <div style={{ border: '2px dashed var(--accent-border)', borderRadius: 8, padding: 20, textAlign: 'center', cursor: 'pointer', background: 'var(--accent-pale)', marginBottom: 10 }} onClick={() => document.getElementById(`file-${detail.id}-${m.index}`).click()}>
-                            <div style={{ fontSize: 20, marginBottom: 4 }}>📦</div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent)', marginBottom: 2 }}>Click to upload file</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>Any file type — stored on IPFS (decentralized)</div>
+                          <div style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 12 }}>Submit Deliverable</div>
+                          <div className="upload-box" onClick={() => document.getElementById(`file-${detail.id}-${m.index}`).click()}>
+                            <div style={{ fontSize: 24, marginBottom: 8 }}>📦</div>
+                            <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--landing-blue)', marginBottom: 4 }}>Click to upload file</div>
+                            <div style={{ fontSize: 13, color: 'var(--landing-muted)', fontWeight: 500 }}>Any file type — stored safely on IPFS</div>
                             <input id={`file-${detail.id}-${m.index}`} type="file" style={{ display: 'none' }} onChange={e => setSubmitFile(e.target.files[0] || null)} />
                           </div>
                           {submitFile ? (
-                            <div style={{ fontSize: 12, color: 'var(--accent)', fontWeight: 600, marginBottom: 8 }}>Selected: {submitFile.name} ({(submitFile.size / 1024).toFixed(1)} KB)</div>
+                            <div style={{ fontSize: 13, color: 'var(--landing-blue)', fontWeight: 700, marginBottom: 12, background: 'rgba(36, 87, 230, 0.05)', padding: '8px 12px', borderRadius: 8 }}>Selected: {submitFile.name} ({(submitFile.size / 1024).toFixed(1)} KB)</div>
                           ) : null}
-                          <textarea className="form-input" rows="3" placeholder="Describe what you've delivered…" style={{ resize: 'vertical', marginBottom: 10 }} value={submitNotes} onChange={e => setSubmitNotes(e.target.value)}></textarea>
-                          <button className="btn btn-primary btn-sm" type="submit" disabled={submitting || !submitFile}>
-                            {submitting ? 'Submitting…' : submitFile ? 'Submit Deliverable' : 'Upload a file first'}
+                          <textarea className="form-input" rows="3" placeholder="Describe what you've delivered..." style={{ resize: 'vertical', marginBottom: 16 }} value={submitNotes} onChange={e => setSubmitNotes(e.target.value)}></textarea>
+                          <button className="btn btn-primary" type="submit" disabled={submitting || !submitFile} style={{width: '100%', height: 48, fontSize: 15}}>
+                            {submitting ? 'Submitting...' : submitFile ? 'Submit Deliverable' : 'Upload a file first'}
                           </button>
                         </form>
                       )}
@@ -495,27 +515,27 @@ export default function MyContracts() {
             })}
             {showDisputeChat && modalDisputeId && (
               <div style={{
-                marginTop: 16, borderRadius: 8, border: '1px solid var(--border, #e5e7eb)',
-                overflow: 'hidden', background: '#fff',
+                marginTop: 20, borderRadius: 16, border: '1px solid var(--landing-line)',
+                overflow: 'hidden', background: 'var(--landing-white)',
               }}>
                 <div style={{
-                  padding: '10px 16px', borderBottom: '1px solid var(--border, #e5e7eb)',
+                  padding: '16px 20px', borderBottom: '1px solid var(--landing-line)',
                   display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  background: 'var(--bg-secondary, #f9fafb)',
+                  background: 'var(--landing-mist)',
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>Chat with Admin</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--landing-navy)' }}>Chat with Admin</span>
                     <span style={{
                       width: 8, height: 8, borderRadius: '50%',
                       background: disputeChatConnected ? '#10b981' : '#ef4444', display: 'inline-block',
                     }} />
                   </div>
-                  <button className="btn btn-sm" onClick={() => setShowDisputeChat(false)} style={{ fontSize: 12 }}>Close</button>
+                  <button className="btn btn-outline" onClick={() => setShowDisputeChat(false)} style={{ padding: '6px 12px', minHeight: 'auto', fontSize: 12 }}>Close</button>
                 </div>
-                <div style={{ padding: '12px 16px', minHeight: 80, maxHeight: 300, overflowY: 'auto' }}>
+                <div style={{ padding: '16px 20px', minHeight: 120, maxHeight: 350, overflowY: 'auto' }}>
                   {!disputeChatInitiated ? (
-                    <p style={{ fontSize: 13, color: '#6b7280', textAlign: 'center', padding: '16px 0' }}>
-                      Waiting for admin to initiate a chat…
+                    <p style={{ fontSize: 14, color: 'var(--landing-muted)', textAlign: 'center', padding: '24px 0', fontWeight: 500 }}>
+                      Waiting for admin to initiate a chat...
                     </p>
                   ) : (
                     <>
@@ -525,15 +545,17 @@ export default function MyContracts() {
                         return (
                           <div key={msg.id} style={{
                             display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start',
-                            marginBottom: 8,
+                            marginBottom: 12,
                           }}>
                             <div style={{
-                              maxWidth: '75%', padding: '8px 12px', borderRadius: 12,
-                              background: isMe ? '#2563eb' : '#f3f4f6',
-                              color: isMe ? '#fff' : '#111827',
-                              fontSize: 13, lineHeight: 1.5,
+                              maxWidth: '80%', padding: '12px 16px', borderRadius: 16,
+                              background: isMe ? 'var(--landing-blue)' : 'var(--landing-mist)',
+                              color: isMe ? '#fff' : 'var(--landing-navy)',
+                              fontSize: 14, lineHeight: 1.5,
+                              borderBottomRightRadius: isMe ? 4 : 16,
+                              borderBottomLeftRadius: isMe ? 16 : 4
                             }}>
-                              <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 2 }}>
+                              <div style={{ fontSize: 11, opacity: 0.8, marginBottom: 4, fontWeight: 700 }}>
                                 {isMe ? 'You' : detail?.client_id === msg.sender_id ? 'Client' : 'Admin'} &middot; {msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                               </div>
                               <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
@@ -547,8 +569,8 @@ export default function MyContracts() {
                 </div>
                 {disputeChatInitiated && (
                   <div style={{
-                    padding: '10px 16px', borderTop: '1px solid var(--border, #e5e7eb)',
-                    display: 'flex', gap: 8,
+                    padding: '16px 20px', borderTop: '1px solid var(--landing-line)',
+                    display: 'flex', gap: 12, background: 'var(--landing-mist)'
                   }}>
                     <input
                       ref={disputeInputRef}
@@ -557,12 +579,13 @@ export default function MyContracts() {
                       value={disputeChatInput}
                       onChange={e => setDisputeChatInput(e.target.value)}
                       onKeyDown={handleDisputeChatKeyDown}
-                      style={{ flex: 1, fontSize: 13 }}
+                      style={{ flex: 1, fontSize: 14, background: 'var(--landing-white)' }}
                     />
                     <button
-                      className="btn btn-sm btn-primary"
+                      className="btn btn-primary"
                       onClick={sendDisputeMessage}
                       disabled={disputeChatSending || !disputeChatInput.trim()}
+                      style={{padding: '0 24px'}}
                     >
                       {disputeChatSending ? '...' : 'Send'}
                     </button>
@@ -571,9 +594,9 @@ export default function MyContracts() {
               </div>
             )}
 
-            <div style={{ display: 'flex', gap: 10, paddingTop: 20, borderTop: '1px solid var(--border)', marginTop: 20 }}>
+            <div style={{ display: 'flex', gap: 12, paddingTop: 24, borderTop: '1px solid var(--landing-line)', marginTop: 24 }}>
               {(detail.status === 'active' || detail.status === 'pending_signatures' || detail.status === 'pending_funding' || detail.status === 'disputed') && (
-                <button className="btn btn-outline" style={{ flex: 1 }}
+                <button className="btn btn-outline" style={{ flex: 1, borderColor: '#fecaca', color: '#dc2626' }}
                         onClick={() => setDisputeModal(detail.id)}
                         disabled={actionLoading}>
                   ⚠ Raise Dispute
@@ -592,16 +615,16 @@ export default function MyContracts() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {disputeModal && (
+      {disputeModal && createPortal(
         <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) setDisputeModal(null); }}>
-          <div className="modal-box" style={{ maxWidth: 450 }}>
+          <div className="modal-box" style={{ maxWidth: 480 }}>
             <button className="modal-close" onClick={() => setDisputeModal(null)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
-            <h3 style={{ marginBottom: 12 }}>Raise a Dispute</h3>
-            <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>
+            <h3 style={{ marginBottom: 12, fontSize: 24, fontWeight: 800, color: 'var(--landing-navy)', fontFamily: 'var(--landing-display)' }}>Raise a Dispute</h3>
+            <p style={{ fontSize: 14, color: 'var(--landing-muted)', marginBottom: 20, lineHeight: 1.5 }}>
               This will flag the contract for admin review and pause all milestone activity.
             </p>
             <form onSubmit={async (e) => {
@@ -610,22 +633,27 @@ export default function MyContracts() {
               if (!reason.trim()) return;
               await raiseDispute(disputeModal, reason);
             }}>
-              <textarea name="reason" className="search-input" style={{ width: '100%', minHeight: 100, marginBottom: 12 }}
-                        placeholder="Describe the issue in detail…" required />
-              <div style={{ display: 'flex', gap: 10 }}>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }}
+              <textarea name="reason" className="form-input" style={{ width: '100%', minHeight: 120, marginBottom: 16 }}
+                        placeholder="Describe the issue in detail..." required />
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444', height: 48 }}
                         disabled={actionLoading}>
-                  {actionLoading ? 'Submitting…' : 'Submit Dispute'}
+                  {actionLoading ? 'Submitting...' : 'Submit Dispute'}
                 </button>
-                <button type="button" className="btn btn-outline" onClick={() => setDisputeModal(null)}>Cancel</button>
+                <button type="button" className="btn btn-outline" style={{ flex: 1, height: 48 }} onClick={() => setDisputeModal(null)}>Cancel</button>
               </div>
             </form>
           </div>
         </div>
-      )}
+      , document.body)}
 
       {toast && (
-        <div className="toast show">
+        <div className="toast show" style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#101828', color: '#fff', padding: '12px 24px', borderRadius: '12px',
+          display: 'flex', alignItems: 'center', gap: '10px', boxShadow: '0 12px 32px rgba(16,24,40,0.2)',
+          fontFamily: "var(--landing-body)", fontSize: 14, fontWeight: 700, zIndex: 9999
+        }}>
           <span className="toast-icon">{toast.icon}</span><span>{toast.msg}</span>
         </div>
       )}

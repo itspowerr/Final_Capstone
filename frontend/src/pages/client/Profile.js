@@ -139,19 +139,25 @@ export default function ClientProfile() {
     setSaving(true);
     try {
       const { data } = await api.put('/users/me', {
-        username: form.name || undefined,
-        email: form.email || undefined,
-        bio: form.bio || undefined,
-        skills: form.skills.length > 0 ? form.skills : undefined,
-        hourly_rate: form.hourlyRate ? parseFloat(form.hourlyRate) : undefined,
-        github_url: form.github || undefined,
-        linkedin_url: form.linkedin || undefined,
-        portfolio_url: form.portfolio || undefined,
-        avatar_cid: avatarCid || undefined,
+        username: form.name || null,
+        email: form.email || null,
+        bio: form.bio || null,
+        skills: form.skills,
+        hourly_rate: form.hourlyRate ? parseFloat(form.hourlyRate) : 0,
+        github_url: form.github || null,
+        linkedin_url: form.linkedin || null,
+        portfolio_url: form.portfolio || null,
+        avatar_cid: avatarCid || null,
         email_notifications: form.emailNotifications,
       });
       setUser(data);
-      showToast('Profile saved!');
+      const raw = localStorage.getItem('user');
+      if (raw) {
+        const u = JSON.parse(raw);
+        if (form.name) u.username = form.name;
+        localStorage.setItem('user', JSON.stringify(u));
+      }
+      showToast('✨ Your professional profile is now live and updated!', '🚀');
     } catch (e) {
       showToast('Failed to save. Try again.', '⚠️');
     } finally {

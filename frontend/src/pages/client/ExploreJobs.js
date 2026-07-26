@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Navbar from '../../components/client/Navbar';
 import { SkeletonCard } from '../../components/shared/Skeleton';
 import api from '../../services/api.js';
@@ -221,7 +222,7 @@ export default function ExploreJobs() {
         )}
       </div>
 
-      {selectedJobData && (
+      {selectedJobData && createPortal(
         <div className="modal-overlay open" onClick={() => setSelectedJob(null)}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 600 }}>
             <button className="modal-close" onClick={() => setSelectedJob(null)}>
@@ -300,7 +301,7 @@ export default function ExploreJobs() {
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 }

@@ -19,6 +19,20 @@ export default function Navbar({ activePage }) {
       }
     };
     load();
+    
+    api.get('/users/me').then(res => {
+      if (res.data) {
+        setUser(prev => ({ ...prev, name: res.data.username || res.data.email, avatar_cid: res.data.avatar_cid || '' }));
+        const raw = localStorage.getItem('user');
+        if (raw) {
+          const lsu = JSON.parse(raw);
+          lsu.avatar_cid = res.data.avatar_cid;
+          lsu.username = res.data.username;
+          localStorage.setItem('user', JSON.stringify(lsu));
+        }
+      }
+    }).catch(() => {});
+
     window.addEventListener('avatar-updated', load);
     return () => window.removeEventListener('avatar-updated', load);
   }, []);
