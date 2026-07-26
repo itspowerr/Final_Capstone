@@ -248,10 +248,15 @@ async def wallet_login(
                     matched = [u for u in existing_wallet_users if u.role.value == role.lower()]
                     if matched:
                         user = matched[0]
-                    elif existing_count >= 1:
-                        # Role specified but no match — if only 1 account exists, log into it
-                        # (user might have changed role or be confused)
-                        user = existing_wallet_users[0]
+                    else:
+                        existing_role = existing_wallet_users[0].role.value
+                        raise HTTPException(
+                            status_code=status.HTTP_403_FORBIDDEN,
+                            detail={
+                                "code": "ROLE_MISMATCH",
+                                "message": f"This wallet is registered as a {existing_role}, not a {role}. Please sign in as {existing_role}.",
+                            },
+                        )
                 else:
                     # No role specified
                     if existing_count == 1:
