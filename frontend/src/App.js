@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
@@ -27,6 +27,7 @@ import AuditLogs from './pages/admin/AuditLogs';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminNavbar from './components/admin/Navbar';
 import './css/landing.css';
+import './css/motion.css';
 import './css/skeleton.css';
 import './css/login.css';
 import './css/client/dashboard.css';
@@ -67,42 +68,48 @@ function AdminLayout({ children }) {
 }
 
 export default function App() {
+  const location = useLocation();
+
   if (IS_ADMIN) {
     return (
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<AdminLogin />} />
-        <Route path="/dashboard" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><AdminLayout><AdminReport /></AdminLayout></ProtectedRoute>} />
-        <Route path="/users" element={<ProtectedRoute><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
-        <Route path="/user-search" element={<ProtectedRoute><AdminLayout><AdminUserSearch /></AdminLayout></ProtectedRoute>} />
-        <Route path="/jobs" element={<ProtectedRoute><AdminLayout><AdminJobs /></AdminLayout></ProtectedRoute>} />
-        <Route path="/proposals" element={<ProtectedRoute><AdminLayout><AdminProposals /></AdminLayout></ProtectedRoute>} />
-        <Route path="/contracts" element={<ProtectedRoute><AdminLayout><AdminContracts /></AdminLayout></ProtectedRoute>} />
-        <Route path="/disputes" element={<ProtectedRoute><AdminLayout><AdminDisputes /></AdminLayout></ProtectedRoute>} />
-        <Route path="/audit-logs" element={<ProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><AdminLayout><AdminProfile /></AdminLayout></ProtectedRoute>} />
-      </Routes>
+      <main className="route-transition-shell" key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<AdminLogin />} />
+          <Route path="/dashboard" element={<ProtectedRoute><AdminLayout><AdminDashboard /></AdminLayout></ProtectedRoute>} />
+          <Route path="/reports" element={<ProtectedRoute><AdminLayout><AdminReport /></AdminLayout></ProtectedRoute>} />
+          <Route path="/users" element={<ProtectedRoute><AdminLayout><AdminUsers /></AdminLayout></ProtectedRoute>} />
+          <Route path="/user-search" element={<ProtectedRoute><AdminLayout><AdminUserSearch /></AdminLayout></ProtectedRoute>} />
+          <Route path="/jobs" element={<ProtectedRoute><AdminLayout><AdminJobs /></AdminLayout></ProtectedRoute>} />
+          <Route path="/proposals" element={<ProtectedRoute><AdminLayout><AdminProposals /></AdminLayout></ProtectedRoute>} />
+          <Route path="/contracts" element={<ProtectedRoute><AdminLayout><AdminContracts /></AdminLayout></ProtectedRoute>} />
+          <Route path="/disputes" element={<ProtectedRoute><AdminLayout><AdminDisputes /></AdminLayout></ProtectedRoute>} />
+          <Route path="/audit-logs" element={<ProtectedRoute><AdminLayout><AuditLogs /></AdminLayout></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><AdminLayout><AdminProfile /></AdminLayout></ProtectedRoute>} />
+        </Routes>
+      </main>
     );
   }
 
   return (
     <AppProvider>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/client/dashboard" element={<ClientDashboard />} />
-        <Route path="/client/explore-jobs" element={<ExploreJobs />} />
-        <Route path="/client/browse-freelancers" element={<BrowseFreelancers />} />
-        <Route path="/client/my-contracts" element={<MyContracts />} />
-        <Route path="/client/profile" element={<ClientProfile />} />
-        <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
-        <Route path="/freelancer/jobs" element={<FreelancerFindJobs />} />
-        <Route path="/freelancer/contracts" element={<FreelancerMyContracts />} />
-        <Route path="/freelancer/my-profile" element={<FreelancerMyProfile />} />
-        <Route path="/freelancer/messages" element={<ClientMessages NavbarComponent={FreelancerNavbar} />} />
-        <Route path="/client/messages" element={<ClientMessages NavbarComponent={ClientNavbar} />} />
-      </Routes>
+      <main className="route-transition-shell" key={location.pathname}>
+        <Routes location={location}>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/client/dashboard" element={<ClientDashboard />} />
+          <Route path="/client/explore-jobs" element={<ExploreJobs />} />
+          <Route path="/client/browse-freelancers" element={<BrowseFreelancers />} />
+          <Route path="/client/my-contracts" element={<MyContracts />} />
+          <Route path="/client/profile" element={<ClientProfile />} />
+          <Route path="/freelancer/dashboard" element={<FreelancerDashboard />} />
+          <Route path="/freelancer/jobs" element={<FreelancerFindJobs />} />
+          <Route path="/freelancer/contracts" element={<FreelancerMyContracts />} />
+          <Route path="/freelancer/my-profile" element={<FreelancerMyProfile />} />
+          <Route path="/freelancer/messages" element={<ClientMessages NavbarComponent={FreelancerNavbar} />} />
+          <Route path="/client/messages" element={<ClientMessages NavbarComponent={ClientNavbar} />} />
+        </Routes>
+      </main>
     </AppProvider>
   );
 }

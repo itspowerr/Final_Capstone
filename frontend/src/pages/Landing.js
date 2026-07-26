@@ -1,212 +1,276 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
 import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
 export default function Landing() {
   const navigate = useNavigate();
 
+  const goLogin = () => navigate('/login');
+  const goRegister = () => navigate('/login#register');
+
   return (
-    <>
-      <nav className="nav">
-        <Link className="nav-logo" to="/">
-          <div className="nav-logo-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-          </div>
-          FreeLedger
-        </Link>
-        <div className="nav-links">
-          <a href="#features">Features</a>
-          <a href="#how">How It Works</a>
-          <Link to="/login">Freelancers</Link>
-        </div>
-        <div className="nav-actions">
-          <button className="btn btn-outline btn-sm" onClick={() => navigate('/login')}>Log In</button>
-          <button className="btn btn-primary btn-sm" onClick={() => navigate('/login#register')}>Get Started</button>
-        </div>
-      </nav>
+    <div className="landing-page">
+      <header className="landing-header">
+        <div className="landing-shell landing-nav">
+          <Link className="landing-brand" to="/">
+            <span className="landing-brand-mark">F</span>
+            FreeLedger
+          </Link>
 
-      <section>
-        <div className="hero">
-          <div className="hero-text">
-            <div className="hero-badge"><span></span> Web3 · Decentralized · No Middlemen</div>
-            <h1>Decentralized<br />Freelancing<br /><em>Without Middlemen</em></h1>
-            <p>Hire talent or find projects with secure smart contracts and decentralized identity. No hidden fees, no gatekeepers.</p>
-            <div className="hero-actions">
-              <button className="btn btn-primary btn-lg" onClick={() => navigate('/login')}>Connect Wallet</button>
-              <button className="btn btn-outline btn-lg" onClick={() => navigate('/login')}>Explore Jobs</button>
-            </div>
-          </div>
-          <div className="hero-visual">
-            <div className="chain-nodes">
-              <div className="node">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-              </div>
-              <div className="chain-line"></div>
-              <div className="node">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
-              </div>
-              <div className="chain-line"></div>
-              <div className="node">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-              <div className="chain-line"></div>
-              <div className="node">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+          <nav className="landing-links" aria-label="Landing navigation">
+            <a href="#why">Why FreeLedger</a>
+            <a href="#experience">Experience</a>
+            <a href="#safety">Safety</a>
+          </nav>
 
-      <section className="section" id="features">
-        <div className="section-header">
-          <div className="section-label">Why FreeLedger</div>
-          <h2 className="section-title">Built for the future of work</h2>
-          <p className="section-sub">Experience the first truly peer-to-peer professional ecosystem powered by blockchain.</p>
-        </div>
-        <div className="features-grid">
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
-            </div>
-            <h3>Secure Identity</h3>
-            <p>Build your decentralized profile with blockchain-backed credentials that you own.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <h3>Smart Contract Escrow</h3>
-            <p>Funds are locked safely and released automatically upon milestone completion.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
-            </div>
-            <h3>Decentralized Storage</h3>
-            <p>Your work and portfolio live on IPFS — permanent, uncensorable, and always accessible.</p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            </div>
-            <h3>Fair Marketplace</h3>
-            <p>Transparent matching algorithms highlight your skills and ensure fair opportunities.</p>
+          <div className="landing-actions">
+            <button className="landing-button landing-button-light" onClick={goLogin}>
+              Sign in
+            </button>
+            <button className="landing-button landing-button-primary" onClick={goRegister}>
+              Get started
+            </button>
           </div>
         </div>
-      </section>
+      </header>
 
-      <div className="how-section" id="how">
-        <div className="how-inner">
-          <div>
-            <div className="section-label">Process</div>
-            <h2 className="section-title">How It Works</h2>
-            <p className="section-sub" style={{marginBottom: 40}}>Four simple steps to start working in the decentralized economy.</p>
-            <div className="how-steps">
-              <div className="step">
-                <div className="step-num">1</div>
-                <div className="step-content">
-                  <h4>Connect Wallet</h4>
-                  <p>Link MetaMask, Phantom, etc. to securely authenticate without passwords.</p>
+      <main>
+        <section className="landing-hero">
+          <div className="landing-shell landing-hero-grid">
+            <div className="landing-hero-copy">
+              <div className="landing-kicker">
+                <i aria-hidden="true" />
+                A calmer way to work
+              </div>
+              <h1>
+                Great work.
+                <br />
+                <em>Clear agreements.</em>
+              </h1>
+              <p>
+                FreeLedger brings clients and independent talent together with protected payments,
+                portable reputation, and none of the usual platform friction.
+              </p>
+              <div className="landing-hero-actions">
+                <button className="landing-button landing-button-primary landing-button-large" onClick={goRegister}>
+                  Find meaningful work
+                </button>
+                <button className="landing-button landing-button-light landing-button-large" onClick={goRegister}>
+                  Meet verified talent
+                </button>
+              </div>
+              <div className="landing-proof">
+                <span><i>✓</i>No platform commission</span>
+                <span><i>✓</i>Protected payments</span>
+                <span><i>✓</i>Your reputation stays yours</span>
+              </div>
+            </div>
+
+            <div className="landing-visual" aria-label="FreeLedger workspace preview">
+              <div className="landing-visual-blob" />
+              <div className="landing-workspace">
+                <div className="landing-workspace-top">
+                  <div className="landing-workspace-title">
+                    <span>F</span>
+                    Your workspace
+                  </div>
+                  <strong>Everything on track</strong>
+                </div>
+                <div className="landing-workspace-body">
+                  <p className="landing-eyebrow">Good morning, Maya</p>
+                  <h3>Product experience design</h3>
+                  <div className="landing-project-card">
+                    <div className="landing-project-head">
+                      <div>
+                        <h4>Website redesign</h4>
+                        <p>Clear scope - Protected agreement</p>
+                      </div>
+                      <span>In progress</span>
+                    </div>
+                    <div className="landing-flow">
+                      <i />
+                    </div>
+                    <div className="landing-phases">
+                      <div className="landing-phase is-ready">
+                        <small>Research</small>
+                        <b>Approved</b>
+                      </div>
+                      <div className="landing-phase is-ready">
+                        <small>Design system</small>
+                        <b>Approved</b>
+                      </div>
+                      <div className="landing-phase">
+                        <small>Prototype</small>
+                        <b>In review</b>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="step">
-                <div className="step-num">2</div>
-                <div className="step-content">
-                  <h4>Browse Opportunities</h4>
-                  <p>Explore a global list of projects or browse top talent using our on-chain verification.</p>
-                </div>
-              </div>
-              <div className="step">
-                <div className="step-num">3</div>
-                <div className="step-content">
-                  <h4>Secure Agreement</h4>
-                  <p>Smart contracts handle the escrow and enforce terms automatically.</p>
-                </div>
-              </div>
-              <div className="step">
-                <div className="step-num">4</div>
-                <div className="step-content">
-                  <h4>Complete &amp; Get Paid</h4>
-                  <p>Deliver work through IPFS. Payment is released instantly once milestones are approved.</p>
+              <div className="landing-notice">
+                <span>✓</span>
+                <div>
+                  <b>Work approved</b>
+                  <small>Your payment is on its way</small>
                 </div>
               </div>
             </div>
           </div>
-          <div className="how-visual">
-            <h3>Platform Snapshot</h3>
-            <div className="stat-row">
-              <div className="stat-box"><div className="val">2.4K</div><div className="lbl">Active Projects</div></div>
-              <div className="stat-box"><div className="val">98%</div><div className="lbl">Success Rate</div></div>
+        </section>
+
+
+        <section className="landing-section landing-section-soft" id="why">
+          <div className="landing-shell">
+            <div className="landing-section-head">
+              <span className="landing-section-label">Why FreeLedger</span>
+              <h2>Professional freedom without the uncertainty.</h2>
+              <p>
+                Everything is designed to make independent work feel more human, transparent,
+                and secure.
+              </p>
             </div>
-            <div className="progress-item">
-              <div className="progress-label"><span>Smart Contract Volume</span><span>84%</span></div>
-              <div className="progress-bar"><div className="progress-fill" style={{width: '84%'}}></div></div>
-            </div>
-            <div className="progress-item">
-              <div className="progress-label"><span>Developer Demand</span><span>91%</span></div>
-              <div className="progress-bar"><div className="progress-fill" style={{width: '91%'}}></div></div>
-            </div>
-            <div className="progress-item">
-              <div className="progress-label"><span>On-time Delivery</span><span>76%</span></div>
-              <div className="progress-bar"><div className="progress-fill" style={{width: '76%'}}></div></div>
+            <div className="landing-cards">
+              <article className="landing-card">
+                <div className="landing-card-icon">F</div>
+                <h3>Reputation that belongs to you</h3>
+                <p>Your verified work history moves with you, so your credibility never gets trapped inside a platform.</p>
+              </article>
+              <article className="landing-card">
+                <div className="landing-card-icon">✓</div>
+                <h3>Agreements everyone understands</h3>
+                <p>Scope, milestones, and expectations stay visible, creating clarity before the work begins.</p>
+              </article>
+              <article className="landing-card">
+                <div className="landing-card-icon">+</div>
+                <h3>More value stays with you</h3>
+                <p>Direct relationships replace heavy marketplace commissions and unnecessary intermediaries.</p>
+              </article>
             </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="cta-section">
-        <div className="cta-inner">
-          <h2>Ready to join the revolution?</h2>
-          <p>Start working on projects that define the next generation of the internet.</p>
-          <button className="btn btn-white btn-lg" onClick={() => navigate('/login#register')}>Join FreeLedger Today →</button>
-        </div>
-      </div>
-
-      <footer className="footer">
-        <div className="footer-grid">
-          <div className="footer-brand">
-            <Link className="nav-logo" to="/" style={{color: '#fff'}}>
-              <div className="nav-logo-icon">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <section className="landing-section" id="experience">
+          <div className="landing-shell landing-story-grid">
+            <div className="landing-story-copy">
+              <span className="landing-section-label">Simple by design</span>
+              <h2>From first conversation to final approval.</h2>
+              <p>
+                The infrastructure stays quietly in the background while you focus on the
+                relationship and the work itself.
+              </p>
+              <div className="landing-note">
+                <i>F</i>
+                Technology should create confidence, not complexity.
               </div>
-              FreeLedger
-            </Link>
-            <p>The future of decentralized work. No fees, no middlemen, no compromise. Powered by blockchain smart contracts.</p>
-          </div>
-          <div className="footer-col">
-            <h4>Product</h4>
-            <a href="#">Find Talent</a>
-            <a href="#">Find Work</a>
-            <a href="#">Smart Escrow</a>
-            <a href="#">Token</a>
-          </div>
-          <div className="footer-col">
-            <h4>Resources</h4>
-            <a href="#">Documentation</a>
-            <a href="#">Help Center</a>
-            <a href="#">Blog</a>
-            <a href="#">Changelog</a>
-          </div>
-          <div className="footer-col">
-            <h4>Legal</h4>
-            <a href="#">Privacy</a>
-            <a href="#">Terms</a>
-            <a href="#">Governance</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>© 2024 FreeLedger DAO. All rights reserved.</p>
-          <div className="footer-socials">
-            <div className="social-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.48 4.48 0 00-.08-.83A7.72 7.72 0 0023 3z"/></svg>
             </div>
-            <div className="social-btn">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+            <div className="landing-journey">
+              <article>
+                <span>01</span>
+                <div>
+                  <h3>Build a trustworthy presence</h3>
+                  <p>Share your experience, skills, and verified professional history.</p>
+                </div>
+              </article>
+              <article>
+                <span>02</span>
+                <div>
+                  <h3>Shape the agreement together</h3>
+                  <p>Make the scope, deliverables, and expectations clear for everyone.</p>
+                </div>
+              </article>
+              <article>
+                <span>03</span>
+                <div>
+                  <h3>Work with payment protection</h3>
+                  <p>Know that the agreement is secured before you invest your time.</p>
+                </div>
+              </article>
+              <article>
+                <span>04</span>
+                <div>
+                  <h3>Approve, deliver, and move forward</h3>
+                  <p>Close the project cleanly and carry your reputation into the next one.</p>
+                </div>
+              </article>
             </div>
+          </div>
+        </section>
+
+        <section className="landing-section" id="safety">
+          <div className="landing-shell">
+            <div className="landing-safety">
+              <div>
+                <span className="landing-section-label">Confidence built in</span>
+                <h2>Protection should feel effortless.</h2>
+                <p>
+                  FreeLedger gives both sides a shared source of truth, without turning every
+                  project into a technical exercise.
+                </p>
+              </div>
+              <div className="landing-safety-list">
+                <div><i>✓</i>Payment protected before work begins</div>
+                <div><i>✓</i>Terms that stay clear and visible</div>
+                <div><i>✓</i>Approval tied to meaningful milestones</div>
+                <div><i>✓</i>Identity and work history you control</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="landing-cta" id="start">
+          <div className="landing-shell">
+            <div className="landing-cta-box">
+              <h2>Work should feel this clear.</h2>
+              <p>Find the right collaboration and move forward with confidence.</p>
+              <div className="landing-cta-actions">
+                <button className="landing-button landing-button-primary landing-button-large" onClick={goRegister}>
+                  Explore opportunities
+                </button>
+                <button className="landing-button landing-button-light landing-button-large" onClick={goRegister}>
+                  Find the right person
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="landing-footer">
+        <div className="landing-shell">
+          <div className="landing-footer-top">
+            <div className="landing-footer-about">
+              <Link className="landing-brand" to="/">
+                <span className="landing-brand-mark">F</span>
+                FreeLedger
+              </Link>
+              <p>Borderless professional relationships, protected agreements, and reputation you truly own.</p>
+            </div>
+            <div className="landing-footer-links">
+              <div>
+                <h4>Product</h4>
+                <button onClick={goRegister}>Find work</button>
+                <button onClick={goRegister}>Hire talent</button>
+                <a href="#experience">How it works</a>
+              </div>
+              <div>
+                <h4>Resources</h4>
+                <a href="#why">Benefits</a>
+                <a href="#safety">Safety</a>
+                <button onClick={goLogin}>Sign in</button>
+              </div>
+              <div>
+                <h4>Company</h4>
+                <a href="#why">About</a>
+                <a href="#safety">Privacy</a>
+                <a href="#safety">Terms</a>
+              </div>
+            </div>
+          </div>
+          <div className="landing-footer-bottom">
+            <span>FreeLedger. All rights reserved.</span>
+            <span>Built for independent work.</span>
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
