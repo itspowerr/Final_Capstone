@@ -148,6 +148,7 @@ class Contract(Base):
 
 class MilestoneStatus(str, enum.Enum):
     pending = "pending"
+    in_progress = "in_progress"
     submitted = "submitted"
     approved = "approved"
     rejected = "rejected"

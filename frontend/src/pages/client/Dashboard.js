@@ -6,7 +6,7 @@ import api from '../../services/api';
 import '../../css/client/dashboard.css';
 
 const MILESTONE_STATUS_MAP = {
-  pending: 'pending', submitted: 'submitted', approved: 'done', rejected: 'pending', paid: 'done',
+  pending: 'pending', in_progress: 'active', submitted: 'submitted', approved: 'done', rejected: 'pending', paid: 'done',
 };
 
 function formatContract(raw) {

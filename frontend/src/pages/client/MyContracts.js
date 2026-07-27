@@ -29,7 +29,7 @@ const FILTER_STATUSES = {
 };
 
 const MILESTONE_STATUS_MAP = {
-  pending: 'pending', submitted: 'submitted', approved: 'done', rejected: 'pending', paid: 'done',
+  pending: 'pending', in_progress: 'active', submitted: 'submitted', approved: 'done', rejected: 'pending', paid: 'done',
 };
 
 function formatContract(raw) {
@@ -109,6 +109,7 @@ export default function MyContracts() {
   const [modalProposals, setModalProposals] = useState([]);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [modalDisputeId, setModalDisputeId] = useState(null);
+  const [contractHistory, setContractHistory] = useState([]);
   const [showDisputeChat, setShowDisputeChat] = useState(false);
   const [disputeChatMessages, setDisputeChatMessages] = useState([]);
   const [disputeChatInitiated, setDisputeChatInitiated] = useState(false);
@@ -359,6 +360,9 @@ export default function MyContracts() {
     } else {
       setModalDisputeId(null);
     }
+    api.get(`/contracts/${id}/history`).then(res => {
+      setContractHistory(res.data?.history || []);
+    }).catch(() => setContractHistory([]));
   };
   const statusLabel = (s) => STATUS_LABELS[s] || s;
   const statusClass = (s) => STATUS_CLASS[s] || 'draft';
@@ -485,7 +489,7 @@ export default function MyContracts() {
       </div>
 
       {modalContract && createPortal(
-        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) { setModalContract(null); setSelectedProposal(null); } }}>
+        <div className="modal-overlay open" onClick={(e) => { if (e.target === e.currentTarget) { setModalContract(null); setSelectedProposal(null); setContractHistory([]); } }}>
           <div className="modal-box modal-box-wide">
             <button className="modal-close" onClick={() => { setModalContract(null); setSelectedProposal(null); }}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -614,6 +618,32 @@ export default function MyContracts() {
               ))}
             </div>
 
+            {contractHistory.length > 0 && (
+              <div style={{ marginBottom: 20 }}>
+                <h4 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.5px', color: 'var(--text-3)', marginBottom: 12 }}>Activity Timeline</h4>
+                <div style={{ borderLeft: '2px solid var(--border)', marginLeft: 8, paddingLeft: 20 }}>
+                  {contractHistory.slice(-10).reverse().map((entry) => {
+                    const date = entry.created_at ? new Date(entry.created_at) : null;
+                    const timeStr = date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                    const label = entry.entity_type === 'milestone'
+                      ? `Milestone ${entry.action}`
+                      : entry.action.charAt(0).toUpperCase() + entry.action.slice(1);
+                    return (
+                      <div key={entry.id} style={{ marginBottom: 16, position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: -27, top: 4, width: 10, height: 10, borderRadius: '50%', background: 'var(--accent)', border: '2px solid var(--surface)' }} />
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{label}</div>
+                        <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 2 }}>
+                          {entry.from_status && entry.to_status ? `${entry.from_status} → ${entry.to_status}` : ''}
+                          {entry.details ? ` — ${entry.details}` : ''}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--text-3)', marginTop: 2 }}>{timeStr}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {showDisputeChat && modalDisputeId && (
               <div style={{
                 marginTop: 16, borderRadius: 8, border: '1px solid var(--border, #e5e7eb)',
@@ -706,7 +736,7 @@ export default function MyContracts() {
                   💬 Chat with Admin
                 </button>
               )}
-              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setModalContract(null); setShowDisputeChat(false); setModalDisputeId(null); }}>Close</button>
+              <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setModalContract(null); setShowDisputeChat(false); setModalDisputeId(null); setContractHistory([]); }}>Close</button>
             </div>
           </div>
         </div>

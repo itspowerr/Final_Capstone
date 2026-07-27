@@ -39,6 +39,7 @@ export default function MyContracts() {
   const [disputeModal, setDisputeModal] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [modalDisputeId, setModalDisputeId] = useState(null);
+  const [contractHistory, setContractHistory] = useState([]);
   const [showDisputeChat, setShowDisputeChat] = useState(false);
   const [disputeChatMessages, setDisputeChatMessages] = useState([]);
   const [disputeChatInitiated, setDisputeChatInitiated] = useState(false);
@@ -112,6 +113,7 @@ export default function MyContracts() {
       setShowDisputeChat(false);
       setDisputeChatMessages([]);
       setDisputeChatInitiated(false);
+      setContractHistory([]);
     } else {
       if (detail.status === 'disputed') {
         api.get('/disputes', { params: { page: 1, limit: 50 } }).then(res => {
@@ -121,6 +123,9 @@ export default function MyContracts() {
       } else {
         setModalDisputeId(null);
       }
+      api.get(`/contracts/${detail.id}/history`).then(res => {
+        setContractHistory(res.data?.history || []);
+      }).catch(() => setContractHistory([]));
     }
   }, [detail]);
 
@@ -449,19 +454,19 @@ export default function MyContracts() {
             <h4 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 16 }}>Milestones</h4>
             {detail.milestones.map((m, i) => {
               const isOpen = expandedIdx === i;
-              const canSubmit = detail.status === 'active' && (m.status || '').toLowerCase() === 'pending';
+              const canSubmit = detail.status === 'active' && ['pending', 'in_progress'].includes((m.status || '').toLowerCase());
               const isPaid = (m.status || '').toLowerCase() === 'approved' || (m.status || '').toLowerCase() === 'paid';
               const isRejected = m.rejection_reason && (m.status || '').toLowerCase() === 'pending';
               return (
-                <div key={i} className={`milestone-item ${isRejected ? 'rejected' : ''}`}>
+                <div key={i} className={`milestone-item ${(isRejected || (m.status || '').toLowerCase() === 'in_progress') ? 'rejected' : ''}`}>
                   <div className="milestone-header" onClick={() => toggleExpand(i)}>
-                    <div className={`milestone-icon ${isPaid ? 'paid' : isRejected ? 'rejected' : m.status === 'submitted' ? 'submitted' : ''}`}>
+                    <div className={`milestone-icon ${isPaid ? 'paid' : isRejected || (m.status || '').toLowerCase() === 'in_progress' ? 'rejected' : m.status === 'submitted' ? 'submitted' : ''}`}>
                       {isPaid ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg> : isRejected ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> : m.status === 'submitted' ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> : (i+1)}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--landing-navy)' }}>{m.description}</div>
                       <div style={{ fontSize: 13, color: 'var(--landing-muted)', fontWeight: 500, marginTop: 2 }}>
-                        {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' ? 'Rejected' : m.rejection_reason ? 'Rejected — resubmit below' : 'Pending'}
+                        {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' || m.status === 'in_progress' ? 'Rejected — resubmit below' : 'Pending'}
                       </div>
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--landing-blue)' }}>{Number(m.amount || 0).toLocaleString()} ETH</div>
@@ -513,6 +518,31 @@ export default function MyContracts() {
                 </div>
               );
             })}
+            {contractHistory.length > 0 && (
+              <div style={{ marginTop: 24 }}>
+                <h4 style={{ fontSize: 14, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.05em', color: 'var(--landing-navy)', marginBottom: 16 }}>Activity Timeline</h4>
+                <div style={{ borderLeft: '2px solid var(--landing-line)', marginLeft: 8, paddingLeft: 20 }}>
+                  {contractHistory.slice(-10).reverse().map((entry) => {
+                    const date = entry.created_at ? new Date(entry.created_at) : null;
+                    const timeStr = date ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+                    const label = entry.entity_type === 'milestone'
+                      ? `Milestone ${entry.action}`
+                      : entry.action.charAt(0).toUpperCase() + entry.action.slice(1);
+                    return (
+                      <div key={entry.id} style={{ marginBottom: 16, position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: -27, top: 4, width: 10, height: 10, borderRadius: '50%', background: 'var(--landing-blue)', border: '2px solid var(--landing-white)' }} />
+                        <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--landing-navy)' }}>{label}</div>
+                        <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 500, marginTop: 2 }}>
+                          {entry.from_status && entry.to_status ? `${entry.from_status} → ${entry.to_status}` : ''}
+                          {entry.details ? ` — ${entry.details}` : ''}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--landing-muted)', marginTop: 2 }}>{timeStr}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {showDisputeChat && modalDisputeId && (
               <div style={{
                 marginTop: 20, borderRadius: 16, border: '1px solid var(--landing-line)',

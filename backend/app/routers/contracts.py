@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import Contract, ContractMilestone, ContractStatus, Job, MilestoneStatus, Proposal, User
+from app.models import AuditLog, Contract, ContractMilestone, ContractStatus, Job, MilestoneStatus, Proposal, User
 from app.routers.auth import get_current_user
 from app.schemas import (
+    AuditLogResponse,
     ContractCreate,
     ContractDetail,
     ContractResponse,
@@ -16,6 +17,8 @@ from app.schemas import (
     MilestoneReject,
     MilestoneResponse,
     MilestoneSubmit,
+    ProjectHistoryResponse,
+    ProjectStatusResponse,
     ProposalResponse,
 )
 
@@ -300,6 +303,14 @@ async def approve_milestone(
             detail={"code": "MILESTONE_NOT_SUBMITTED", "message": "Milestone has not been submitted"},
         )
 
+    if contract.on_chain_id is not None:
+        on_chain_id = int(contract.on_chain_id)
+        await asyncio.to_thread(
+            blockchain_service.approve_milestone_on_chain,
+            contract_id=on_chain_id,
+            milestone_index=index,
+        )
+
     ms.status = MilestoneStatus.approved
     ms.approved_at = func.now()
     await db.flush()
@@ -378,17 +389,14 @@ async def reject_milestone(
         )
 
     if contract.on_chain_id is not None:
-        try:
-            on_chain_id = int(contract.on_chain_id)
-            await asyncio.to_thread(
-                blockchain_service.reject_milestone_on_chain,
-                contract_id=on_chain_id,
-                milestone_index=index,
-            )
-        except Exception as exc:
-            print(f"[WARN] On-chain rejection failed for contract {contract_id}: {exc}")
+        on_chain_id = int(contract.on_chain_id)
+        await asyncio.to_thread(
+            blockchain_service.reject_milestone_on_chain,
+            contract_id=on_chain_id,
+            milestone_index=index,
+        )
 
-    ms.status = MilestoneStatus.pending
+    ms.status = MilestoneStatus.in_progress
     ms.deliverable_cid = None
     ms.submission_notes = None
     ms.submitted_at = None
@@ -402,7 +410,7 @@ async def reject_milestone(
         actor_id=current_user.id,
         actor_role=current_user.role.value,
         from_status="submitted",
-        to_status="pending",
+        to_status="in_progress",
         details=data.reason,
     )
     from app.services.notification_service import create_notification
@@ -440,23 +448,22 @@ async def submit_milestone(
             detail={"code": "NOT_FREELANCER", "message": "You are not assigned to this contract"},
         )
     ms = await _get_milestone(contract_id, index, db)
-    if ms.status != MilestoneStatus.pending:
+    if ms.status not in (MilestoneStatus.pending, MilestoneStatus.in_progress):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "MILESTONE_NOT_PENDING", "message": "Only pending milestones can be submitted"},
+            detail={"code": "MILESTONE_NOT_SUBMITTABLE", "message": "Only pending or in-progress milestones can be submitted"},
         )
 
+    prev_status = ms.status.value
+
     if contract.on_chain_id is not None and data.deliverable_cid:
-        try:
-            on_chain_id = int(contract.on_chain_id)
-            await asyncio.to_thread(
-                blockchain_service.submit_milestone_on_chain,
-                contract_id=on_chain_id,
-                milestone_index=index,
-                deliverable_cid=data.deliverable_cid,
-            )
-        except Exception as exc:
-            print(f"[WARN] On-chain submission failed for contract {contract_id}: {exc}")
+        on_chain_id = int(contract.on_chain_id)
+        await asyncio.to_thread(
+            blockchain_service.submit_milestone_on_chain,
+            contract_id=on_chain_id,
+            milestone_index=index,
+            deliverable_cid=data.deliverable_cid,
+        )
 
     ms.status = MilestoneStatus.submitted
     ms.deliverable_cid = data.deliverable_cid
@@ -470,7 +477,7 @@ async def submit_milestone(
         action="submit",
         actor_id=current_user.id,
         actor_role=current_user.role.value,
-        from_status="pending",
+        from_status=prev_status,
         to_status="submitted",
     )
     from app.services.notification_service import create_notification
@@ -486,6 +493,55 @@ async def submit_milestone(
     await db.commit()
     await db.refresh(ms)
     return MilestoneResponse.model_validate(ms)
+
+
+@router.get("/{contract_id}/status", response_model=ProjectStatusResponse)
+async def get_project_status(
+    contract_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    contract = await _get_contract_for_party(contract_id, current_user, db)
+
+    milestones_result = await db.execute(
+        select(ContractMilestone)
+        .where(ContractMilestone.contract_id == contract_id)
+        .order_by(ContractMilestone.index)
+    )
+    milestones = milestones_result.scalars().all()
+
+    return ProjectStatusResponse(
+        contract_id=contract.id,
+        status=contract.status.value,
+        milestones=[MilestoneResponse.model_validate(m) for m in milestones],
+    )
+
+
+@router.get("/{contract_id}/history", response_model=ProjectHistoryResponse)
+async def get_project_history(
+    contract_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    await _get_contract_for_party(contract_id, current_user, db)
+
+    milestone_ids_result = await db.execute(
+        select(ContractMilestone.id)
+        .where(ContractMilestone.contract_id == contract_id)
+    )
+    milestone_ids = [row[0] for row in milestone_ids_result.all()]
+
+    query = select(AuditLog).where(
+        (AuditLog.entity_type == "contract") & (AuditLog.entity_id == contract_id)
+        | (AuditLog.entity_type == "milestone") & (AuditLog.entity_id.in_(milestone_ids))
+    ).order_by(AuditLog.created_at.asc())
+
+    result = await db.execute(query)
+    logs = result.scalars().all()
+
+    return ProjectHistoryResponse(
+        history=[AuditLogResponse.model_validate(log) for log in logs]
+    )
 
 
 @router.post("/{contract_id}/sign", response_model=ContractDetail)

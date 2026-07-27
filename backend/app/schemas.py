@@ -301,6 +301,16 @@ class AuditLogResponse(BaseModel):
         from_attributes = True
 
 
+class ProjectStatusResponse(BaseModel):
+    contract_id: str
+    status: str
+    milestones: list[MilestoneResponse]
+
+
+class ProjectHistoryResponse(BaseModel):
+    history: list[AuditLogResponse]
+
+
 class ProposalCreate(BaseModel):
     job_id: str
     cover_letter: Optional[str] = None
