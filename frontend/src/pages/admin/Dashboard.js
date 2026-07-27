@@ -22,20 +22,32 @@ export default function Dashboard() {
   }, []);
 
   if (loading) return (
-    <div style={{ padding: '28px 32px' }}>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Admin Dashboard</h1>
+          <p className="page-sub">Loading platform statistics...</p>
+        </div>
+      </div>
       <div className="stats-grid">
         {Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginTop: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
         <SkeletonCard rows={4} />
         <SkeletonCard rows={4} />
       </div>
     </div>
   );
-  if (!stats) return <div style={{ padding: 40, color: 'var(--text-3)' }}>Failed to load dashboard data.</div>;
+  if (!stats) return <div className="page-body" style={{ padding: 40, color: 'var(--text-3)' }}>Failed to load dashboard data.</div>;
 
   return (
-    <div style={{ padding: '28px 32px' }}>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Admin Dashboard</h1>
+          <p className="page-sub">Welcome back! Here's an overview of the platform.</p>
+        </div>
+      </div>
       <div className="stats-grid">
         <div className="stat-card accent-card">
           <div className="s-top"><span className="s-label">Users</span><div className="s-icon">👥</div></div>

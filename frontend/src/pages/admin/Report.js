@@ -53,7 +53,7 @@ export default function Report() {
   }, []);
 
   if (loading) return (
-    <div style={{ padding: '28px 32px' }}>
+    <div className="page-body">
       <div className="stats-grid">
         {Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)}
       </div>
@@ -74,9 +74,12 @@ export default function Report() {
   const maxUserRole = Math.max(...Object.values(u.by_role || {}), 1);
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div className="admin-section-header">
-        <h2 style={{ fontSize: 20, fontWeight: 800 }}>System Report</h2>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">System Report</h1>
+          <p className="page-sub">Comprehensive overview of platform metrics and health.</p>
+        </div>
       </div>
 
       {/* Top stat cards */}

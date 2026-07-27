@@ -35,11 +35,12 @@ export default function AuditLogs() {
   const totalPages = Math.max(1, Math.ceil(total / LIMIT));
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div className="admin-section-header">
-        <h2 style={{ fontSize: 20, fontWeight: 800 }}>
-          Audit Logs <span style={{ fontSize: 14, color: 'var(--text-3)', fontWeight: 400 }}>({total})</span>
-        </h2>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Audit Logs</h1>
+          <p className="page-sub">Track system events and user actions ({total} total)</p>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>

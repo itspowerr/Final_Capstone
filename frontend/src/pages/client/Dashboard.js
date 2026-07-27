@@ -5,6 +5,23 @@ import { SkeletonStatCard, SkeletonCard } from '../../components/shared/Skeleton
 import api from '../../services/api';
 import '../../css/client/dashboard.css';
 
+const MILESTONE_STATUS_MAP = {
+  pending: 'pending', submitted: 'submitted', approved: 'done', rejected: 'pending', paid: 'done',
+};
+
+function formatContract(raw) {
+  const ms = (raw.milestones || []).map(m => ({
+    status: MILESTONE_STATUS_MAP[m.status] || 'pending',
+  }));
+  const doneMs = ms.filter(m => m.status === 'done').length;
+  return {
+    ...raw,
+    progress: ms.length ? Math.round((doneMs / ms.length) * 100) : 0,
+    doneMs,
+    totalMs: ms.length,
+  };
+}
+
 export default function ClientDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
   const [stats, setStats] = useState({ active: 0, applied: 0, budget: 0 });
@@ -26,7 +43,7 @@ export default function ClientDashboard() {
         api.get(`/proposals?client_id=${userId}`).catch(() => null),
       ]);
 
-      const allContracts = contractsRes.data?.contracts || [];
+      const allContracts = (contractsRes.data?.contracts || []).map(formatContract);
       const proposals = proposalsRes?.data?.proposals || [];
 
       setContracts(allContracts);
@@ -200,10 +217,10 @@ export default function ClientDashboard() {
                     <div className="project-row" key={i}>
                       <div className="project-row-top">
                         <span className="project-name">{c.title || c.job_title || 'Untitled'}</span>
-                        <span className="project-pct">{c.milestones_completed || 0}/{c.milestones_total || 0}</span>
+                        <span className="project-pct">{c.doneMs || 0}/{c.totalMs || 0}</span>
                       </div>
                       <div className="milestone-label">Status: {c.status?.replace(/_/g, ' ')}</div>
-                      <div className="prog-bar"><div className="prog-fill" style={{ width: `${c.milestones_total ? ((c.milestones_completed || 0) / c.milestones_total) * 100 : 0}%` }}></div></div>
+                      <div className="prog-bar"><div className="prog-fill" style={{ width: `${c.progress || 0}%` }}></div></div>
                     </div>
                   ))
                 )}

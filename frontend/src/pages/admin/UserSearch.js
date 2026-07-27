@@ -47,9 +47,12 @@ export default function UserSearch() {
   };
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div className="admin-section-header">
-        <h2 style={{ fontSize: 20, fontWeight: 800 }}>User Search</h2>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">User Search</h1>
+          <p className="page-sub">Lookup users by ID, name, email or wallet address.</p>
+        </div>
       </div>
 
       <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 16 }}>

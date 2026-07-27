@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Navbar from '../../components/client/Navbar';
 import { getProvider } from '../../services/web3.js';
 import { useApp } from '../../context/AppContext';
@@ -340,10 +341,11 @@ export default function ClientProfile() {
         </div>
       </div>
 
-      {toast && (
+      {toast && createPortal(
         <div className="toast show">
           <span className="toast-icon">{toast.icon}</span><span>{toast.msg}</span>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

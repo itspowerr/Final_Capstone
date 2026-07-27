@@ -64,10 +64,13 @@ export default function AdminContracts() {
   const items = data.contracts || [];
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div className="admin-section-header">
-        <h2 style={{ fontSize: 20, fontWeight: 800 }}>Contracts <span style={{ fontSize: 14, color: 'var(--text-3)', fontWeight: 400 }}>({data.total})</span></h2>
-        <button className="btn btn-sm btn-primary" onClick={() => setShowModal(true)}>+ Add</button>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Contracts</h1>
+          <p className="page-sub">Manage platform contracts ({data.total} total)</p>
+        </div>
+        <button className="btn btn-sm btn-primary" onClick={() => setShowModal(true)}>+ Add Contract</button>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>

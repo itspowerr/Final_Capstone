@@ -1,41 +1,114 @@
-.stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
+.stats-grid { 
+  display: grid; 
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 24px; 
+  margin-bottom: 32px; 
+}
 .stat-card {
-  background: var(--white); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); padding: 20px;
-  box-shadow: var(--shadow); transition: box-shadow .2s;
+  background: rgba(255, 255, 255, 0.7); 
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.8); 
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.03); 
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
-.stat-card:hover { box-shadow: var(--shadow-lg); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0) 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+.stat-card > * { position: relative; z-index: 1; }
+.stat-card:hover { 
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+  border-color: #ffffff;
+}
 .stat-card.accent-card {
-  background: linear-gradient(135deg, var(--accent), var(--accent-light));
-  color: #fff; border-color: transparent;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #ffffff; 
+  border: none;
+  box-shadow: 0 15px 35px rgba(37, 99, 235, 0.25);
 }
-.s-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.s-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
-.accent-card .s-label { color: rgba(255,255,255,.8); }
-.s-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.accent-card .s-icon { background: rgba(255,255,255,.2); }
-.s-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
-.s-sub { font-size: 12px; color: var(--text-3); margin-top: 4px; }
-.accent-card .s-sub { color: rgba(255,255,255,.65); }
-.s-badge { display: inline-block; font-size: 11px; font-weight: 600; color: var(--green); background: #ecfdf5; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+.s-top { 
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; 
+}
+.s-label { font-size: 13px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: 0.5px; }
+.accent-card .s-label { color: rgba(255,255,255,0.9); }
+.s-icon { 
+  width: 44px; height: 44px; 
+  border-radius: 12px; 
+  background: var(--surface); 
+  display: flex; align-items: center; justify-content: center; 
+  flex-shrink: 0;
+  font-size: 20px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+.accent-card .s-icon { 
+  background: rgba(255,255,255,0.2); 
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+}
+.s-val { font-size: 34px; font-weight: 800; letter-spacing: -1px; background: linear-gradient(135deg, var(--navy), var(--text-2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.accent-card .s-val { background: none; -webkit-text-fill-color: #fff; }
+.s-sub { font-size: 13px; color: var(--text-3); margin-top: 6px; font-weight: 500; }
+.accent-card .s-sub { color: rgba(255,255,255,0.8); }
+.s-badge { 
+  display: inline-block; font-size: 12px; font-weight: 700; color: var(--green); 
+  background: #d1fae5; padding: 4px 10px; border-radius: 20px; 
+  margin-top: 6px; box-shadow: 0 2px 5px rgba(16, 185, 129, 0.1);
+}
 
 .card {
-  background: var(--white); border-radius: var(--radius-lg);
-  border: 1px solid var(--border); box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 24px;
+  border: 1px solid rgba(255,255,255,0.6); 
+  box-shadow: 0 10px 40px rgba(0,0,0,0.03);
+  transition: box-shadow 0.3s ease;
+}
+.card:hover {
+  box-shadow: 0 15px 50px rgba(0,0,0,0.06);
 }
 .card-header {
-  padding: 18px 20px 0; display: flex; align-items: center;
-  justify-content: space-between; margin-bottom: 16px;
+  padding: 24px 28px 16px; display: flex; align-items: center;
+  justify-content: space-between; border-bottom: 1px solid rgba(0,0,0,0.04);
 }
-.card-header h3 { font-size: 15px; font-weight: 700; }
-.card-body { padding: 0 20px 20px; }
+.card-header h3 { font-size: 17px; font-weight: 800; color: var(--navy); }
+.card-body { padding: 20px 28px 28px; }
 
-.cs-val { font-size: 26px; font-weight: 800; margin-bottom: 4px; }
-.cs-lbl { font-size: 11px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--text-3); }
+.cs-val { font-size: 42px; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; background: linear-gradient(135deg, #f59e0b, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.cs-lbl { font-size: 12px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-3); }
 
-.two-col { display: grid; grid-template-columns: 1fr .85fr; gap: 20px; }
+.two-col { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; }
 
 @media (max-width: 900px) {
-  .stats-grid { grid-template-columns: 1fr 1fr; }
-  .two-col { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+  .two-col { grid-template-columns: 1fr; gap: 16px; }
+  .card-header, .card-body { padding: 20px; }
+}
+
+/* Animations */
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.stats-grid .stat-card {
+  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.stats-grid .stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stats-grid .stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stats-grid .stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stats-grid .stat-card:nth-child(4) { animation-delay: 0.2s; }
+
+.card {
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.25s;
 }

@@ -340,11 +340,12 @@ export default function AdminDisputes() {
   const formatAmount = (amt) => Number(amt || 0).toFixed(4);
 
   return (
-    <div style={{ padding: '28px 32px' }}>
-      <div className="admin-section-header">
-        <h2 style={{ fontSize: 20, fontWeight: 800 }}>
-          Disputes <span style={{ fontSize: 14, color: 'var(--text-3)', fontWeight: 400 }}>({total})</span>
-        </h2>
+    <div className="page-body">
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">Disputes</h1>
+          <p className="page-sub">Manage platform disputes ({total} total)</p>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
