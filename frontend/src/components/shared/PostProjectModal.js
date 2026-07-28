@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { parseEther } from 'ethers';
 import api from '../../services/api.js';
 import { getProvider, getSigner, getContract, ensureCorrectNetwork } from '../../services/web3.js';
@@ -27,6 +28,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
   const [freelancerSearch, setFreelancerSearch] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [toast, setToast] = useState(null);
   const [postError, setPostError] = useState(null);
   const [posting, setPosting] = useState(false);
   const [walletStatus, setWalletStatus] = useState(null);
@@ -105,6 +107,11 @@ export default function PostProjectModal({ isOpen, onClose }) {
     }
   };
 
+  function showToast(msg, icon) {
+    setToast({ msg, icon: icon || '+' });
+    setTimeout(() => setToast(null), 2500);
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setPostError(null);
@@ -178,9 +185,11 @@ export default function PostProjectModal({ isOpen, onClose }) {
 
       await api.post('/contracts', contractPayload);
 
-      resetForm();
-      onClose();
-      window.alert('Project posted successfully!');
+      showToast('Project posted successfully!', '+');
+      setTimeout(() => {
+        resetForm();
+        onClose();
+      }, 1000);
     } catch (err) {
       const msg = err.response?.data?.detail?.message || err.response?.data?.detail || err.message || 'Failed to post project';
       setPostError(typeof msg === 'string' ? msg : JSON.stringify(msg));
@@ -298,6 +307,20 @@ export default function PostProjectModal({ isOpen, onClose }) {
           </button>
         </form>
       </div>
+
+      {toast && createPortal(
+        <div className="toast show" style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          background: '#101828', color: '#fff', padding: '12px 24px', borderRadius: '12px',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          boxShadow: '0 12px 32px rgba(16,24,40,0.2)',
+          fontFamily: "var(--landing-body)", fontSize: 14, fontWeight: 700, zIndex: 99999,
+        }}>
+          <span className="toast-icon">{toast.icon}</span>
+          <span>{toast.msg}</span>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

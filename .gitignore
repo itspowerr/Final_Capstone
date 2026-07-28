@@ -47,3 +47,8 @@ htmlcov/
 # Misc
 *.tgz
 npm-debug.log*
+
+# Root-level stray files
+/package-lock.json
+/package.json
+*.pdf
