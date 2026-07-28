@@ -307,7 +307,19 @@ if [ -n "$REMOTE_HOST" ]; then
     SSH_CMD="$SSH_CMD -i $REMOTE_SSH_KEY"
   fi
 
-  # Kill any existing tunnel on our ports
+  # Reuse a healthy existing tunnel. This is especially important on Windows,
+  # where Git Bash often has no lsof and cannot inspect an elevated ssh process.
+  EXISTING_TUNNEL=1
+  for port in 5432 6379 8545 5001 8080; do
+    if ! timeout 2 bash -c ": >/dev/tcp/127.0.0.1/$port" 2>/dev/null; then
+      EXISTING_TUNNEL=0
+      break
+    fi
+  done
+
+  if [ "$EXISTING_TUNNEL" -eq 1 ]; then
+    ok "Existing SSH tunnel is healthy; reusing local forwarded ports"
+  else
   step "Cleaning existing tunnels..."
   # Kill stale SSH tunnels by process pattern
   if [ "$OS" = "Darwin" ] || [ "$OS" = "Linux" ]; then
@@ -329,15 +341,21 @@ if [ -n "$REMOTE_HOST" ]; then
     -L 8080:localhost:8080 \
     "$REMOTE_USER@$REMOTE_HOST"
 
+  if [ $? -ne 0 ]; then
+    fail "SSH tunnel failed to start"
+    exit 1
+  fi
+
   # Find the PID of the forked SSH tunnel
   sleep 1
   TUNNEL_PID=$(lsof -ti:8545 2>/dev/null | head -1)
 
-  if [ -z "$TUNNEL_PID" ]; then
-    fail "SSH tunnel failed to start"
-    exit 1
+  if [ -n "$TUNNEL_PID" ]; then
+    ok "SSH tunnel active (PID: $TUNNEL_PID)"
+  else
+    ok "SSH tunnel active"
   fi
-  ok "SSH tunnel active (PID: $TUNNEL_PID)"
+  fi
 
   # Poll until services are reachable through the tunnel
   TUNNEL_READY=0
@@ -440,9 +458,11 @@ if [ ! -d "venv" ]; then
   ok "venv created"
 fi
 
-# Activate venv (Unix-only path; Windows Git Bash not supported for this)
+# Activate venv on Unix or Windows Git Bash.
 if [ -f "$ROOT_DIR/backend/venv/bin/activate" ]; then
   source "$ROOT_DIR/backend/venv/bin/activate"
+elif [ -f "$ROOT_DIR/backend/venv/Scripts/activate" ]; then
+  source "$ROOT_DIR/backend/venv/Scripts/activate"
 fi
 
 if [ -f requirements.txt ]; then

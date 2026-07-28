@@ -251,7 +251,7 @@ export default function MyProfile() {
                 <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
                   {avatarCid ? (
-                    <img className="fl-profile-avatar-img" src={getIPFSGatewayUrl(avatarCid)} alt="avatar" />
+                    <img className="fl-profile-avatar-img" src={getIPFSGatewayUrl(avatarCid)} alt={`${fullName || 'User'} profile`} width="120" height="120" decoding="async" />
                   ) : (
                     <div className="fl-profile-avatar-lg">{initials}</div>
                   )}
@@ -283,7 +283,7 @@ export default function MyProfile() {
 
           <div>
             <div className="fl-profile-section">
-              <h3>Work Preferences</h3>
+              <h2>Work Preferences</h2>
               <div className="form-group">
                 <label className="form-label">Availability Status</label>
                 <select className="form-input" value={availability} onChange={e => setAvailability(e.target.value)}>
@@ -299,7 +299,7 @@ export default function MyProfile() {
             </div>
 
             <div className="fl-profile-section">
-              <h3>Basic Information</h3>
+              <h2>Basic Information</h2>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">Full Name</label>
@@ -331,7 +331,7 @@ export default function MyProfile() {
             </div>
 
             <div className="fl-profile-section">
-              <h3>Skills</h3>
+              <h2>Skills</h2>
               <div className="fl-skills-list">
                 {skills.length === 0 ? (
                   <span style={{ fontSize: 14, color: 'var(--landing-muted)' }}>No skills added yet.</span>
@@ -352,7 +352,7 @@ export default function MyProfile() {
             </div>
 
             <div className="fl-profile-section">
-              <h3>Portfolio & Links</h3>
+              <h2>Portfolio & Links</h2>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">GitHub</label>
@@ -370,7 +370,7 @@ export default function MyProfile() {
             </div>
 
             <div className="fl-profile-section">
-              <h3>Web3 Identity</h3>
+              <h2>Web3 Identity</h2>
               <p style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 20, lineHeight: 1.5 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform.</p>
               
               <div className="web3-id-card">

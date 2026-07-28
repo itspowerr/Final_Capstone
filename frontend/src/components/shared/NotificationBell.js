@@ -73,6 +73,10 @@ export default function NotificationBell() {
   return (
     <div ref={ref} style={{ position: 'relative' }}>
       <button
+        type="button"
+        aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-haspopup="true"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
         style={{
           background: 'none', border: 'none', cursor: 'pointer', position: 'relative',

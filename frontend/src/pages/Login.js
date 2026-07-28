@@ -7,7 +7,9 @@ import useAuth from '../hooks/useAuth';
 
 const panels = {
   login: {
-    title: 'Welcome back to the decentralized economy',
+    eyebrow: 'Secure workspace access',
+    title: 'Welcome back to the',
+    titleAccent: 'decentralized economy',
     subtitle: 'Sign in with your wallet to access your projects, contracts, and earnings — no passwords needed.',
     features: [
       'Cryptographic wallet authentication',
@@ -18,7 +20,9 @@ const panels = {
     bottomText: 'Protected by blockchain cryptography — no central server can be breached.',
   },
   register: {
-    title: 'Start your decentralized journey today',
+    eyebrow: 'Build without boundaries',
+    title: 'Start your',
+    titleAccent: 'decentralized journey today',
     subtitle: 'Join thousands of freelancers and clients building the future of work on the blockchain.',
     features: [
       'Free to join, no subscription fees',
@@ -280,7 +284,14 @@ export default function Login() {
           </Link>
 
           <div className="left-panel-content active">
-            <h2>{panel.title}</h2>
+            <div className="auth-eyebrow">
+              <span className="auth-eyebrow-dot" />
+              {panel.eyebrow}
+            </div>
+            <h2>
+              {panel.title}{' '}
+              <span className="auth-title-accent">{panel.titleAccent}</span>
+            </h2>
             <p>{panel.subtitle}</p>
             <div className="auth-feature-list">
               {panel.features.map((f, i) => (
@@ -399,18 +410,18 @@ export default function Login() {
           ) : tab === 'login' ? (
             <div className="form-panel active">
               <p className="subtitle">Don't have an account? <a onClick={() => setTab('register')}>Create one →</a></p>
-              <form onSubmit={handleLogin}>
+              <form onSubmit={handleLogin} autoComplete="on">
                 <div className="form-group">
-                  <label className="form-label">Email Address</label>
-                  <input className="form-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                  <label className="form-label" htmlFor="login-email">Email Address</label>
+                  <input id="login-email" name="username" className="form-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" />
                   {errors.email && <div className="error-msg visible">{errors.email}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <label className="form-label" htmlFor="login-password" style={{ display: 'flex', justifyContent: 'space-between' }}>
                     Password
                     <a href="#" style={{ fontWeight: 500, color: 'var(--blue)', fontSize: 12 }} onClick={(e) => e.preventDefault()}>Forgot?</a>
                   </label>
-                  <input className="form-input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+                  <input id="login-password" name="password" className="form-input" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
                   {errors.password && <div className="error-msg visible">{errors.password}</div>}
                 </div>
                 <div className="form-group">
@@ -452,26 +463,26 @@ export default function Login() {
           ) : (
             <div className="form-panel active">
               <p className="subtitle">Already have an account? <a onClick={() => setTab('login')}>Sign in →</a></p>
-              <form onSubmit={handleRegister}>
+              <form onSubmit={handleRegister} autoComplete="on">
                 <div className="form-row">
                   <div className="form-group">
-                    <label className="form-label">First Name</label>
-                    <input className="form-input" type="text" placeholder="John" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
+                    <label className="form-label" htmlFor="register-first-name">First Name</label>
+                    <input id="register-first-name" name="given-name" className="form-input" type="text" placeholder="John" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
                     {errors.firstName && <div className="error-msg visible">{errors.firstName}</div>}
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Last Name</label>
-                    <input className="form-input" type="text" placeholder="Doe" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+                    <label className="form-label" htmlFor="register-last-name">Last Name</label>
+                    <input id="register-last-name" name="family-name" className="form-input" type="text" placeholder="Doe" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Email Address</label>
-                  <input className="form-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+                  <label className="form-label" htmlFor="register-email">Email Address</label>
+                  <input id="register-email" name="username" className="form-input" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" />
                   {errors.email && <div className="error-msg visible">{errors.email}</div>}
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Password</label>
-                  <input className="form-input" type="password" placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
+                  <label className="form-label" htmlFor="register-password">Password</label>
+                  <input id="register-password" name="new-password" className="form-input" type="password" placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="new-password" />
                   <div className="form-hint">Use at least 8 characters with letters and numbers.</div>
                   {errors.password && <div className="error-msg visible">{errors.password}</div>}
                 </div>

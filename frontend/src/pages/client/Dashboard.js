@@ -24,6 +24,7 @@ function formatContract(raw) {
 
 export default function ClientDashboard() {
   const [modalOpen, setModalOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
   const [stats, setStats] = useState({ active: 0, applied: 0, budget: 0 });
   const [contracts, setContracts] = useState([]);
   const [appliedFl, setAppliedFl] = useState({ freelancers: [], total: 0, page: 1 });
@@ -33,6 +34,19 @@ export default function ClientDashboard() {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const userId = user.id;
+
+  useEffect(() => {
+    if (!guideOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') setGuideOpen(false);
+    };
+    document.addEventListener('keydown', closeOnEscape);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', closeOnEscape);
+      document.body.style.overflow = '';
+    };
+  }, [guideOpen]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -284,13 +298,55 @@ export default function ClientDashboard() {
               <div className="hc-icon">💡</div>
               <h4>Hire Smarter</h4>
               <p>Clients who use our Escrow feature report 40% higher satisfaction on first-time hires.</p>
-              <button className="btn-hire" onClick={() => console.log('Read Guide')}>Read Guide →</button>
+              <button className="btn-hire" onClick={() => setGuideOpen(true)}>Read Guide →</button>
             </div>
           </div>
         </div>
       </div>
 
       <PostProjectModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+
+      {guideOpen && (
+        <div className="guide-overlay" onMouseDown={(event) => { if (event.target === event.currentTarget) setGuideOpen(false); }}>
+          <section className="guide-modal" role="dialog" aria-modal="true" aria-labelledby="hire-guide-title">
+            <div className="guide-modal-accent" />
+            <button type="button" className="guide-close" aria-label="Close hiring guide" onClick={() => setGuideOpen(false)}>×</button>
+            <div className="guide-heading">
+              <span className="guide-kicker">FreeLedger playbook</span>
+              <h2 id="hire-guide-title">Hire smarter with protected milestones</h2>
+              <p>Turn a good brief into a secure contract without slowing down your project.</p>
+            </div>
+
+            <div className="guide-steps">
+              <article className="guide-step">
+                <span>01</span>
+                <div><h3>Write a focused brief</h3><p>Define the outcome, required skills, budget, and a realistic delivery window.</p></div>
+              </article>
+              <article className="guide-step">
+                <span>02</span>
+                <div><h3>Compare more than price</h3><p>Review relevant work, on-chain reputation, communication, and proposal clarity.</p></div>
+              </article>
+              <article className="guide-step">
+                <span>03</span>
+                <div><h3>Fund clear milestones</h3><p>Break delivery into measurable stages and place funds in escrow before work begins.</p></div>
+              </article>
+              <article className="guide-step">
+                <span>04</span>
+                <div><h3>Review and release</h3><p>Approve completed work promptly, request specific revisions, and release each payment securely.</p></div>
+              </article>
+            </div>
+
+            <div className="guide-tip">
+              <span>💡</span>
+              <p><strong>Pro tip:</strong> Smaller, outcome-based milestones reduce risk for both sides and make progress easier to verify.</p>
+            </div>
+            <div className="guide-actions">
+              <button type="button" className="btn btn-outline" onClick={() => setGuideOpen(false)}>Close guide</button>
+              <button type="button" className="btn btn-primary" onClick={() => { setGuideOpen(false); setModalOpen(true); }}>Post a project</button>
+            </div>
+          </section>
+        </div>
+      )}
 
       <div className="toast" id="toast">
         <span className="toast-icon">✅</span>
