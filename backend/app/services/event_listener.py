@@ -120,7 +120,7 @@ async def process_milestone_rejected(contract_id: int, milestone_index: int, db)
     )
     ms = result.scalar_one_or_none()
     if ms:
-        ms.status = MilestoneStatus.rejected
+        ms.status = MilestoneStatus.in_progress
         logger.info("Milestone %s/%s synced: rejected", contract.id, milestone_index)
 
 

@@ -1,7 +1,11 @@
+import re
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
+
+WALLET_RE = re.compile(r'^0x[0-9a-fA-F]{40}$')
+CID_RE = re.compile(r'^(Qm[a-zA-Z0-9]{1,60}|bafy[a-zA-Z0-9]{50,})$')
 
 
 class IPFSUploadResponse(BaseModel):
@@ -63,6 +67,13 @@ class UserUpdate(BaseModel):
     portfolio_cids: Optional[list[str]] = None
     avatar_cid: Optional[str] = None
     email_notifications: Optional[bool] = None
+
+    @field_validator('wallet_address')
+    @classmethod
+    def validate_wallet_address(cls, v):
+        if v is not None and not WALLET_RE.match(v):
+            raise ValueError('Invalid Ethereum address: must be 0x followed by 40 hex characters')
+        return v
 
 
 class TokenResponse(BaseModel):
@@ -180,6 +191,13 @@ class ContractCreate(BaseModel):
     on_chain_id: Optional[int] = Field(None, description="On-chain contract ID if already deployed via MetaMask")
     contract_address: Optional[str] = Field(None, description="Contract address if already deployed via MetaMask")
 
+    @field_validator('contract_address')
+    @classmethod
+    def validate_contract_address(cls, v):
+        if v is not None and not WALLET_RE.match(v):
+            raise ValueError('Invalid contract address: must be 0x followed by 40 hex characters')
+        return v
+
 
 class MilestoneResponse(BaseModel):
     id: str
@@ -274,6 +292,13 @@ class MilestoneReject(BaseModel):
 class MilestoneSubmit(BaseModel):
     deliverable_cid: Optional[str] = None
     submission_notes: Optional[str] = None
+
+    @field_validator('deliverable_cid')
+    @classmethod
+    def validate_deliverable_cid(cls, v):
+        if v is not None and not CID_RE.match(v):
+            raise ValueError('Invalid IPFS CID: must start with Qm (CIDv0) or bafy (CIDv1)')
+        return v
 
 
 class DisputeCreate(BaseModel):
