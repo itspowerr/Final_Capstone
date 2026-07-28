@@ -209,21 +209,30 @@ export default function ClientProfile() {
 
         <div className="profile-layout">
           <div>
-            <div className="profile-card">
-              <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
-                {avatarCid ? (
-                  <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" style={{ width: 96, height: 96, borderRadius: '50%', objectFit: 'cover', border: '3px solid var(--border)' }} />
-                ) : (
-                  <div className="profile-avatar-lg">{initials}</div>
-                )}
-                <div style={{ position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: '50%', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid var(--surface)', fontSize: 12, color: 'white' }}>
-                  {uploadingAvatar ? '...' : '📷'}
-                </div>
-              </label>
+            <div className="profile-card" style={{ padding: 0 }}>
+              <div className="profile-banner"></div>
+              
+              <div className="profile-avatar-container">
+                <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                  {avatarCid ? (
+                    <img className="profile-avatar-img" src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" />
+                  ) : (
+                    <div className="profile-avatar-lg">{initials}</div>
+                  )}
+                  <div className="profile-upload-btn">
+                    {uploadingAvatar ? '⏳' : '📷'}
+                  </div>
+                </label>
+              </div>
+
               <div className="profile-name">{form.name || 'Your Name'}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>{form.email}</div>
-              <span className="role-badge client" style={{ marginBottom: 16 }}>Client</span>
+              <div className="profile-email">{form.email}</div>
+              
+              <div style={{ display: 'inline-flex' }}>
+                <span className="role-badge client">Client</span>
+              </div>
+              
               <div className="profile-stats">
                 <div className="pstat"><div className="val">{stats.contracts}</div><div className="lbl">Contracts</div></div>
                 <div className="pstat"><div className="val">{stats.spent.toLocaleString()} ETH</div><div className="lbl">Spent</div></div>
@@ -297,28 +306,47 @@ export default function ClientProfile() {
             </div>
 
             <div className="profile-section">
-              <h3>Wallet</h3>
-              {walletAddress ? (
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0' }}>
-                    <span style={{ fontSize: 13, color: 'var(--text-2)' }}>Connected:</span>
-                    <code style={{ fontSize: 13, background: 'var(--bg-2)', padding: '4px 8px', borderRadius: 6 }}>
-                      {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                    </code>
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
+              <h3>Web3 Identity</h3>
+              <p style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 20, lineHeight: 1.5 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform.</p>
+              
+              <div className="web3-id-card">
+                <div className="web3-id-card-title">Cryptographic Passport</div>
+                {walletAddress ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 0 4px rgba(16,185,129,0.2)' }}></div>
+                      <span style={{ fontWeight: 800, fontSize: 14 }}>Connected</span>
+                    </div>
+                    <div className="web3-id-card-wallet">{walletAddress}</div>
                   </div>
-                  <button className="btn btn-outline btn-sm" onClick={disconnectWallet}>Disconnect</button>
-                </div>
+                ) : (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 0 4px rgba(239,68,68,0.2)' }}></div>
+                      <span style={{ fontWeight: 800, fontSize: 14 }}>Disconnected</span>
+                    </div>
+                    <div className="web3-id-card-wallet" style={{ opacity: 0.5 }}>No Wallet Connected</div>
+                  </div>
+                )}
+              </div>
+              
+              {walletAddress ? (
+                <button className="btn btn-outline" style={{width: '100%', height: 48, fontSize: 15, borderColor: '#ef4444', color: '#ef4444'}} onClick={disconnectWallet}>
+                  Disconnect Wallet
+                </button>
               ) : (
-                <div>
-                  <p style={{ fontSize: 13, color: 'var(--text-3)', marginBottom: 8 }}>
-                    Connect your MetaMask wallet to post projects on-chain.
-                  </p>
-                  {walletError && <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 8 }}>{walletError}</p>}
-                  <button className="btn btn-primary btn-sm" onClick={handleConnectWallet}>
-                    Connect Wallet
+                <>
+                  {walletError && <p style={{ fontSize: 13, color: '#ef4444', marginBottom: 12 }}>{walletError}</p>}
+                  <button className="btn btn-outline" style={{width: '100%', height: 48, fontSize: 15}} onClick={handleConnectWallet}>
+                    <svg width="20" height="20" viewBox="0 0 35 33" fill="none" style={{ marginRight: 8 }}>
+                      <path d="M32.9582 1L19.8241 10.7183L22.2665 4.99099L32.9582 1Z" fill="#E17726"/>
+                      <path d="M2.04187 1L15.0646 10.8048L12.7336 4.99098L2.04187 1Z" fill="#E27625"/>
+                      <path d="M28.1341 23.5433L24.6903 28.9135L32.2169 30.9913L34.3577 23.6586L28.1341 23.5433Z" fill="#E27625"/>
+                      <path d="M0.657715 23.6586L2.78397 30.9913L10.2974 28.9135L6.86665 23.5433L0.657715 23.6586Z" fill="#E27625"/>
+                    </svg>
+                    Connect MetaMask
                   </button>
-                </div>
+                </>
               )}
             </div>
 
@@ -326,16 +354,23 @@ export default function ClientProfile() {
               <h3>Notifications</h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
-                  <input type="checkbox" checked={form.emailNotifications} onChange={e => setForm({ ...form, emailNotifications: e.target.checked })} style={{ width: 16, height: 16, accentColor: 'var(--accent)' }} />
-                  Email notifications for new proposals and messages
+                  <input type="checkbox" checked={form.emailNotifications} onChange={e => setForm({ ...form, emailNotifications: e.target.checked })} style={{ width: 18, height: 18, accentColor: 'var(--landing-navy, #101828)' }} />
+                  <span style={{ color: 'var(--landing-text, #475467)' }}>Email notifications for new proposals and messages</span>
                 </label>
               </div>
             </div>
 
-            <TOTPSettings />
+            <div className="profile-section" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '32px 32px 0 32px' }}>
+                <h3 style={{ marginBottom: 16 }}>Two-Factor Authentication</h3>
+              </div>
+              <div style={{ padding: '0 32px 32px 32px' }}>
+                <TOTPSettings />
+              </div>
+            </div>
 
-            <button className="btn btn-primary btn-full" onClick={saveProfile} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Profile'}
+            <button className="btn btn-primary btn-full" style={{ height: 52, fontSize: 15 }} onClick={saveProfile} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Profile Changes'}
             </button>
           </div>
         </div>

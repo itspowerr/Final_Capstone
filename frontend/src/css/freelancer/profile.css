@@ -1,21 +1,63 @@
 /* ============================================================
-   FreeLedger — My Profile Theme (Aligned with Landing Page)
+   FreeLedger — Freelancer Digital Passport Profile Theme
    ============================================================ */
 
 .fl-profile-layout {
   display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 24px;
+  grid-template-columns: 360px 1fr;
+  gap: 32px;
+  align-items: start;
 }
 
+@media (max-width: 992px) {
+  .fl-profile-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Passport Card */
 .fl-profile-card {
   background: var(--landing-white, #ffffff);
   border: 1px solid var(--landing-line, #e4e7ec);
   border-radius: 24px;
-  padding: 32px;
-  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.02);
+  overflow: hidden;
+  box-shadow: 0 16px 48px -12px rgba(16, 24, 40, 0.08);
   text-align: center;
   margin-bottom: 24px;
+}
+
+.fl-profile-banner {
+  height: 140px;
+  background: linear-gradient(120deg, var(--landing-blue-soft, #edf3ff), var(--landing-mist, #f7f9fc));
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle animated mesh background for banner */
+.fl-profile-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle at 50% 50%, rgba(36, 87, 230, 0.1) 0%, transparent 40%),
+              radial-gradient(circle at 80% 20%, rgba(124, 58, 237, 0.08) 0%, transparent 30%);
+  animation: bannerFlow 15s ease infinite alternate;
+}
+
+@keyframes bannerFlow {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(-5%, 5%) scale(1.1); }
+}
+
+.fl-profile-avatar-container {
+  margin-top: -60px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
 }
 
 .fl-profile-avatar-lg {
@@ -29,8 +71,44 @@
   font-size: 36px;
   font-weight: 800;
   color: #fff;
-  margin: 0 auto 16px;
-  border: 4px solid var(--landing-mist, #f7f9fc);
+  border: 6px solid var(--landing-white, #ffffff);
+  box-shadow: 0 8px 24px rgba(36, 87, 230, 0.15);
+}
+
+.fl-profile-avatar-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 6px solid var(--landing-white, #ffffff);
+  box-shadow: 0 8px 24px rgba(36, 87, 230, 0.15);
+}
+
+.fl-profile-upload-btn {
+  position: absolute;
+  bottom: 0;
+  right: 50%;
+  transform: translateX(60px);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--landing-white, #ffffff);
+  border: 1px solid var(--landing-line, #e4e7ec);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  color: var(--landing-navy, #101828);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+  transition: all 0.2s ease;
+  z-index: 3;
+}
+
+.fl-profile-upload-btn:hover {
+  background: var(--landing-blue, #2457e6);
+  color: #fff;
+  border-color: var(--landing-blue, #2457e6);
+  transform: translateX(60px) scale(1.05);
 }
 
 .fl-profile-name {
@@ -39,65 +117,99 @@
   font-weight: 800;
   color: var(--landing-navy, #101828);
   margin-bottom: 4px;
+  padding: 0 20px;
+}
+
+.fl-profile-title {
+  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  font-size: 14px;
+  color: var(--landing-text, #475467);
+  margin-bottom: 16px;
+  font-weight: 500;
+  padding: 0 20px;
 }
 
 .fl-profile-wallet {
-  font-size: 13px;
+  font-size: 12px;
   font-family: 'DM Mono', 'SF Mono', monospace;
   color: var(--landing-muted, #667085);
   background: var(--landing-mist, #f7f9fc);
   padding: 8px 16px;
   border-radius: 12px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin-bottom: 24px;
   border: 1px solid var(--landing-line, #e4e7ec);
+  transition: all 0.2s ease;
+}
+
+.fl-profile-wallet:hover {
+  background: var(--landing-white, #ffffff);
+  border-color: #bfd0fb;
+  box-shadow: 0 2px 8px rgba(36, 87, 230, 0.05);
+}
+
+.fl-profile-wallet::before {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #027a48;
+  box-shadow: 0 0 0 3px #ecfdf3;
 }
 
 .fl-profile-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-top: 16px;
+  gap: 1px;
+  background: var(--landing-line, #e4e7ec);
+  border-top: 1px solid var(--landing-line, #e4e7ec);
 }
 
 .fl-pstat {
   text-align: center;
-  padding: 16px 12px;
-  background: var(--landing-mist, #f7f9fc);
-  border-radius: 16px;
-  border: 1px solid var(--landing-line, #e4e7ec);
+  padding: 20px 12px;
+  background: var(--landing-white, #ffffff);
   transition: all 0.2s ease;
 }
 
 .fl-pstat:hover {
-  border-color: #bfd0fb;
-  background: var(--landing-white, #ffffff);
-  box-shadow: 0 4px 12px rgba(36, 87, 230, 0.05);
+  background: var(--landing-mist, #f7f9fc);
 }
 
 .fl-pstat .val {
   font-family: var(--landing-display, 'Manrope', sans-serif);
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
-  color: var(--landing-blue, #2457e6);
+  color: var(--landing-navy, #101828);
 }
 
 .fl-pstat .lbl {
   font-size: 11px;
   color: var(--landing-muted, #667085);
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 4px;
 }
 
+/* Sections (Form Areas) */
 .fl-profile-section {
-  background: var(--landing-white, #ffffff);
-  border: 1px solid var(--landing-line, #e4e7ec);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.02);
+  box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.04);
   margin-bottom: 24px;
+  transition: box-shadow 0.3s ease;
+}
+
+.fl-profile-section:hover {
+  box-shadow: 0 16px 48px -12px rgba(16, 24, 40, 0.08);
 }
 
 .fl-profile-section h3 {
@@ -106,62 +218,44 @@
   font-weight: 800;
   color: var(--landing-navy, #101828);
   margin-bottom: 24px;
-}
-
-.fl-skills-list {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 12px;
 }
 
-.fl-skill-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--landing-blue-soft, #edf3ff);
-  color: var(--landing-blue-dark, #173aa6);
-  border: 1px solid #bfd0fb;
-  border-radius: 99px;
-  padding: 6px 12px;
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--landing-display, 'Manrope', sans-serif);
   font-size: 13px;
   font-weight: 700;
-  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  margin-bottom: 8px;
+  color: var(--landing-navy, #101828);
 }
 
-.fl-skill-pill button {
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: var(--landing-blue, #2457e6);
-  line-height: 1;
-  padding: 0;
-  opacity: 0.7;
-}
-
-.fl-skill-pill button:hover {
-  opacity: 1;
-}
-
-.fl-quick-skill-btn {
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
   border: 1px solid var(--landing-line, #e4e7ec);
-  background: var(--landing-mist, #f7f9fc);
+  background: var(--landing-white, #ffffff);
   font-family: var(--landing-body, 'DM Sans', sans-serif);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--landing-muted, #667085);
-  padding: 4px 12px;
-  border-radius: 99px;
-  cursor: pointer;
-  transition: all 0.2s;
-  margin: 4px;
+  font-size: 14px;
+  color: var(--landing-navy, #101828);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
+  box-sizing: border-box;
 }
 
-.fl-quick-skill-btn:hover {
-  background: var(--landing-blue-soft, #edf3ff);
-  color: var(--landing-blue-dark, #173aa6);
+.form-input:focus {
+  outline: none;
   border-color: #bfd0fb;
+  background: var(--landing-white, #ffffff);
+  box-shadow: 0 0 0 4px rgba(36, 87, 230, 0.1);
 }
 
 .form-row {
@@ -170,10 +264,115 @@
   gap: 20px;
 }
 
+/* Skills */
+.fl-skills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.fl-skill-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--landing-blue-soft, #edf3ff);
+  color: var(--landing-blue-dark, #173aa6);
+  border: 1px solid rgba(36, 87, 230, 0.15);
+  border-radius: 99px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  transition: all 0.2s ease;
+}
+
+.fl-skill-pill:hover {
+  background: var(--landing-white, #ffffff);
+  border-color: var(--landing-blue, #2457e6);
+  box-shadow: 0 4px 12px rgba(36, 87, 230, 0.1);
+  transform: translateY(-1px);
+}
+
+.fl-skill-pill button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 18px;
+  color: var(--landing-blue, #2457e6);
+  line-height: 1;
+  padding: 0;
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.fl-skill-pill button:hover {
+  opacity: 1;
+}
+
+.fl-quick-skill-btn {
+  border: 1px solid var(--landing-line, #e4e7ec);
+  background: var(--landing-white, #ffffff);
+  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--landing-text, #475467);
+  padding: 6px 14px;
+  border-radius: 99px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 4px 4px 4px 0;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
+}
+
+.fl-quick-skill-btn:hover {
+  background: var(--landing-blue-soft, #edf3ff);
+  color: var(--landing-blue-dark, #173aa6);
+  border-color: rgba(36, 87, 230, 0.15);
+  transform: translateY(-1px);
+}
+
+/* Crypto Wallet Web3 Card */
+.web3-id-card {
+  padding: 20px;
+  background: linear-gradient(135deg, var(--landing-navy, #101828), #1d2939);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 20px;
+  margin-bottom: 24px;
+  color: white;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.15);
+}
+
+.web3-id-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 150px; height: 150px;
+  background: radial-gradient(circle, rgba(36, 87, 230, 0.2) 0%, transparent 70%);
+}
+
+.web3-id-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
+.web3-id-card-wallet {
+  font-family: 'DM Mono', monospace;
+  font-size: 15px;
+  color: #fff;
+  background: rgba(255,255,255,0.1);
+  padding: 10px 16px;
+  border-radius: 12px;
+  display: inline-block;
+}
+
 @media (max-width: 900px) {
-  .fl-profile-layout {
-    grid-template-columns: 1fr;
-  }
   .form-row {
     grid-template-columns: 1fr;
   }

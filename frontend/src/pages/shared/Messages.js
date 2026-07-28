@@ -476,12 +476,24 @@ export default function Messages({ NavbarComponent }) {
 
                 {/* Input */}
                 <div className="msg-input-bar">
-                  <input
+                  <textarea
                     ref={inputRef}
+                    className="msg-textarea"
+                    rows={1}
                     placeholder="Type your message..."
                     value={replyText}
-                    onChange={e => setReplyText(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(activeThread.partnerId); } }}
+                    onChange={e => {
+                      setReplyText(e.target.value);
+                      e.target.style.height = 'auto';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 150)}px`;
+                    }}
+                    onKeyDown={e => { 
+                      if (e.key === 'Enter' && !e.shiftKey) { 
+                        e.preventDefault(); 
+                        sendReply(activeThread.partnerId); 
+                        if (inputRef.current) inputRef.current.style.height = 'auto';
+                      } 
+                    }}
                   />
                   <button
                     className="msg-send-btn"

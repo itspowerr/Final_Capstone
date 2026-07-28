@@ -104,13 +104,13 @@ export default function BrowseFreelancers() {
   const avatarColor = (id) => colors[Math.abs(id.split('').reduce((a, c) => a + c.charCodeAt(0), 0)) % colors.length];
 
   return (
-    <>
+    <div style={{ background: 'var(--landing-mist)', minHeight: '100vh' }}>
       <Navbar activePage="browse-freelancers" />
       <div className="dash-body">
         <div className="page-header">
           <div>
-            <h1 className="page-title">Browse Freelancers</h1>
-            <p className="page-sub">Find top talent for your projects — <span>{total}</span> available</p>
+            <h1 style={{ fontSize: 32, fontWeight: 800, color: 'var(--landing-navy)', fontFamily: "var(--landing-display)", margin: 0, letterSpacing: '-0.02em' }}>Browse Freelancers</h1>
+            <p style={{ fontSize: 16, color: 'var(--landing-muted)', margin: '8px 0 0' }}>Find top talent for your projects — <span style={{fontWeight: 700, color: 'var(--landing-navy)'}}>{total}</span> available</p>
           </div>
         </div>
 
@@ -203,35 +203,49 @@ export default function BrowseFreelancers() {
         )}
 
         {inviteModal && createPortal(
-          <div className="modal-overlay open" onClick={() => setInviteModal(null)}>
-            <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+          <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setInviteModal(null); }}>
+            <div className="modal-box" onClick={e => e.stopPropagation()} style={{ maxWidth: 520 }}>
               <button className="modal-close" onClick={() => setInviteModal(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
-              <div className="modal-title">Invite {inviteModal.username || 'Freelancer'}</div>
+              
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span className="job-category" style={{ background: 'var(--landing-blue-soft)', color: 'var(--landing-blue-dark)', padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 800, textTransform: 'uppercase' }}>Invitation</span>
+                </div>
+                <h2 style={{ fontSize: 24, fontWeight: 800, color: 'var(--landing-navy)', fontFamily: "var(--landing-display)", margin: 0 }}>Invite {inviteModal.username || 'Freelancer'}</h2>
+                <p style={{ fontSize: 14, color: 'var(--landing-muted)', marginTop: 8 }}>Select a job below and optionally send a message.</p>
+              </div>
+
               {myJobs.length === 0 ? (
-                <div className="empty-state" style={{ padding: '40px 24px' }}>
-                  <p style={{ color: 'var(--text-2)', fontSize: 13 }}>You have no open jobs to invite to. Post a job first.</p>
+                <div className="empty-state" style={{ padding: '40px 24px', background: 'var(--landing-mist)', borderRadius: 16 }}>
+                  <div className="empty-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  </div>
+                  <h3 className="empty-title" style={{ fontSize: 16, fontWeight: 700, marginTop: 16 }}>No open jobs</h3>
+                  <p style={{ color: 'var(--landing-text)', fontSize: 14, marginTop: 8 }}>You have no open jobs to invite to. Post a job first.</p>
                 </div>
               ) : (
-                <div style={{ marginTop: 16 }}>
-                  <div className="form-group">
-                    <label className="form-label">Select Job</label>
-                    <select className="form-input" value={selectedJob} onChange={e => setSelectedJob(e.target.value)}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: 'var(--landing-navy)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Select Job</label>
+                    <select className="search-input" value={selectedJob} onChange={e => setSelectedJob(e.target.value)} style={{ width: '100%' }}>
                       <option value="">Choose a job...</option>
                       {myJobs.map(j => <option key={j.id} value={j.id}>{j.title}</option>)}
                     </select>
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Message <span className="form-label-muted">(optional)</span></label>
-                    <textarea className="form-input" rows={3} value={inviteMsg}
-                      onChange={e => setInviteMsg(e.target.value)} placeholder="I think you'd be a great fit for this project..." />
+                  <div>
+                    <label style={{ display: 'block', fontSize: 13, fontWeight: 800, color: 'var(--landing-navy)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Message <span style={{color: 'var(--landing-muted)', fontWeight: 500, textTransform: 'none', letterSpacing: 0}}>(optional)</span></label>
+                    <textarea className="search-input" rows={3} value={inviteMsg}
+                      onChange={e => setInviteMsg(e.target.value)} placeholder="I think you'd be a great fit for this project..." style={{ width: '100%', resize: 'vertical' }} />
                   </div>
-                  {inviteError && <div className="form-error-msg" style={{ marginBottom: 8 }}>{inviteError}</div>}
-                  {inviteSuccess && <div style={{ color: 'var(--green)', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>{inviteSuccess}</div>}
-                  <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 12 }}>
-                    <button className="btn btn-outline" onClick={() => setInviteModal(null)}>Cancel</button>
-                    <button className="btn btn-primary" onClick={sendInvite} disabled={sending || !selectedJob}>
+                  
+                  {inviteError && <div style={{ padding: 12, background: '#fef3f2', color: '#b42318', border: '1px solid #fecaca', borderRadius: 12, fontSize: 14, fontWeight: 500 }}>{inviteError}</div>}
+                  {inviteSuccess && <div style={{ padding: 12, background: '#ecfdf3', color: '#027a48', border: '1px solid #a6f4c5', borderRadius: 12, fontSize: 14, fontWeight: 600 }}>{inviteSuccess}</div>}
+                  
+                  <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+                    <button className="btn btn-outline" style={{ flex: 1, height: 48, fontSize: 15 }} onClick={() => setInviteModal(null)}>Cancel</button>
+                    <button className="btn btn-primary" style={{ flex: 1, height: 48, fontSize: 15 }} onClick={sendInvite} disabled={sending || !selectedJob}>
                       {sending ? 'Sending...' : 'Send Invitation'}
                     </button>
                   </div>
@@ -241,6 +255,6 @@ export default function BrowseFreelancers() {
           </div>
         , document.body)}
       </div>
-    </>
+    </div>
   );
 }

@@ -179,6 +179,16 @@ export default function MyProfile() {
     }
   }
 
+  async function disconnectMetaMask() {
+    try {
+      await api.put('/users/me', { wallet_address: null });
+      setWallet('');
+      showToast('Wallet disconnected successfully.', '🔌');
+    } catch (err) {
+      showToast('Failed to disconnect wallet.', '⚠️');
+    }
+  }
+
   const completed = contracts.filter(c => c.status === 'completed');
   const earned = completed.reduce((s, c) => s + (Number(c.total_amount) || 0), 0);
 
@@ -233,24 +243,31 @@ export default function MyProfile() {
 
         <div className="fl-profile-layout">
           <div>
-            <div className="fl-profile-card">
-              <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
-                {avatarCid ? (
-                  <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" style={{ width: 120, height: 120, borderRadius: '50%', objectFit: 'cover', border: '4px solid var(--landing-mist)', marginBottom: 16 }} />
-                ) : (
-                  <div className="fl-profile-avatar-lg">{initials}</div>
-                )}
-                <div style={{ position: 'absolute', bottom: 16, right: 0, width: 32, height: 32, borderRadius: '50%', background: 'var(--landing-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '3px solid var(--landing-white)', fontSize: 14, color: 'white', boxShadow: '0 2px 8px rgba(36, 87, 230, 0.3)' }}>
-                  {uploadingAvatar ? '...' : '📷'}
-                </div>
-              </label>
+            <div className="fl-profile-card" style={{ padding: 0 }}>
+              <div className="fl-profile-banner"></div>
+              
+              <div className="fl-profile-avatar-container">
+                <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
+                  {avatarCid ? (
+                    <img className="fl-profile-avatar-img" src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" />
+                  ) : (
+                    <div className="fl-profile-avatar-lg">{initials}</div>
+                  )}
+                  <div className="fl-profile-upload-btn">
+                    {uploadingAvatar ? '⏳' : '📷'}
+                  </div>
+                </label>
+              </div>
+
               <div className="fl-profile-name">{nameDisplay}</div>
-              <div style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 16, fontWeight: 500 }}>{title || 'Add your professional title'}</div>
+              <div className="fl-profile-title">{title || 'Add your professional title'}</div>
+              
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99, fontSize: 12, fontWeight: 800, background: availStyle.bg, color: availStyle.color, border: availStyle.border, marginBottom: 20 }}>
                 {availStyle.label}
               </div>
-              <div style={{display: 'block'}}>
+              
+              <div style={{ display: 'block', padding: '0 20px' }}>
                 <div className="fl-profile-wallet">{walletDisplay}</div>
               </div>
               
@@ -261,7 +278,9 @@ export default function MyProfile() {
                 <div className="fl-pstat"><div className="val">{rating}</div><div className="lbl">Rating</div></div>
               </div>
             </div>
+          </div>
 
+          <div>
             <div className="fl-profile-section">
               <h3>Work Preferences</h3>
               <div className="form-group">
@@ -277,9 +296,7 @@ export default function MyProfile() {
                 <input className="form-input" type="number" placeholder="e.g. 0.05" step="0.01" value={hourlyRate} onChange={e => setHourlyRate(e.target.value)} />
               </div>
             </div>
-          </div>
 
-          <div>
             <div className="fl-profile-section">
               <h3>Basic Information</h3>
               <div className="form-row">
@@ -352,30 +369,45 @@ export default function MyProfile() {
             </div>
 
             <div className="fl-profile-section">
-              <h3>Wallet Identity (MetaMask)</h3>
-              <p style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 20, lineHeight: 1.5 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform — no username or password needed.</p>
-              <div style={{ padding: 16, background: 'var(--landing-mist)', border: '1px solid var(--landing-line)', borderRadius: 16, marginBottom: 20 }}>
+              <h3>Web3 Identity</h3>
+              <p style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 20, lineHeight: 1.5 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform.</p>
+              
+              <div className="web3-id-card">
+                <div className="web3-id-card-title">Cryptographic Passport</div>
                 {wallet ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#027a48', boxShadow: '0 0 0 4px #ecfdf3' }}></div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--landing-navy)' }}>Wallet Connected</div>
-                      <div style={{ fontSize: 12, color: 'var(--landing-muted)', fontFamily: "'DM Mono', monospace", marginTop: 2 }}>{wallet}</div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 0 4px rgba(16,185,129,0.2)' }}></div>
+                      <span style={{ fontWeight: 800, fontSize: 14 }}>Connected</span>
                     </div>
+                    <div className="web3-id-card-wallet">{wallet}</div>
                   </div>
                 ) : (
-                  <div style={{ fontSize: 14, color: 'var(--landing-muted)', fontWeight: 500 }}>No wallet connected</div>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 0 4px rgba(239,68,68,0.2)' }}></div>
+                      <span style={{ fontWeight: 800, fontSize: 14 }}>Disconnected</span>
+                    </div>
+                    <div className="web3-id-card-wallet" style={{ opacity: 0.5 }}>No Wallet Connected</div>
+                  </div>
                 )}
               </div>
-              <button className="btn btn-outline" style={{width: '100%', height: 48, fontSize: 15}} onClick={connectMetaMask}>
-                <svg width="20" height="20" viewBox="0 0 35 33" fill="none" style={{ marginRight: 8 }}>
-                  <path d="M32.9582 1L19.8241 10.7183L22.2665 4.99099L32.9582 1Z" fill="#E17726"/>
-                  <path d="M2.04187 1L15.0646 10.8048L12.7336 4.99098L2.04187 1Z" fill="#E27625"/>
-                  <path d="M28.1341 23.5433L24.6903 28.9135L32.2169 30.9913L34.3577 23.6586L28.1341 23.5433Z" fill="#E27625"/>
-                  <path d="M0.657715 23.6586L2.78397 30.9913L10.2974 28.9135L6.86665 23.5433L0.657715 23.6586Z" fill="#E27625"/>
-                </svg>
-                Connect MetaMask
-              </button>
+              
+              {wallet ? (
+                <button className="btn btn-outline" style={{width: '100%', height: 48, fontSize: 15, borderColor: '#ef4444', color: '#ef4444'}} onClick={disconnectMetaMask}>
+                  Disconnect Wallet
+                </button>
+              ) : (
+                <button className="btn btn-outline" style={{width: '100%', height: 48, fontSize: 15}} onClick={connectMetaMask}>
+                  <svg width="20" height="20" viewBox="0 0 35 33" fill="none" style={{ marginRight: 8 }}>
+                    <path d="M32.9582 1L19.8241 10.7183L22.2665 4.99099L32.9582 1Z" fill="#E17726"/>
+                    <path d="M2.04187 1L15.0646 10.8048L12.7336 4.99098L2.04187 1Z" fill="#E27625"/>
+                    <path d="M28.1341 23.5433L24.6903 28.9135L32.2169 30.9913L34.3577 23.6586L28.1341 23.5433Z" fill="#E27625"/>
+                    <path d="M0.657715 23.6586L2.78397 30.9913L10.2974 28.9135L6.86665 23.5433L0.657715 23.6586Z" fill="#E27625"/>
+                  </svg>
+                  Connect MetaMask
+                </button>
+              )}
             </div>
 
             <div style={{marginBottom: 24}}>

@@ -49,6 +49,11 @@
   overflow-y: auto;
 }
 
+.msg-list::-webkit-scrollbar { width: 6px; }
+.msg-list::-webkit-scrollbar-track { background: transparent; }
+.msg-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+.msg-list::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+
 .msg-thread {
   display: flex;
   align-items: center;
@@ -203,8 +208,19 @@
   gap: 12px;
 }
 
+.msg-chat-messages::-webkit-scrollbar { width: 6px; }
+.msg-chat-messages::-webkit-scrollbar-track { background: transparent; }
+.msg-chat-messages::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+.msg-chat-messages::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2); }
+
+@keyframes msg-appear {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 .msg-bubble-row {
   display: flex;
+  animation: msg-appear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .msg-bubble-row.me {
@@ -257,17 +273,19 @@
 }
 
 .msg-job-card {
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   font-size: 13px;
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .msg-bubble.them .msg-job-card {
   background: var(--landing-white, #ffffff);
   border-color: var(--landing-line, #e4e7ec);
+  box-shadow: 0 4px 12px rgba(16, 24, 40, 0.03);
 }
 
 .msg-job-card-title {
@@ -344,19 +362,27 @@
   background: var(--landing-white, #ffffff);
 }
 
-.msg-input-bar input {
+.msg-textarea {
   flex: 1;
   padding: 14px 20px;
   border-radius: 14px;
   border: 1px solid var(--landing-line, #e4e7ec);
   font-family: var(--landing-body, 'DM Sans', sans-serif);
   font-size: 14px;
+  line-height: 1.5;
   outline: none;
   transition: border 0.2s ease, box-shadow 0.2s ease;
   background: var(--landing-mist, #f7f9fc);
+  resize: none;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
-.msg-input-bar input:focus {
+.msg-textarea::-webkit-scrollbar { width: 4px; }
+.msg-textarea::-webkit-scrollbar-track { background: transparent; }
+.msg-textarea::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+.msg-textarea:focus {
   border-color: #bfd0fb;
   background: #fff;
   box-shadow: 0 0 0 4px rgba(36, 87, 230, 0.1);

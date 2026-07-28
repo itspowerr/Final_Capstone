@@ -1,0 +1,178 @@
+/* ============================================================
+   FreeLedger — Admin Command Center Profile Theme
+   ============================================================ */
+
+.admin-profile-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 992px) {
+  .admin-profile-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Command Center Card */
+.admin-profile-card {
+  background: var(--landing-navy, #101828);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px -12px rgba(16, 24, 40, 0.4);
+  text-align: center;
+  margin-bottom: 24px;
+  color: white;
+}
+
+.admin-profile-banner {
+  height: 140px;
+  background: linear-gradient(135deg, #111827, #030712);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-profile-banner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(0deg, transparent 24%, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.03) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, 0.03) 75%, rgba(255, 255, 255, 0.03) 76%, transparent 77%, transparent), linear-gradient(90deg, transparent 24%, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.03) 26%, transparent 27%, transparent 74%, rgba(255, 255, 255, 0.03) 75%, rgba(255, 255, 255, 0.03) 76%, transparent 77%, transparent);
+  background-size: 50px 50px;
+  opacity: 0.3;
+}
+
+.admin-profile-avatar-container {
+  margin-top: -60px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.admin-profile-avatar-lg {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444, #991b1b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 800;
+  color: #fff;
+  border: 6px solid var(--landing-navy, #101828);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.admin-profile-name {
+  font-family: var(--landing-display, 'Manrope', sans-serif);
+  font-size: 24px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 4px;
+  padding: 0 20px;
+}
+
+.admin-profile-email {
+  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 16px;
+  font-weight: 500;
+  padding: 0 20px;
+}
+
+.role-badge.admin {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 24px;
+}
+
+.admin-shield {
+  background: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255,255,255,0.05);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #10b981;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Sections */
+.admin-profile-section {
+  background: var(--landing-white, #ffffff);
+  border: 1px solid var(--landing-line, #e4e7ec);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 12px 32px -8px rgba(16, 24, 40, 0.04);
+  margin-bottom: 24px;
+  transition: box-shadow 0.3s ease;
+}
+
+.admin-profile-section:hover {
+  box-shadow: 0 16px 48px -12px rgba(16, 24, 40, 0.08);
+}
+
+.admin-profile-section h3 {
+  font-family: var(--landing-display, 'Manrope', sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--landing-navy, #101828);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-profile-section h3 svg {
+  color: var(--landing-blue, #2457e6);
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--landing-display, 'Manrope', sans-serif);
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--landing-navy, #101828);
+}
+
+.form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--landing-line, #e4e7ec);
+  background: var(--landing-white, #ffffff);
+  font-family: var(--landing-body, 'DM Sans', sans-serif);
+  font-size: 14px;
+  color: var(--landing-navy, #101828);
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.02);
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #d1d5db;
+  background: var(--landing-white, #ffffff);
+  box-shadow: 0 0 0 4px rgba(16, 24, 40, 0.05);
+}
