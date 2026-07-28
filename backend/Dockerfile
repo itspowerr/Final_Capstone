@@ -3,7 +3,7 @@ FROM python:3.12-slim AS base
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev curl && \
+    gcc libpq-dev libc6-dev curl && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
