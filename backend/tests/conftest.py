@@ -122,7 +122,9 @@ async def tc(seed, _session_factory):
             except (ImportError, AttributeError):
                 pass
         app.state = MagicMock()
-        app.state.redis = mock_redis
+
+        import app.redis_client as redis_mod
+        redis_mod.redis_client = mock_redis
 
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://testserver") as http:

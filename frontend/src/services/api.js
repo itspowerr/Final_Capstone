@@ -1,7 +1,8 @@
 import axios from "axios";
+import config from '../config';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api",
+  baseURL: config.apiUrl,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -75,7 +76,7 @@ api.interceptors.response.use(
       if (refreshToken) {
         try {
           const { data } = await axios.post(
-            `${process.env.REACT_APP_API_URL || "http://127.0.0.1:8000/api"}/auth/refresh`,
+            `${config.apiUrl}/auth/refresh`,
             { refresh_token: refreshToken },
             { headers: { "Content-Type": "application/json" } }
           );

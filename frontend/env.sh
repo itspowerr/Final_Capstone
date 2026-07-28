@@ -1,0 +1,19 @@
+#!/bin/sh
+CONFIG_JS="/usr/share/nginx/html/config.js"
+
+for var in REACT_APP_API_URL REACT_APP_BLOCKCHAIN_RPC REACT_APP_CHAIN_ID REACT_APP_CONTRACT_ADDRESS REACT_APP_IPFS_GATEWAY; do
+  eval "val=\$$var"
+  if [ -z "$val" ]; then
+    echo "WARNING: $var is not set" >&2
+  fi
+done
+
+cat > "$CONFIG_JS" <<EOF
+window.__ENV__ = {
+  REACT_APP_API_URL: "${REACT_APP_API_URL}",
+  REACT_APP_BLOCKCHAIN_RPC: "${REACT_APP_BLOCKCHAIN_RPC}",
+  REACT_APP_CHAIN_ID: "${REACT_APP_CHAIN_ID}",
+  REACT_APP_CONTRACT_ADDRESS: "${REACT_APP_CONTRACT_ADDRESS}",
+  REACT_APP_IPFS_GATEWAY: "${REACT_APP_IPFS_GATEWAY}",
+};
+EOF

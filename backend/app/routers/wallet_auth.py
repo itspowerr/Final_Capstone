@@ -34,8 +34,9 @@ router = APIRouter(tags=["wallet_auth"])
 
 
 async def _get_redis(request: Request):
-    """Helper to get Redis client from app state."""
-    return request.app.state.redis
+    """Helper to get Redis client."""
+    from app.redis_client import get_redis
+    return await get_redis()
 
 
 @router.get("/auth/wallet/challenge")

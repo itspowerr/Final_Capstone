@@ -13,16 +13,35 @@ router = APIRouter(prefix="/uploads", tags=["uploads"])
 UPLOAD_DIR = Path(__file__).resolve().parent.parent.parent / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
+MAX_UPLOAD_SIZE = 10 * 1024 * 1024  # 10 MB
+ALLOWED_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg",
+    ".pdf", ".doc", ".docx", ".txt", ".md",
+    ".zip", ".json",
+}
+
 
 @router.post("")
 async def upload_file(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
 ):
-    file_id = str(uuid.uuid4())
-    ext = Path(file.filename).suffix if file.filename else ""
-    dest = UPLOAD_DIR / f"{file_id}{ext}"
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_FILE_TYPE", "message": f"File type '{ext}' not allowed. Allowed: {', '.join(sorted(ALLOWED_EXTENSIONS))}"},
+        )
+
     content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={"code": "FILE_TOO_LARGE", "message": f"File exceeds maximum size of {MAX_UPLOAD_SIZE // (1024*1024)}MB"},
+        )
+
+    file_id = str(uuid.uuid4())
+    dest = UPLOAD_DIR / f"{file_id}{ext}"
     dest.write_bytes(content)
     return {
         "file_id": file_id,

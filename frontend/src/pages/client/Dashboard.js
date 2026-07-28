@@ -133,7 +133,7 @@ export default function ClientDashboard() {
     return (
       <>
         <Navbar activePage="dashboard" />
-        <div className="dash-body"><p style={{ textAlign: 'center', padding: 48, color: 'var(--red)' }}>{error}</p></div>
+        <div className="dash-body"><p style={{ textAlign: 'center', padding: 48, color: '#f04438' }}>{error}</p></div>
       </>
     );
   }
@@ -174,7 +174,7 @@ export default function ClientDashboard() {
             <div className="s-top">
               <span className="s-label">Active Projects</span>
               <div className="s-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--landing-blue)" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2" /></svg>
               </div>
             </div>
             <div className="s-val">{stats.active}</div>
@@ -184,21 +184,21 @@ export default function ClientDashboard() {
             <div className="s-top">
               <span className="s-label">Freelancers Applied</span>
               <div className="s-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--landing-blue)" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 00-3-3.87" /><path d="M16 3.13a4 4 0 010 7.75" /></svg>
               </div>
             </div>
             <div className="s-val">{stats.applied}</div>
-            <div style={{ fontSize: 12, color: 'var(--text-3)', marginTop: 4 }}>{stats.applied > 0 ? `${stats.applied} applicant${stats.applied > 1 ? 's' : ''}` : 'No applicants yet'}</div>
+            <div style={{ fontSize: 12, color: 'var(--landing-muted)', marginTop: 4 }}>{stats.applied > 0 ? `${stats.applied} applicant${stats.applied > 1 ? 's' : ''}` : 'No applicants yet'}</div>
           </div>
           <div className="stat-card">
             <div className="s-top">
               <span className="s-label">Total Budget Locked</span>
               <div className="s-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--landing-blue)" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               </div>
             </div>
             <div className="s-val">{stats.budget.toLocaleString()} ETH</div>
-            <div style={{ fontSize: 12, color: 'var(--green)', marginTop: 4, fontWeight: 600 }}>Escrow Active</div>
+            <div style={{ fontSize: 12, color: 'var(--landing-green)', marginTop: 4, fontWeight: 600 }}>Escrow Active</div>
           </div>
         </div>
 
@@ -211,7 +211,7 @@ export default function ClientDashboard() {
               </div>
               <div className="dash-card-body">
                 {activeProjects.length === 0 ? (
-                  <p style={{ textAlign: 'center', padding: 24, color: 'var(--text-3)' }}>No active projects yet. Post your first project to get started!</p>
+                  <p style={{ textAlign: 'center', padding: 24, color: 'var(--landing-muted)' }}>No active projects yet. Post your first project to get started!</p>
                 ) : (
                   activeProjects.slice(0, 5).map((c, i) => (
                     <div className="project-row" key={i}>
@@ -242,23 +242,23 @@ export default function ClientDashboard() {
           <div>
             <div className="dash-card">
               <div className="dash-card-header">
-                <h3>Applied Freelancers <span style={{ fontSize: 12, color: 'var(--text-3)', fontWeight: 400 }}>({appliedFl.total})</span></h3>
+                <h3>Applied Freelancers <span style={{ fontSize: 12, color: 'var(--landing-muted)', fontWeight: 400 }}>({appliedFl.total})</span></h3>
               </div>
               <div className="dash-card-body">
                 {appliedFl.freelancers.length === 0 ? (
-                  <p style={{ textAlign: 'center', padding: 24, color: 'var(--text-3)' }}>Waiting for freelancers to apply to your projects.</p>
+                  <p style={{ textAlign: 'center', padding: 24, color: 'var(--landing-muted)' }}>Waiting for freelancers to apply to your projects.</p>
                 ) : (
                   <>
                     {appliedFl.freelancers.slice(0, 5).map((f, i) => (
                       <div className="freelancer-item" key={i}>
                         <div className="fl-left">
-                          <div className="fl-avatar" style={{ background: 'linear-gradient(135deg,var(--accent),var(--accent-light))' }}>{f.name.charAt(0).toUpperCase()}</div>
+                          <div className="fl-avatar" style={{ background: 'linear-gradient(135deg,var(--landing-blue),var(--landing-blue-dark))' }}>{f.name.charAt(0).toUpperCase()}</div>
                           <div className="fl-info"><div className="fl-name">{f.name}</div><div className="fl-role">{f.role}</div></div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
                             <div className="fl-rating">{f.proposal?.bid_amount ? f.proposal.bid_amount.toLocaleString() + ' ETH' : '—'}</div>
-                            <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{f.proposal?.status === 'accepted' ? 'Accepted' : f.proposal?.status === 'rejected' ? 'Rejected' : 'Pending'}</div>
+                            <div style={{ fontSize: 11, color: 'var(--landing-muted)' }}>{f.proposal?.status === 'accepted' ? 'Accepted' : f.proposal?.status === 'rejected' ? 'Rejected' : 'Pending'}</div>
                           </div>
                           {f.proposal?.status === 'pending' ? (
                             <button className="btn btn-primary btn-sm" style={{ whiteSpace: 'nowrap' }} disabled={acceptingId === f.proposalId} onClick={async (e) => { e.stopPropagation(); await acceptProposal(f.proposalId); }}>

@@ -5,6 +5,7 @@ import Navbar from '../../components/freelancer/Navbar';
 import { SkeletonTable } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import { uploadFile } from '../../services/ipfs';
+import config from '../../config';
 import '../../css/freelancer/dashboard.css';
 import '../../css/freelancer/my-contracts.css';
 
@@ -234,8 +235,10 @@ export default function MyContracts() {
     const currentUser = (() => { try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; } })();
     const myId = currentUser.id;
     if (!myId) return;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8000/api/dispute-messages/ws/${myId}`;
+    const apiOrigin = new URL(config.apiUrl).origin;
+    const wsProtocol = apiOrigin.startsWith('https') ? 'wss:' : 'ws:';
+    const wsHost = apiOrigin.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}//${wsHost}/api/dispute-messages/ws/${myId}`;
     const ws = new WebSocket(wsUrl);
     disputeWsRef.current = ws;
     ws.onopen = () => setDisputeChatConnected(true);

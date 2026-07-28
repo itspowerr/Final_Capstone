@@ -10,6 +10,9 @@ __pycache__/
 .env
 .env.local
 .env.*.local
+backend/.env
+frontend/.env
+docker/.env
 
 # Build outputs
 build/

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import NotificationBell from '../shared/NotificationBell.js';
 import api from '../../services/api';
+import { getIPFSGatewayUrl } from '../../services/ipfs';
 import '../../css/freelancer/navbar.css';
 
 export default function Navbar({ activePage }) {
@@ -83,7 +84,7 @@ export default function Navbar({ activePage }) {
             )}
           </div>
           <div className="user-avatar">
-            {user.avatar_cid ? <img src={`http://localhost:8080/ipfs/${user.avatar_cid}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
+            {user.avatar_cid ? <img src={getIPFSGatewayUrl(user.avatar_cid)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import { SkeletonCard, SkeletonLine } from '../../components/shared/Skeleton';
 import api from '../../services/api';
+import { getIPFSGatewayUrl } from '../../services/ipfs';
 import TOTPSettings from '../../components/shared/TOTPSettings';
 import '../../css/freelancer/dashboard.css';
 import '../../css/freelancer/profile.css';
@@ -250,7 +251,7 @@ export default function MyProfile() {
                 <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
                   {avatarCid ? (
-                    <img className="fl-profile-avatar-img" src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" />
+                    <img className="fl-profile-avatar-img" src={getIPFSGatewayUrl(avatarCid)} alt="avatar" />
                   ) : (
                     <div className="fl-profile-avatar-lg">{initials}</div>
                   )}

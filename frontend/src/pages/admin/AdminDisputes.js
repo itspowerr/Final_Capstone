@@ -90,8 +90,10 @@ function DisputeChat({ disputeId, contractDetail, onClose }) {
 
   useEffect(() => {
     if (!myId) return;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8000/api/dispute-messages/ws/${myId}`;
+    const apiOrigin = new URL(config.apiUrl).origin;
+    const wsProtocol = apiOrigin.startsWith('https') ? 'wss:' : 'ws:';
+    const wsHost = apiOrigin.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}//${wsHost}/api/dispute-messages/ws/${myId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

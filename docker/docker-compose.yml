@@ -3,8 +3,6 @@ services:
     image: postgres:15
     container_name: freeledger-db
     restart: unless-stopped
-    ports:
-      - "5432:5432"
     environment:
       POSTGRES_DB: freeledger
       POSTGRES_USER: freeledger
@@ -21,13 +19,13 @@ services:
       resources:
         limits:
           memory: 512M
+    networks:
+      - dokploy-network
 
   redis:
     image: redis:7
     container_name: freeledger-redis
     restart: unless-stopped
-    ports:
-      - "6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -39,6 +37,8 @@ services:
       resources:
         limits:
           memory: 128M
+    networks:
+      - dokploy-network
 
   hardhat:
     image: node:20
@@ -62,13 +62,14 @@ services:
           memory: 1G
         reservations:
           memory: 512M
+    networks:
+      - dokploy-network
 
   ipfs:
     image: ipfs/kubo:v0.28.0
     container_name: freeledger-ipfs
     restart: unless-stopped
     ports:
-      - "5001:5001"
       - "8080:8080"
     volumes:
       - ./ipfs/data:/data/ipfs
@@ -85,8 +86,14 @@ services:
       resources:
         limits:
           memory: 1G
+    networks:
+      - dokploy-network
 
 volumes:
   postgres_data:
   redis_data:
   ipfs_data:
+
+networks:
+  dokploy-network:
+    external: true

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { SkeletonThreadList, SkeletonChatArea } from '../../components/shared/Skeleton';
 import api from '../../services/api';
+import config from '../../config';
+import { getIPFSGatewayUrl } from '../../services/ipfs';
 import '../../css/shared/messages.css';
 
 const AVATAR_COLORS = ['#2563eb', '#7c3aed', '#059669', '#d97706', '#dc2626', '#0891b2', '#4f46e5', '#c026d3'];
@@ -47,7 +49,7 @@ function Avatar({ id, avatarCid, size = 42, style = {} }) {
       background: color, overflow: 'hidden', ...style,
     }}>
       {avatarCid
-        ? <img src={`http://localhost:8080/ipfs/${avatarCid}`} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        ? <img src={getIPFSGatewayUrl(avatarCid)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         : (id || '?')[0].toUpperCase()
       }
     </div>
@@ -116,8 +118,10 @@ export default function Messages({ NavbarComponent }) {
 
   useEffect(() => {
     if (!myId) return;
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.hostname}:8000/api/messages/ws/${myId}`;
+    const apiOrigin = new URL(config.apiUrl).origin;
+    const wsProtocol = apiOrigin.startsWith('https') ? 'wss:' : 'ws:';
+    const wsHost = apiOrigin.replace(/^https?:\/\//, '');
+    const wsUrl = `${wsProtocol}//${wsHost}/api/messages/ws/${myId}`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

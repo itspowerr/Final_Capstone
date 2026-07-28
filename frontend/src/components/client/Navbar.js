@@ -4,6 +4,7 @@ import PostProjectModal from '../shared/PostProjectModal.js';
 import NotificationBell from '../shared/NotificationBell.js';
 import { useApp } from '../../context/AppContext';
 import api from '../../services/api';
+import { getIPFSGatewayUrl } from '../../services/ipfs';
 import '../../css/client/navbar.css';
 
 export default function Navbar({ activePage }) {
@@ -91,7 +92,7 @@ export default function Navbar({ activePage }) {
               )}
             </div>
             <div className="user-avatar">
-              {user.avatar_cid ? <img src={`http://localhost:8080/ipfs/${user.avatar_cid}`} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
+              {user.avatar_cid ? <img src={getIPFSGatewayUrl(user.avatar_cid)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { getProvider } from '../../services/web3.js';
 import { useApp } from '../../context/AppContext';
 import { SkeletonCard, SkeletonLine } from '../../components/shared/Skeleton';
 import api from '../../services/api';
+import { getIPFSGatewayUrl } from '../../services/ipfs';
 import TOTPSettings from '../../components/shared/TOTPSettings';
 import '../../css/client/profile.css';
 
@@ -216,7 +217,7 @@ export default function ClientProfile() {
                 <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
                   {avatarCid ? (
-                    <img className="profile-avatar-img" src={`http://localhost:8080/ipfs/${avatarCid}`} alt="avatar" />
+                    <img className="profile-avatar-img" src={getIPFSGatewayUrl(avatarCid)} alt="avatar" />
                   ) : (
                     <div className="profile-avatar-lg">{initials}</div>
                   )}

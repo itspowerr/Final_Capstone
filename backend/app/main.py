@@ -1,6 +1,5 @@
 from contextlib import asynccontextmanager
 
-import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.middleware.rate_limit import RateLimitMiddleware
@@ -17,9 +16,6 @@ from app.services.repin_service import start_repin_service
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.redis = aioredis.from_url(
-        settings.redis_url, decode_responses=True
-    )
     await init_redis()
     start_event_listener()
     start_ipfs_monitor()
@@ -133,7 +129,6 @@ async def lifespan(app: FastAPI):
             )
         )
     yield
-    await app.state.redis.close()
     await close_redis()
 
 
@@ -147,8 +142,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.add_middleware(RateLimitMiddleware)

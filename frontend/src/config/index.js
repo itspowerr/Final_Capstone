@@ -10,12 +10,14 @@
  *   REACT_APP_CHAIN_ID        — Chain ID for network detection (default: 31337 = Hardhat local)
  */
 
+const rt = window.__ENV__ || {};
+
 const config = {
-  contractAddress: process.env.REACT_APP_CONTRACT_ADDRESS || '',
-  rpcUrl: process.env.REACT_APP_BLOCKCHAIN_RPC || 'http://127.0.0.1:8545',
-  chainId: parseInt(process.env.REACT_APP_CHAIN_ID) || 31337,
-  apiUrl: process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000/api',
-  ipfsGateway: process.env.REACT_APP_IPFS_GATEWAY || 'http://localhost:8080',
+  contractAddress: rt.REACT_APP_CONTRACT_ADDRESS || process.env.REACT_APP_CONTRACT_ADDRESS || '',
+  rpcUrl: rt.REACT_APP_BLOCKCHAIN_RPC || process.env.REACT_APP_BLOCKCHAIN_RPC || '',
+  chainId: parseInt(rt.REACT_APP_CHAIN_ID || process.env.REACT_APP_CHAIN_ID) || 31337,
+  apiUrl: rt.REACT_APP_API_URL || process.env.REACT_APP_API_URL || '',
+  ipfsGateway: rt.REACT_APP_IPFS_GATEWAY || process.env.REACT_APP_IPFS_GATEWAY || '',
 };
 
 export default config;
