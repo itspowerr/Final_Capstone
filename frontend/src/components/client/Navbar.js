@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PostProjectModal from '../shared/PostProjectModal.js';
 import NotificationBell from '../shared/NotificationBell.js';
+import AccountMenu from '../shared/AccountMenu.js';
 import { useApp } from '../../context/AppContext';
 import api from '../../services/api';
-import { getIPFSGatewayUrl } from '../../services/ipfs';
 import '../../css/client/navbar.css';
 
 export default function Navbar({ activePage }) {
@@ -50,13 +50,11 @@ export default function Navbar({ activePage }) {
     navigate('/login');
   };
 
-  const avatarLetter = user.name ? user.name.charAt(0).toUpperCase() : '?';
-
   return (
     <>
       <nav className="dash-nav">
         <div className="dash-nav-left">
-          <a className="nav-logo">
+          <a className="nav-logo" href="/client/dashboard" onClick={(e) => { e.preventDefault(); navigate('/client/dashboard'); }}>
             <div className="nav-logo-icon">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
             </div>
@@ -74,27 +72,10 @@ export default function Navbar({ activePage }) {
         <div className="dash-nav-right">
           <NotificationBell />
           <button className="btn btn-primary btn-sm" onClick={() => setModalOpen(true)}>+ Post New Project</button>
-          <button className="btn btn-outline btn-sm" onClick={handleLogout}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-            Logout
-          </button>
           <div className="settings-btn" onClick={() => console.log('[Nav] Settings')}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14" /></svg>
           </div>
-          <div className="user-chip" onClick={() => navigate('/client/profile')} style={{ cursor: 'pointer' }}>
-            <div className="user-info">
-              <div className="uname">{user.name}</div>
-              <div className="urole">{user.role === 'Client' ? 'Client' : user.role}</div>
-              {walletAddress && (
-                <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                </div>
-              )}
-            </div>
-            <div className="user-avatar">
-              {user.avatar_cid ? <img src={getIPFSGatewayUrl(user.avatar_cid)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
-            </div>
-          </div>
+          <AccountMenu user={user} roleLabel={user.role === 'Client' ? 'Client' : user.role} walletAddress={walletAddress} profilePath="/client/profile" onLogout={handleLogout} />
         </div>
       </nav>
 

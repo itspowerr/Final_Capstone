@@ -217,7 +217,7 @@ export default function ClientProfile() {
                 <label style={{ cursor: 'pointer', position: 'relative', display: 'inline-block' }}>
                   <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarUpload} />
                   {avatarCid ? (
-                    <img className="profile-avatar-img" src={getIPFSGatewayUrl(avatarCid)} alt="avatar" />
+                    <img className="profile-avatar-img" src={getIPFSGatewayUrl(avatarCid)} alt={`${form.name || 'User'} profile`} width="120" height="120" decoding="async" />
                   ) : (
                     <div className="profile-avatar-lg">{initials}</div>
                   )}
@@ -245,7 +245,7 @@ export default function ClientProfile() {
 
           <div>
             <div className="profile-section">
-              <h3>Basic Information</h3>
+              <h2>Basic Information</h2>
               <div className="form-group">
                 <label className="form-label">Full Name</label>
                 <input className="form-input" type="text" placeholder="Your full name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
@@ -257,7 +257,7 @@ export default function ClientProfile() {
             </div>
 
             <div className="profile-section">
-              <h3>Professional</h3>
+              <h2>Professional</h2>
               <div className="form-group">
                 <label className="form-label">Bio</label>
                 <textarea className="form-input" rows={4} placeholder="Describe your background, what you're looking for, and the types of projects you want to fund..." style={{ resize: 'vertical' }} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })}></textarea>
@@ -289,7 +289,7 @@ export default function ClientProfile() {
             </div>
 
             <div className="profile-section">
-              <h3>Portfolio & Links</h3>
+              <h2>Portfolio & Links</h2>
               <div className="form-row">
                 <div className="form-group">
                   <label className="form-label">GitHub</label>
@@ -307,7 +307,7 @@ export default function ClientProfile() {
             </div>
 
             <div className="profile-section">
-              <h3>Web3 Identity</h3>
+              <h2>Web3 Identity</h2>
               <p style={{ fontSize: 14, color: 'var(--landing-text)', marginBottom: 20, lineHeight: 1.5 }}>Connect your MetaMask wallet to establish your decentralized on-chain identity. Your wallet address acts as your cryptographic ID across the platform.</p>
               
               <div className="web3-id-card">
@@ -352,7 +352,7 @@ export default function ClientProfile() {
             </div>
 
             <div className="profile-section">
-              <h3>Notifications</h3>
+              <h2>Notifications</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 14 }}>
                   <input type="checkbox" checked={form.emailNotifications} onChange={e => setForm({ ...form, emailNotifications: e.target.checked })} style={{ width: 18, height: 18, accentColor: 'var(--landing-navy, #101828)' }} />

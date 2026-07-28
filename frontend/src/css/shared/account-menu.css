@@ -1,0 +1,104 @@
+.account-menu { position: relative; }
+
+.account-menu-trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 46px;
+  min-width: 158px;
+  padding: 5px 9px 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  color: var(--text);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.account-menu-trigger:hover,
+.account-menu-trigger.open {
+  background: var(--surface);
+  border-color: var(--accent-border);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, .07);
+}
+.account-menu-trigger:focus-visible { outline: 3px solid rgba(59, 92, 230, .18); outline-offset: 2px; }
+.account-menu-info { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.account-menu-name { max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 700; }
+.account-menu-role { color: var(--text-3); font-size: 10.5px; }
+.account-menu-wallet { max-width: 120px; overflow: hidden; color: var(--accent); font-size: 9.5px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu-avatar {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+}
+.account-menu-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.account-menu-chevron { color: var(--text-3); transition: transform .22s ease, color .18s ease; }
+.account-menu-trigger.open .account-menu-chevron { transform: rotate(180deg); color: var(--accent); }
+
+.account-menu-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 300;
+  width: 276px;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, .22);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .17), 0 4px 12px rgba(15, 23, 42, .06);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px) scale(.97);
+  transform-origin: top right;
+  transition: opacity .2s ease, transform .24s cubic-bezier(.22, 1, .36, 1), visibility .2s;
+}
+.account-menu-dropdown.open { opacity: 1; visibility: visible; pointer-events: auto; transform: translateY(0) scale(1); }
+.account-menu-header { display: flex; align-items: center; gap: 11px; padding: 7px 8px 10px; }
+.account-menu-header > span:last-child { min-width: 0; display: flex; flex-direction: column; }
+.account-menu-header strong { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.account-menu-header small { margin-top: 2px; color: var(--text-3); font-size: 11px; }
+.account-menu-avatar-large { width: 38px; height: 38px; font-size: 14px; }
+.account-menu-divider { height: 1px; margin: 0 5px 7px; background: var(--border); }
+.account-menu-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .16s ease, color .16s ease, transform .16s ease;
+}
+.account-menu-item:hover { background: var(--accent-pale); color: var(--accent); transform: translateX(2px); }
+.account-menu-item-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 9px; background: var(--surface); }
+.account-menu-item > span:last-child { display: flex; flex-direction: column; }
+.account-menu-item strong { font-size: 12.5px; }
+.account-menu-item small { margin-top: 2px; color: var(--text-3); font-size: 10.5px; }
+.account-menu-logout { color: #dc2626; }
+.account-menu-logout:hover { background: #fef2f2; color: #dc2626; }
+.account-menu-logout .account-menu-item-icon { background: #fef2f2; }
+
+@media (max-width: 640px) {
+  .account-menu-info { display: none; }
+  .account-menu-trigger { min-width: 0; padding-left: 8px; }
+  .account-menu-dropdown { width: min(276px, calc(100vw - 24px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-menu-dropdown, .account-menu-chevron, .account-menu-item { transition: none; }
+}

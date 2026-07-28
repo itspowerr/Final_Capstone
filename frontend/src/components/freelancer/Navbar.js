@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import NotificationBell from '../shared/NotificationBell.js';
+import AccountMenu from '../shared/AccountMenu.js';
 import api from '../../services/api';
-import { getIPFSGatewayUrl } from '../../services/ipfs';
 import '../../css/freelancer/navbar.css';
 
 export default function Navbar({ activePage }) {
@@ -48,12 +48,10 @@ export default function Navbar({ activePage }) {
     navigate('/login');
   };
 
-  const avatarLetter = user.name ? user.name.charAt(0).toUpperCase() : '?';
-
   return (
     <nav className="dash-nav">
       <div className="dash-nav-left">
-        <a className="nav-logo">
+        <a className="nav-logo" href="/freelancer/dashboard" onClick={(e) => { e.preventDefault(); navigate('/freelancer/dashboard'); }}>
           <div className="nav-logo-icon">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
           </div>
@@ -69,24 +67,7 @@ export default function Navbar({ activePage }) {
       </div>
       <div className="dash-nav-right">
         <NotificationBell />
-        <button className="btn btn-outline btn-sm" onClick={handleLogout}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-          Logout
-        </button>
-        <div className="user-chip" onClick={() => navigate('/freelancer/my-profile')} style={{ cursor: 'pointer' }}>
-          <div className="user-info">
-            <div className="uname">{user.name}</div>
-            <div className="urole">Freelancer</div>
-            {walletAddress && (
-              <div style={{ fontSize: 10, color: 'var(--accent)', fontWeight: 600, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-              </div>
-            )}
-          </div>
-          <div className="user-avatar">
-            {user.avatar_cid ? <img src={getIPFSGatewayUrl(user.avatar_cid)} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} /> : avatarLetter}
-          </div>
-        </div>
+        <AccountMenu user={user} roleLabel="Freelancer" walletAddress={walletAddress} profilePath="/freelancer/my-profile" onLogout={handleLogout} />
       </div>
     </nav>
   );
