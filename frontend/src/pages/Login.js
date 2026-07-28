@@ -30,6 +30,17 @@ const panels = {
   },
 };
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// FastAPI validation errors (422) send `detail` as an array of
+// { msg, loc, type } objects rather than a string or { message }.
+function extractErrorMessage(err, fallback) {
+  const detail = err.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail) && detail[0]?.msg) return detail[0].msg;
+  return detail?.message || err.message || fallback;
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const { connectAndCheck } = useAuth();
@@ -83,7 +94,7 @@ export default function Login() {
 
   const validateLogin = () => {
     const errs = {};
-    if (!email || !email.includes('@')) errs.email = 'Please enter a valid email.';
+    if (!email || !EMAIL_RE.test(email)) errs.email = 'Please enter a valid email.';
     if (!password) errs.password = 'Password is required.';
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -92,7 +103,7 @@ export default function Login() {
   const validateRegister = () => {
     const errs = {};
     if (!firstName.trim()) errs.firstName = 'First name is required.';
-    if (!email || !email.includes('@')) errs.email = 'Please enter a valid email.';
+    if (!email || !EMAIL_RE.test(email)) errs.email = 'Please enter a valid email.';
     if (!password || password.length < 8) errs.password = 'Password must be at least 8 characters.';
     if (!role) errs.role = 'Please select a role.';
     setErrors(errs);
@@ -126,9 +137,7 @@ export default function Login() {
       localStorage.setItem('user', JSON.stringify(user));
       navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Login failed';
-      setError(errorMsg);
+      setError(extractErrorMessage(err, 'Login failed'));
     } finally {
       setLoading(false);
     }
@@ -163,8 +172,7 @@ export default function Login() {
         setCooldown(secs);
         setError(detail.message);
       } else {
-        const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Verification failed';
-        setError(errorMsg);
+        setError(extractErrorMessage(err, 'Verification failed'));
       }
     } finally {
       setLoading(false);
@@ -190,9 +198,7 @@ export default function Login() {
       localStorage.setItem('user', JSON.stringify(user));
       navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
     } catch (err) {
-      const detail = err.response?.data?.detail;
-      const errorMsg = typeof detail === 'string' ? detail : detail?.message || err.message || 'Registration failed';
-      setError(errorMsg);
+      setError(extractErrorMessage(err, 'Registration failed'));
     } finally {
       setLoading(false);
     }
