@@ -25,7 +25,8 @@ COPY env.sh /docker-entrypoint.d/40-env.sh
 RUN chmod +x /docker-entrypoint.d/40-env.sh
 
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
-    chown -R nginx:nginx /etc/nginx/conf.d
+    chown -R nginx:nginx /etc/nginx/conf.d && \
+    chown -R nginx:nginx /var/cache/nginx
 
 USER nginx
 
