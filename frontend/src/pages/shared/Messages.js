@@ -69,6 +69,10 @@ export default function Messages({ NavbarComponent }) {
   const messagesRef = useRef([]);
   const threadMessagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const [dismissedJobs, setDismissedJobs] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('dismissedJobs') || '[]')); }
+    catch { return new Set(); }
+  });
 
   const currentUser = (() => {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
@@ -225,6 +229,14 @@ export default function Messages({ NavbarComponent }) {
     } catch (err) {
       showToast(err.response?.data?.detail || 'Failed to accept', '!');
     }
+  }
+
+  function dismissJob(jobId) {
+    setDismissedJobs(prev => {
+      const next = new Set([...prev, jobId]);
+      localStorage.setItem('dismissedJobs', JSON.stringify([...next]));
+      return next;
+    });
   }
 
   async function deleteThread(partnerId) {
@@ -427,8 +439,8 @@ export default function Messages({ NavbarComponent }) {
                 </div>
 
                 {/* Job invitation cards — only visible to freelancers (recipients) */}
-                {myRole === 'freelancer' && activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !activeThread.messages.some(
-                  r => r.sender_id === myId && r.job_id === m.job_id && r.content?.includes('accepted')
+                {myRole === 'freelancer' && activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !dismissedJobs.has(m.job_id) && !activeThread.messages.some(
+                  r => r.sender_id === myId && r.job_id === m.job_id && r.content?.toLowerCase().includes('accepted')
                 )) && (
                   <div style={{ padding: '0 30px' }}>
                     {[...new Set(
@@ -438,9 +450,19 @@ export default function Messages({ NavbarComponent }) {
                       const alreadyAccepted = activeThread.messages.some(
                         m => m.sender_id === myId && m.job_id === jid && m.content?.toLowerCase().includes('accepted')
                       );
-                      if (alreadyAccepted || !job) return null;
+                      if (alreadyAccepted || !job || dismissedJobs.has(jid)) return null;
                       return (
-                        <div className="msg-invite-card" key={jid}>
+                        <div className="msg-invite-card" key={jid} style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => dismissJob(jid)}
+                            style={{
+                              position: 'absolute', top: 8, right: 8,
+                              background: 'none', border: 'none', fontSize: 20,
+                              cursor: 'pointer', color: '#999', lineHeight: 1,
+                              padding: '0 4px', borderRadius: 4,
+                            }}
+                            title="Decline"
+                          >×</button>
                           <h4>{job.title}</h4>
                           <p>Budget: {job.budget} ETH &middot; Duration: {job.duration_days || 30} days</p>
                           <button className="btn-accept" onClick={() => acceptJob(jid, activeThread.partnerId)}>
