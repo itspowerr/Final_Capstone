@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DisputeStatus, Job, MilestoneStatus, Proposal, User
+from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DisputeStatus, Job, MilestoneStatus, Proposal, User, UserRole
 from app.routers.auth import get_current_user, hash_password
 from app.schemas import (
     AdminContractCreate,
@@ -160,7 +160,7 @@ async def admin_create_user(
         username=data.username,
         email=data.email.lower(),
         password_hash=hash_password(data.password),
-        role=data.role.lower(),
+        role=UserRole(data.role.lower()),
     )
     db.add(user)
     await db.commit()

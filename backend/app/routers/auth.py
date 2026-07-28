@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.models import AdminAccount, User
+from app.models import AdminAccount, User, UserRole
 from app.schemas import (
     AdminLoginRequest,
     ErrorResponse,
@@ -141,7 +141,7 @@ async def register(request: RegisterRequest, db: AsyncSession = Depends(get_db))
         password_hash=hash_password(request.password),
         auth_method="email",
         username=request.username or request.email.split("@")[0],
-        role=request.role.lower(),
+        role=UserRole(request.role.lower()),
     )
     db.add(user)
     await db.flush()
