@@ -2,8 +2,12 @@ import axios from "axios";
 import config from '../config';
 
 const api = axios.create({
-  baseURL: config.apiUrl,
   headers: { "Content-Type": "application/json" },
+});
+
+api.interceptors.request.use((axiosConfig) => {
+  axiosConfig.baseURL = config.apiUrl;
+  return axiosConfig;
 });
 
 const requestCache = new Map();
