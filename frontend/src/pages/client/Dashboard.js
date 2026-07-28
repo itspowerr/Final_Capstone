@@ -108,6 +108,44 @@ export default function ClientDashboard() {
     fetchData();
   }, [userId, fetchData]);
 
+  const exportReport = () => {
+    const rows = [
+      ['Report', 'Value'],
+      ['Active Projects', stats.active],
+      ['Freelancers Applied', stats.applied],
+      ['Total Budget Locked (ETH)', stats.budget.toFixed(4)],
+      ['Signed Contracts', contractSummary.signed],
+      ['Pending Signatures', contractSummary.pending],
+      ['Archived', contractSummary.archived],
+      [],
+      ['Contracts', 'Status', 'Progress'],
+      ...contracts.map(c => [
+        c.title || c.job_title || 'Untitled',
+        c.status?.replace(/_/g, ' ') || '',
+        `${c.doneMs || 0}/${c.totalMs || 0} (${c.progress || 0}%)`,
+      ]),
+      [],
+      ['Freelancer', 'Role', 'Bid (ETH)', 'Status'],
+      ...appliedFl.freelancers.map(f => [
+        f.name,
+        f.role,
+        f.proposal?.bid_amount?.toLocaleString() || '',
+        f.proposal?.status || '',
+      ]),
+    ];
+
+    const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const [acceptingId, setAcceptingId] = useState(null);
 
   const acceptProposal = async (proposalId) => {
@@ -166,7 +204,7 @@ export default function ClientDashboard() {
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0110 0v4" /></svg>
               Session Active
             </div>
-            <button className="btn btn-outline btn-sm" onClick={() => console.log('Export Report')}>
+            <button className="btn btn-outline btn-sm" onClick={exportReport}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
               Export Report
             </button>
