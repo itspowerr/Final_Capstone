@@ -17,3 +17,4 @@ greenlet==3.5.3
 bcrypt==4.0.1
 pyotp==2.9.0
 qrcode[pil]==7.4.2
+faker==40.36.0
