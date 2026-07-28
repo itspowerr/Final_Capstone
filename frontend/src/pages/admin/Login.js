@@ -122,7 +122,14 @@ export default function AdminLogin() {
             FreeLedger
           </div>
           <div className="admin-left-panel-content active">
-            <h2>Admin Portal</h2>
+            <div className="admin-auth-eyebrow">
+              <span className="admin-auth-eyebrow-dot" />
+              Secure admin access
+            </div>
+            <h2>
+              Control the{' '}
+              <span className="admin-auth-title-accent">decentralized economy</span>
+            </h2>
             <p>Securely access the FreeLedger administration panel to manage users, jobs, contracts, and disputes.</p>
             <div className="admin-auth-feature-list">
               <div className="admin-auth-feature">
