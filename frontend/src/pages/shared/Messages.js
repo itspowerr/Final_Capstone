@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { SkeletonThreadList, SkeletonChatArea } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import config from '../../config';
@@ -76,6 +76,11 @@ export default function Messages({ NavbarComponent }) {
     catch { return new Set(); }
   });
 
+  const [searchParams] = useSearchParams();
+  const initialUserParam = useRef(searchParams.get('user'));
+  const initialHandled = useRef(false);
+  const threadsRef = useRef([]);
+
   const currentUser = (() => {
     try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   })();
@@ -115,6 +120,36 @@ export default function Messages({ NavbarComponent }) {
   }, []);
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
+
+  useEffect(() => {
+    if (loading || initialHandled.current || !initialUserParam.current) return;
+    initialHandled.current = true;
+
+    const path = window.location.pathname;
+    navigate(path, { replace: true });
+
+    const userId = initialUserParam.current;
+    const existing = threadsRef.current.find(t => t.partnerId === userId);
+    if (existing) {
+      setActiveThread(existing);
+      markThreadRead(existing.partnerId);
+      return;
+    }
+
+    (async () => {
+      try {
+        const { data } = await api.get('/users', { params: { ids: userId } });
+        const user = (data.users || [])[0];
+        if (user) {
+          setAvatarCache(prev => ({
+            ...prev,
+            [userId]: { avatar_cid: user.avatar_cid || '', name: user.username || user.email || '' }
+          }));
+        }
+      } catch {}
+      setActiveThread({ partnerId: userId, messages: [], lastMessage: null, unread: 0 });
+    })();
+  }, [loading, navigate]);
 
   useEffect(() => {
     if (!myId) return;
@@ -271,6 +306,7 @@ export default function Messages({ NavbarComponent }) {
   }, [messages, activeThread]);
 
   const threads = getThreads();
+  threadsRef.current = threads;
 
   useEffect(() => {
     if (activeThread) {
