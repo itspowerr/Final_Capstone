@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import tempfile
 from typing import BinaryIO
@@ -8,6 +9,8 @@ import httpx
 from app.config import settings
 from app.utils.error_codes import ErrorCodes
 from app.utils.exceptions import IPFSError
+
+logger = logging.getLogger("freeledger.ipfs_service")
 
 
 async def upload_file(file: BinaryIO, filename: str = None) -> dict:
@@ -23,6 +26,7 @@ async def upload_file(file: BinaryIO, filename: str = None) -> dict:
                 "size": result["Size"],
             }
     except httpx.HTTPError as e:
+        logger.exception("Failed to upload to IPFS: %s", str(e))
         raise IPFSError(f"Failed to upload to IPFS: {str(e)}", code=ErrorCodes.IPFS_UPLOAD_FAILED)
 
 
@@ -47,6 +51,7 @@ async def download_file(cid: str) -> bytes:
             response.raise_for_status()
             return response.content
     except httpx.HTTPError as e:
+        logger.exception("Failed to download from IPFS: %s", str(e))
         raise IPFSError(f"Failed to download from IPFS: {str(e)}", code=ErrorCodes.IPFS_DOWNLOAD_FAILED)
 
 
@@ -57,7 +62,8 @@ async def pin_file(cid: str) -> bool:
             response = await client.post(url)
             response.raise_for_status()
             return True
-    except httpx.HTTPError:
+    except httpx.HTTPError as e:
+        logger.error("Failed to pin %s on IPFS: %s", cid, str(e))
         return False
 
 
@@ -67,7 +73,8 @@ async def file_exists(cid: str) -> bool:
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(url)
             return response.status_code == 200
-    except httpx.HTTPError:
+    except httpx.HTTPError as e:
+        logger.error("Failed to check existence of %s on IPFS: %s", cid, str(e))
         return False
 
 
