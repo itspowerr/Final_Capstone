@@ -100,6 +100,7 @@ export default function Login() {
     const errs = {};
     if (!email || !EMAIL_RE.test(email)) errs.email = 'Please enter a valid email.';
     if (!password) errs.password = 'Password is required.';
+    if (!loginRole) errs.loginRole = 'Please select your role.';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -123,6 +124,7 @@ export default function Login() {
       const response = await api.post('/auth/login', {
         email: email.toLowerCase(),
         password,
+        loginRole,
       });
       const data = response.data;
 
