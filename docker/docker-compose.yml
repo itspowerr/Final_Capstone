@@ -49,6 +49,7 @@ services:
       - "8545:8545"
     volumes:
       - ../contracts:/app
+      - hardhat_data:/app/data
     command: sh /app/docker-entrypoint.sh
     labels:
       - traefik.enable=true
@@ -100,6 +101,7 @@ volumes:
   postgres_data:
   redis_data:
   ipfs_data:
+  hardhat_data:
 
 networks:
   dokploy-network:

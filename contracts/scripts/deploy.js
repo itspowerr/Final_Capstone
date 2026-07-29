@@ -44,6 +44,13 @@ async function main() {
     console.warn("WARNING: could not write .contract-address:", err.message);
   }
 
+  try {
+    fs.writeFileSync("/app/data/contract-address.txt", address);
+    console.log("Contract address written to /app/data/contract-address.txt\n");
+  } catch (err) {
+    console.warn("WARNING: could not write /app/data/contract-address.txt:", err.message);
+  }
+
   const infoPath = path.resolve(__dirname, "contract-address.txt");
   const info = [
     `Contract: ${address}`,
