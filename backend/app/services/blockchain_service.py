@@ -15,12 +15,14 @@ _contract: any = None
 def get_web3() -> Web3:
     global _web3
     if _web3 is None:
-        _web3 = Web3(Web3.HTTPProvider(
+        provider = Web3.HTTPProvider(
             settings.rpc_url,
             request_kwargs={"timeout": settings.blockchain_timeout},
-        ))
-        if not _web3.is_connected():
+        )
+        w3 = Web3(provider)
+        if not w3.is_connected():
             raise ConnectionError(f"Cannot connect to RPC at {settings.rpc_url}")
+        _web3 = w3
     return _web3
 
 

@@ -142,7 +142,7 @@ class Contract(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
-    dispute = relationship("Dispute", uselist=False)
+    dispute = relationship("Dispute", uselist=False, back_populates="contract")
     milestones_rel = relationship("ContractMilestone", order_by="ContractMilestone.index")
 
 
@@ -201,7 +201,7 @@ class Dispute(Base):
     resolution_notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    contract = relationship("Contract", foreign_keys=[contract_id], lazy="select")
+    contract = relationship("Contract", foreign_keys=[contract_id], lazy="select", back_populates="dispute")
 
 
 class AdminAccount(Base):
