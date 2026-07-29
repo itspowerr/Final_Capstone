@@ -20,8 +20,10 @@ def get_web3() -> Web3:
             request_kwargs={"timeout": settings.blockchain_timeout},
         )
         w3 = Web3(provider)
-        if not w3.is_connected():
-            raise ConnectionError(f"Cannot connect to RPC at {settings.rpc_url}")
+        try:
+            w3.eth.chain_id
+        except Exception as e:
+            raise ConnectionError(f"Cannot connect to RPC at {settings.rpc_url}: {e}")
         _web3 = w3
     return _web3
 
