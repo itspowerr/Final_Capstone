@@ -69,7 +69,7 @@ function formatContract(raw) {
 }
 
 
-function ActionButtons({ contract, onSelect, onSign, onFund }) {
+function ActionButtons({ contract, onSelect, onSign, onFund, loading }) {
   if (contract.status === 'active') {
     return (
       <>
@@ -79,7 +79,7 @@ function ActionButtons({ contract, onSelect, onSign, onFund }) {
   }
   if (contract.status === 'pending_funding') {
     return (
-      <button className="btn btn-primary btn-sm" title="Requires MetaMask" onClick={(e) => { e.stopPropagation(); onFund(contract.id); }}>⚡ Fund Contract</button>
+      <button className="btn btn-primary btn-sm" title="Requires MetaMask" disabled={loading} onClick={(e) => { e.stopPropagation(); onFund(contract.id); }}>⚡ Fund Contract</button>
     );
   }
   if (contract.status === 'pending_signatures') {
@@ -87,7 +87,7 @@ function ActionButtons({ contract, onSelect, onSign, onFund }) {
       return <span className="btn btn-outline btn-sm" style={{ opacity: 0.7, cursor: 'default' }}>Signed</span>;
     }
     if (contract.freelancer_id) {
-      return <button className="btn btn-primary btn-sm" onClick={(e) => { e.stopPropagation(); onSign(contract.id); }}>Sign Contract</button>;
+      return <button className="btn btn-primary btn-sm" disabled={loading} onClick={(e) => { e.stopPropagation(); onSign(contract.id); }}>Sign Contract</button>;
     }
     return <button className="btn btn-outline btn-sm" onClick={(e) => { e.stopPropagation(); onSelect(contract.id); }}>View Applicants</button>;
   }
@@ -149,6 +149,11 @@ export default function MyContracts() {
   }, []);
 
   useEffect(() => { fetchContracts(); }, [fetchContracts]);
+
+  useEffect(() => {
+    const pollId = setInterval(() => { fetchContracts(); }, 30000);
+    return () => clearInterval(pollId);
+  }, [fetchContracts]);
 
   const filtered = useMemo(() => {
     const statuses = FILTER_STATUSES[currentFilter];
@@ -213,19 +218,28 @@ export default function MyContracts() {
   };
 
   const signContract = async (contractId) => {
-    await doAction(
-      () => api.post(`/contracts/${contractId}/sign`),
-      'Contract signature recorded ✅',
-    );
+    setActionLoading(true);
+    try {
+      const res = await api.post(`/contracts/${contractId}/sign`);
+      setAllContracts(prev => prev.map(c =>
+        c.id === contractId ? formatContract(res.data.contract) : c
+      ));
+      showToast('Contract signature recorded ✅');
+    } catch (err) {
+      const m = err.response?.data?.detail?.message || err.message || 'Failed to sign';
+      showToast(m, '❌');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const fundContract = async (contractId) => {
     const c = allContracts.find(x => x.id === contractId);
     if (!c) return;
 
+    setActionLoading(true);
     try {
       if (c.on_chain_id) {
-        setActionLoading(true);
         await ensureCorrectNetwork();
         const signer = await getSigner();
         const contract = await getContract(config.contractAddress, GIG_ESCROW_ABI);
@@ -236,21 +250,34 @@ export default function MyContracts() {
         showToast('Waiting for confirmation…', '⏳');
         await tx.wait();
       }
-      await doAction(
-        () => api.post(`/contracts/${contractId}/fund`),
-        'Contract funded ✅',
-      );
+      const res = await api.post(`/contracts/${contractId}/fund`);
+      setAllContracts(prev => prev.map(c2 =>
+        c2.id === contractId ? formatContract(res.data.contract) : c2
+      ));
+      showToast('Contract funded ✅');
     } catch (chainErr) {
       showToast('Funding failed: ' + (chainErr.message || chainErr), '❌');
+    } finally {
       setActionLoading(false);
     }
   };
 
   const hireProposal = async (proposalId) => {
-    await doAction(
-      () => api.post(`/proposals/${proposalId}/accept`),
-      'Freelancer hired ✅',
-    );
+    setActionLoading(true);
+    try {
+      const res = await api.post(`/proposals/${proposalId}/accept`);
+      setAllContracts(prev => prev.map(c =>
+        c.id === res.data.contract_id ? { ...c, freelancer_id: res.data.freelancer_id } : c
+      ));
+      setModalContract(null);
+      showToast('Freelancer hired ✅');
+      await fetchContracts();
+    } catch (err) {
+      const m = err.response?.data?.detail?.message || err.message || 'Failed to hire';
+      showToast(m, '❌');
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   const raiseDispute = async (contractId, reason) => {
@@ -482,7 +509,7 @@ export default function MyContracts() {
                 <div className="contract-value">{c.value.toLocaleString()} ETH</div>
                 <div className="contract-value-sub">Contract value</div>
                 <div className="contract-actions">
-                  <ActionButtons contract={c} onSelect={openContractModal} onSign={signContract} onFund={fundContract} />
+                  <ActionButtons contract={c} onSelect={openContractModal} onSign={signContract} onFund={fundContract} loading={actionLoading} />
                 </div>
               </div>
             </div>

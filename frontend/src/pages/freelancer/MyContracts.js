@@ -188,9 +188,10 @@ export default function MyContracts() {
   async function signContract(contractId) {
     setSubmitting(true);
     try {
-      await api.post(`/contracts/${contractId}/sign`);
+      const res = await api.post(`/contracts/${contractId}/sign`);
+      const updated = res.data.contract;
       setContracts(prev => prev.map(c =>
-        c.id === contractId ? { ...c, freelancer_signed: true } : c
+        c.id === contractId ? { ...c, ...updated, milestones: res.data.milestones || c.milestones } : c
       ));
       showToast('Contract signed ✅');
       setDetailId(null);
@@ -646,7 +647,7 @@ export default function MyContracts() {
               )}
               <button className="btn btn-outline" style={{ flex: 1 }} onClick={() => { setDetailId(null); setExpandedIdx(null); setShowDisputeChat(false); setModalDisputeId(null); }}>Close</button>
               {detail.status === 'pending_signatures' && !detail.freelancer_signed ? (
-                <button className="btn btn-primary" onClick={() => signContract(detail.id)}>Sign Contract</button>
+                <button className="btn btn-primary" disabled={submitting} onClick={() => signContract(detail.id)}>Sign Contract</button>
               ) : null}
             </div>
           </div>
