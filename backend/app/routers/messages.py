@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import Base, async_session_factory, get_db
 from app.routers.auth import get_current_user
-from app.models import User, Contract, Dispute
+from app.models import DismissedInvitation, User, Contract, Dispute
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 
@@ -260,3 +260,41 @@ async def delete_thread(
     })
 
     return {"status": "deleted", "count": len(messages_to_delete)}
+
+
+@router.get("/invitations/dismissed")
+async def get_dismissed_invitations(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(DismissedInvitation.job_id).where(
+            DismissedInvitation.user_id == current_user.id
+        )
+    )
+    job_ids = [row[0] for row in result.all()]
+    return {"job_ids": job_ids}
+
+
+@router.post("/invitations/{job_id}/dismiss")
+async def dismiss_invitation(
+    job_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    existing = await db.execute(
+        select(DismissedInvitation).where(
+            DismissedInvitation.user_id == current_user.id,
+            DismissedInvitation.job_id == job_id,
+        )
+    )
+    if existing.scalar_one_or_none():
+        return {"status": "already_dismissed"}
+
+    dismissed = DismissedInvitation(
+        user_id=current_user.id,
+        job_id=job_id,
+    )
+    db.add(dismissed)
+    await db.commit()
+    return {"status": "dismissed"}

@@ -75,6 +75,10 @@ export default function Messages({ NavbarComponent }) {
     try { return new Set(JSON.parse(localStorage.getItem('dismissedJobs') || '[]')); }
     catch { return new Set(); }
   });
+  const [proposalJobIds, setProposalJobIds] = useState(new Set());
+  const [backendDismissedJobs, setBackendDismissedJobs] = useState(new Set());
+
+  const effectiveDismissed = new Set([...dismissedJobs, ...backendDismissedJobs]);
 
   const [searchParams] = useSearchParams();
   const initialUserParam = useRef(searchParams.get('user'));
@@ -116,8 +120,20 @@ export default function Messages({ NavbarComponent }) {
         } catch {}
       }
     } catch { }
+
+    if (myRole === 'freelancer') {
+      try {
+        const { data: proposalsData } = await api.get('/proposals');
+        setProposalJobIds(new Set((proposalsData.proposals || []).map(p => p.job_id)));
+      } catch {}
+      try {
+        const { data: dismissedData } = await api.get('/messages/invitations/dismissed');
+        setBackendDismissedJobs(new Set(dismissedData.job_ids || []));
+      } catch {}
+    }
+
     setLoading(false);
-  }, []);
+  }, [myRole]);
 
   useEffect(() => { loadMessages(); }, [loadMessages]);
 
@@ -275,6 +291,7 @@ export default function Messages({ NavbarComponent }) {
         bid_amount: jobCache[jobId]?.budget || 0,
         estimated_days: jobCache[jobId]?.duration_days || 30,
       });
+      setProposalJobIds(prev => new Set([...prev, jobId]));
       await api.post('/messages/send', {
         receiver_id: partnerId,
         job_id: jobId,
@@ -286,12 +303,15 @@ export default function Messages({ NavbarComponent }) {
     }
   }
 
-  function dismissJob(jobId) {
+  async function dismissJob(jobId) {
     setDismissedJobs(prev => {
       const next = new Set([...prev, jobId]);
       localStorage.setItem('dismissedJobs', JSON.stringify([...next]));
       return next;
     });
+    try {
+      await api.post(`/messages/invitations/${jobId}/dismiss`);
+    } catch {}
   }
 
   async function deleteThread(partnerId) {
@@ -495,7 +515,7 @@ export default function Messages({ NavbarComponent }) {
                 </div>
 
                 {/* Job invitation cards — only visible to freelancers (recipients) */}
-                {myRole === 'freelancer' && activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !dismissedJobs.has(m.job_id) && !activeThread.messages.some(
+                {myRole === 'freelancer' && activeThread.messages.some(m => m.job_id && m.sender_id !== myId && !effectiveDismissed.has(m.job_id) && !proposalJobIds.has(m.job_id) && !activeThread.messages.some(
                   r => r.sender_id === myId && r.job_id === m.job_id && r.content?.toLowerCase().includes('accepted')
                 )) && (
                   <div style={{ padding: '0 30px' }}>
@@ -506,7 +526,7 @@ export default function Messages({ NavbarComponent }) {
                       const alreadyAccepted = activeThread.messages.some(
                         m => m.sender_id === myId && m.job_id === jid && m.content?.toLowerCase().includes('accepted')
                       );
-                      if (alreadyAccepted || !job || dismissedJobs.has(jid)) return null;
+                      if (alreadyAccepted || !job || effectiveDismissed.has(jid) || proposalJobIds.has(jid)) return null;
                       return (
                         <div className="msg-invite-card" key={jid} style={{ position: 'relative' }}>
                           <button

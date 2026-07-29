@@ -108,6 +108,19 @@ class Proposal(Base):
     freelancer = relationship("User", back_populates="proposals", foreign_keys=[freelancer_id])
 
 
+class DismissedInvitation(Base):
+    __tablename__ = "dismissed_invitations"
+    __table_args__ = (
+        Index("uq_user_job_dismiss", "user_id", "job_id", unique=True),
+        {"schema": "freeledger"},
+    )
+
+    id = Column(String(50), primary_key=True, default=lambda: generate_pseudonymous_id("dij"))
+    user_id = Column(String(50), ForeignKey("freeledger.users.id"), nullable=False, index=True)
+    job_id = Column(String(50), ForeignKey("freeledger.jobs.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class ContractStatus(str, enum.Enum):
     draft = "draft"
     pending_review = "pending_review"
