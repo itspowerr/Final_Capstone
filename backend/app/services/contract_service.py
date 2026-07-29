@@ -3,6 +3,7 @@ import logging
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models import Contract, ContractStatus, MilestoneStatus
 from app.services.blockchain_service import get_contract_state
@@ -38,7 +39,11 @@ async def sign_contract(db: AsyncSession, contract_id: str, user_id: str) -> Con
 
 
 async def fund_contract(db: AsyncSession, contract_id: str, user_id: str) -> Contract:
-    result = await db.execute(select(Contract).where(Contract.id == contract_id))
+    result = await db.execute(
+        select(Contract)
+        .where(Contract.id == contract_id)
+        .options(selectinload(Contract.milestones_rel))
+    )
     contract = result.scalar_one_or_none()
     if not contract:
         raise ValueError("Contract not found")
