@@ -12,7 +12,7 @@ npm install
 mkdir -p /app/data
 
 echo "=== Starting Hardhat node with persistent state ==="
-npx hardhat node --hostname 0.0.0.0 --db /app/data/db &
+npx hardhat node --hostname 0.0.0.0 --state /app/data/chain.json &
 HARDHAT_PID=$!
 
 echo "=== Waiting for Hardhat node to be ready ==="
