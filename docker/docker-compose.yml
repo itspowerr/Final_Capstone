@@ -72,7 +72,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./ipfs/data:/data/ipfs
+      - ipfs_data:/data/ipfs
       - ./ipfs/config.sh:/container-init.d/002-config.sh:ro
     environment:
       IPFS_PROFILE: server
