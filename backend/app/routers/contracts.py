@@ -582,8 +582,11 @@ async def sign_contract(
         needs_on_chain = False
         if contract.on_chain_id is not None:
             try:
-                await asyncio.to_thread(get_contract_state, int(contract.on_chain_id))
-            except Exception:
+                state = await asyncio.to_thread(get_contract_state, int(contract.on_chain_id))
+                if state is None or state.get("client") == "0x0000000000000000000000000000000000000000":
+                    raise ValueError("Contract does not exist on-chain")
+            except Exception as e:
+                logger.warning("On-chain contract %s verification failed: %s — will recreate", contract.on_chain_id, e)
                 contract.on_chain_id = None
                 needs_on_chain = True
         else:
