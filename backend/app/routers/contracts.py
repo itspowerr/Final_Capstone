@@ -24,6 +24,9 @@ from app.schemas import (
 
 from app.config import settings
 from app.services import blockchain_service
+import logging
+
+logger = logging.getLogger("freeledger.contracts")
 from app.services.audit_service import log_transition
 from app.services.blockchain_service import create_contract_on_chain, to_wei
 from app.services.contract_service import fund_contract as do_fund_contract, sign_contract as do_sign_contract
@@ -128,8 +131,8 @@ async def create_contract(
         if on_chain.get("on_chain_id") is not None:
             contract.on_chain_id = int(on_chain["on_chain_id"])
             contract.contract_address = on_chain.get("contract_address")
-    except Exception:
-        pass  # Contract saved in DB even if blockchain fails
+    except Exception as e:
+        logger.exception("Failed to create contract on-chain: %s", e)
 
     await log_transition(
         db=db,

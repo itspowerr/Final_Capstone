@@ -138,10 +138,15 @@ def create_contract_on_chain(freelancer_address: str, title: str, terms_cid: str
     on_chain_id = None
     try:
         receipt = w3.eth.get_transaction_receipt(tx_hash)
+        logger.info("Transaction receipt status: %s", receipt.get("status"))
         logs = contract.events.ContractCreated().process_receipt(receipt)
         if logs:
             on_chain_id = logs[0]["args"]["contractId"]
-    except Exception:
+            logger.info("Contract created on-chain with ID: %s", on_chain_id)
+        else:
+            logger.error("No ContractCreated event found in receipt")
+    except Exception as e:
+        logger.exception("Failed to parse contract creation receipt: %s", e)
         on_chain_id = None
 
     return {
