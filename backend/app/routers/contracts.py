@@ -579,6 +579,7 @@ async def sign_contract(
     await db.commit()
 
     if contract.client_signed and contract.freelancer_signed:
+        logger.info("SIGN: Both parties signed, on_chain_id=%s", contract.on_chain_id)
         needs_on_chain = False
         if contract.on_chain_id is not None:
             try:
@@ -586,11 +587,12 @@ async def sign_contract(
                 if state is None or state.get("client") == "0x0000000000000000000000000000000000000000":
                     raise ValueError("Contract does not exist on-chain")
             except Exception as e:
-                logger.warning("On-chain contract %s verification failed: %s — will recreate", contract.on_chain_id, e)
+                logger.warning("SIGN: On-chain check failed for ID %s: %s", contract.on_chain_id, e)
                 contract.on_chain_id = None
                 needs_on_chain = True
         else:
             needs_on_chain = True
+        logger.info("SIGN: needs_on_chain=%s", needs_on_chain)
 
         if needs_on_chain:
             freelancer = await db.get(User, contract.freelancer_id)
@@ -602,20 +604,31 @@ async def sign_contract(
             )
             milestones = ms_result.scalars().all()
             if freelancer and freelancer.wallet_address and milestones:
-                on_chain = await asyncio.to_thread(
-                    create_contract_on_chain,
-                    freelancer_address=freelancer.wallet_address,
-                    title=contract.title or "",
-                    terms_cid=contract.terms_cid,
-                    total_amount_wei=to_wei(float(contract.total_amount)),
-                    deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
-                    milestone_descs=[m.description for m in milestones],
-                    milestone_amounts=[to_wei(float(m.amount)) for m in milestones],
-                    client_address=client.wallet_address if client else None,
+                logger.info(
+                    "SIGN: Calling create_contract_on_chain freelancer=%s client=%s",
+                    freelancer.wallet_address, client.wallet_address if client else "None",
                 )
-                if on_chain.get("on_chain_id") is not None:
+                try:
+                    on_chain = await asyncio.to_thread(
+                        create_contract_on_chain,
+                        freelancer_address=freelancer.wallet_address,
+                        title=contract.title or "",
+                        terms_cid=contract.terms_cid,
+                        total_amount_wei=to_wei(float(contract.total_amount)),
+                        deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
+                        milestone_descs=[m.description for m in milestones],
+                        milestone_amounts=[to_wei(float(m.amount)) for m in milestones],
+                        client_address=client.wallet_address if client else None,
+                    )
+                    logger.info("SIGN: create_contract_on_chain returned: %s", on_chain)
+                except Exception as e:
+                    logger.exception("SIGN: create_contract_on_chain failed: %s", e)
+                    on_chain = None
+                if on_chain and on_chain.get("on_chain_id") is not None:
                     contract.on_chain_id = int(on_chain["on_chain_id"])
-                contract.contract_address = on_chain.get("contract_address")
+                if on_chain:
+                    contract.contract_address = on_chain.get("contract_address")
+                logger.info("SIGN: About to commit on_chain_id=%s", contract.on_chain_id)
                 contract.status = ContractStatus.pending_funding
                 await db.commit()
 
