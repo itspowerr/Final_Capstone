@@ -205,7 +205,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
     }
   };
 
-  return (
+  return createPortal(
     <div className={`modal-overlay${isOpen ? ' open' : ''}`} onClick={close}>
       <div className="modal-box" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={() => { resetForm(); onClose(); }}>
@@ -321,6 +321,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
         </div>,
         document.body
       )}
-    </div>
+    </div>,
+    document.body
   );
 }
