@@ -224,16 +224,32 @@ export default function Messages({ NavbarComponent }) {
   async function sendReply(partnerId) {
     if (!replyText.trim()) return;
     setSending(true);
+    const content = replyText.trim();
     try {
       const threadMsgs = messages.filter(m =>
         (m.sender_id === myId && m.receiver_id === partnerId) ||
         (m.sender_id === partnerId && m.receiver_id === myId)
       );
       const lastWithJob = [...threadMsgs].reverse().find(m => m.job_id);
-      await api.post('/messages/send', {
+      const { data } = await api.post('/messages/send', {
         receiver_id: partnerId,
         job_id: lastWithJob?.job_id || undefined,
-        content: replyText.trim(),
+        content,
+      });
+      const optimistic = {
+        id: data.message_id,
+        sender_id: myId,
+        receiver_id: partnerId,
+        content,
+        job_id: lastWithJob?.job_id || null,
+        read: false,
+        created_at: new Date().toISOString(),
+      };
+      setMessages(prev => {
+        if (prev.some(m => m.id === optimistic.id)) return prev;
+        const updated = [...prev, optimistic];
+        messagesRef.current = updated;
+        return updated;
       });
       setReplyText('');
     } catch {

@@ -94,6 +94,7 @@ async def send_message(
     )
     db.add(msg)
     await db.commit()
+    await db.refresh(msg)
 
     message_data = {
         "type": "new_message",
