@@ -463,17 +463,17 @@ export default function MyContracts() {
               const isOpen = expandedIdx === i;
               const canSubmit = detail.status === 'active' && ['pending', 'in_progress'].includes((m.status || '').toLowerCase());
               const isPaid = (m.status || '').toLowerCase() === 'approved' || (m.status || '').toLowerCase() === 'paid';
-              const isRejected = m.rejection_reason && (m.status || '').toLowerCase() === 'pending';
+              const isRejected = m.rejection_reason && ['pending', 'in_progress'].includes((m.status || '').toLowerCase());
               return (
-                <div key={i} className={`milestone-item ${(isRejected || (m.status || '').toLowerCase() === 'in_progress') ? 'rejected' : ''}`}>
+                <div key={i} className={`milestone-item ${isRejected ? 'rejected' : ''}`}>
                   <div className="milestone-header" onClick={() => toggleExpand(i)}>
-                    <div className={`milestone-icon ${isPaid ? 'paid' : isRejected || (m.status || '').toLowerCase() === 'in_progress' ? 'rejected' : m.status === 'submitted' ? 'submitted' : ''}`}>
+                    <div className={`milestone-icon ${isPaid ? 'paid' : isRejected ? 'rejected' : m.status === 'submitted' ? 'submitted' : ''}`}>
                       {isPaid ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"></polyline></svg> : isRejected ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg> : m.status === 'submitted' ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M22 2L11 13"></path><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg> : (i+1)}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 15, fontWeight: 800, color: 'var(--landing-navy)' }}>{m.description}</div>
                       <div style={{ fontSize: 13, color: 'var(--landing-muted)', fontWeight: 500, marginTop: 2 }}>
-                        {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : m.status === 'rejected' || m.status === 'in_progress' ? 'Rejected — resubmit below' : 'Pending'}
+                        {m.status === 'submitted' ? 'Awaiting client review' : m.status === 'approved' || m.status === 'paid' ? 'Completed & paid' : isRejected ? 'Rejected — resubmit below' : m.status === 'in_progress' ? 'In progress' : 'Pending'}
                       </div>
                     </div>
                     <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--landing-blue)' }}>{Number(m.amount || 0).toLocaleString()} ETH</div>
