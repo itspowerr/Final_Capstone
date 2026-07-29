@@ -138,6 +138,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(CacheMiddleware)
+
+# CORSMiddleware must be added last so it wraps outermost. Starlette builds
+# the stack in reverse add order, so registering it first (as before) put it
+# *inside* RateLimitMiddleware/CacheMiddleware — any response those short-
+# circuited (e.g. a 429) skipped CORS header injection entirely, which the
+# browser then blocks and reports to the frontend as an opaque network error.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -145,9 +153,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "Accept"],
 )
-
-app.add_middleware(RateLimitMiddleware)
-app.add_middleware(CacheMiddleware)
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(jobs.router, prefix="/api")
