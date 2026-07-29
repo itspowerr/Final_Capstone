@@ -8,8 +8,9 @@ import '../../css/freelancer/navbar.css';
 
 export default function Navbar({ activePage }) {
   const navigate = useNavigate();
-  const { walletAddress, disconnectWallet } = useApp();
+  const { walletAddress: ctxWalletAddress, disconnectWallet } = useApp();
   const [user, setUser] = useState({ name: '—', role: '—', avatar_cid: '' });
+  const walletAddress = ctxWalletAddress || user?.wallet_address;
 
   useEffect(() => {
     const load = () => {

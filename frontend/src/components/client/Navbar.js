@@ -9,8 +9,9 @@ import '../../css/client/navbar.css';
 
 export default function Navbar({ activePage }) {
   const navigate = useNavigate();
-  const { walletAddress, disconnectWallet } = useApp();
+  const { walletAddress: ctxWalletAddress, disconnectWallet } = useApp();
   const [user, setUser] = useState({ name: '—', role: '—', id: null, avatar_cid: '' });
+  const walletAddress = ctxWalletAddress || user?.wallet_address;
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {

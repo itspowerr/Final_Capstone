@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import api from '../services/api.js';
 import useAuth from '../hooks/useAuth';
+import { useApp } from '../context/AppContext';
 
 const panels = {
   login: {
@@ -48,6 +49,7 @@ function extractErrorMessage(err, fallback) {
 export default function Login() {
   const navigate = useNavigate();
   const { connectAndCheck } = useAuth();
+  const { setUser } = useApp();
   const [tab, setTab] = useState('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -139,6 +141,7 @@ export default function Login() {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
       navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
     } catch (err) {
       setError(extractErrorMessage(err, 'Login failed'));
@@ -164,6 +167,7 @@ export default function Login() {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
       if (response.data.backup_login) {
         localStorage.setItem('backup_login', '1');
       }
@@ -200,6 +204,7 @@ export default function Login() {
       localStorage.setItem('access_token', access_token);
       localStorage.setItem('refresh_token', refresh_token);
       localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
       navigate(user.role === 'client' ? '/client/dashboard' : '/freelancer/dashboard');
     } catch (err) {
       setError(extractErrorMessage(err, 'Registration failed'));

@@ -100,6 +100,9 @@ export default function useAuth() {
       setLoading(false);
       setLocalLoading(false);
 
+      // Yield to let React commit batched state updates before navigation
+      await new Promise(r => setTimeout(r, 0));
+
       return { status: 'logged_in', user: result.user };
     } catch (err) {
       const msg =
