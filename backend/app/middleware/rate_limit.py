@@ -79,13 +79,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         pipe.zadd(key, {str(now): now})
         pipe.zcard(key)
         pipe.expire(key, WINDOW + 1)
+        pipe.zrange(key, 0, 0, withscores=True)
         results = await pipe.execute()
 
         count = results[2]
+        oldest_entries = results[4]
         remaining = max(0, limit - count)
 
         if count > limit:
-            retry_after = int(WINDOW - (now - float(results[0]))) + 1
+            oldest_ts = oldest_entries[0][1] if oldest_entries else now
+            retry_after = max(1, int(WINDOW - (now - oldest_ts)) + 1)
             return JSONResponse(
                 status_code=429,
                 content={
