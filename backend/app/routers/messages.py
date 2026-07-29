@@ -93,6 +93,20 @@ async def send_message(
         job_id=body.get("job_id"),
     )
     db.add(msg)
+    await db.flush()
+
+    from app.services.notification_service import create_notification
+    sender_name = current_user.username or current_user.email
+    await create_notification(
+        db=db,
+        user_id=receiver_id,
+        type="new_message",
+        title="New message",
+        message=f"{sender_name}: {content[:100]}",
+        entity_type="message",
+        entity_id=msg.id,
+    )
+
     await db.commit()
     await db.refresh(msg)
 
