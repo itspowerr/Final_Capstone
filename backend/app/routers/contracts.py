@@ -613,8 +613,7 @@ async def sign_contract(
                 if on_chain.get("on_chain_id") is not None:
                     contract.on_chain_id = int(on_chain["on_chain_id"])
                 contract.contract_address = on_chain.get("contract_address")
-                if contract.status == ContractStatus.pending_signatures:
-                    contract.status = ContractStatus.pending_funding
+                contract.status = ContractStatus.pending_funding
                 await db.commit()
 
     result = await db.execute(
