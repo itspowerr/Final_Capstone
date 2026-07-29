@@ -40,6 +40,7 @@ export function getProvider() {
  * The Signer can sign messages and transactions.
  */
 export async function getSigner() {
+  await ensureCorrectNetwork();
   const provider = getProvider();
   return provider.getSigner();
 }
@@ -92,7 +93,7 @@ export async function ensureCorrectNetwork() {
           method: 'wallet_addEthereumChain',
           params: [{
             chainId: chainIdHex,
-            chainName: 'Hardhat Local',
+            chainName: 'FreeLedger Local',
             rpcUrls: [config.rpcUrl],
             nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
           }],

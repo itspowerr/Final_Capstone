@@ -18,7 +18,7 @@
  */
 
 import api from './api';
-import { getProvider } from './web3';
+import { getProvider, ensureCorrectNetwork } from './web3';
 
 /**
  * Connects to MetaMask wallet.
@@ -32,6 +32,8 @@ export async function connectWallet() {
   }
 
   const provider = getProvider();
+
+  await ensureCorrectNetwork();
 
   // Request account access — shows MetaMask popup
   // This is the first interaction — user must approve
