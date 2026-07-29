@@ -1,9 +1,7 @@
 import axios from "axios";
 import config from '../config';
 
-const api = axios.create({
-  headers: { "Content-Type": "application/json" },
-});
+const api = axios.create();
 
 api.interceptors.request.use((axiosConfig) => {
   axiosConfig.baseURL = config.apiUrl;
