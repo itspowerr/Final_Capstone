@@ -631,7 +631,7 @@ async def admin_reports(
     # Milestones
     total_milestones = (await db.execute(select(func.count(ContractMilestone.id)))).scalar() or 0
     milestone_status_counts = {}
-    for s in ("pending", "submitted", "approved", "rejected"):
+    for s in ("pending", "in_progress", "submitted", "approved", "rejected", "paid"):
         milestone_status_counts[s] = (await db.execute(select(func.count(ContractMilestone.id)).where(ContractMilestone.status == s))).scalar() or 0
 
     submitted_count = milestone_status_counts.get("submitted", 0) + milestone_status_counts.get("approved", 0) + milestone_status_counts.get("rejected", 0)

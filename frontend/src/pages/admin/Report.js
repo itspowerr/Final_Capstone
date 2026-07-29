@@ -31,7 +31,7 @@ function StatCard({ label, value, sub, icon, color }) {
 const STATUS_COLORS = {
   draft: '#94a3b8', pending_signatures: '#f59e0b', pending_funding: '#f59e0b',
   active: '#3b82f6', completed: '#10b981', cancelled: '#6b7280', disputed: '#ef4444',
-  pending: '#f59e0b', submitted: '#8b5cf6', approved: '#10b981', rejected: '#ef4444',
+  pending: '#f59e0b', in_progress: '#3b82f6', submitted: '#8b5cf6', approved: '#10b981', rejected: '#ef4444', paid: '#10b981',
   open: '#ef4444', under_review: '#f59e0b', resolved: '#10b981',
 };
 

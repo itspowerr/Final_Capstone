@@ -4,7 +4,7 @@ import logging
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Contract, ContractStatus
+from app.models import Contract, ContractStatus, MilestoneStatus
 from app.services.blockchain_service import get_contract_state
 
 logger = logging.getLogger("freeledger.contract_service")
@@ -70,6 +70,8 @@ async def fund_contract(db: AsyncSession, contract_id: str, user_id: str) -> Con
         )
 
     contract.status = ContractStatus.active
+    for ms in contract.milestones:
+        ms.status = MilestoneStatus.in_progress
     await db.commit()
     await db.refresh(contract)
     return contract

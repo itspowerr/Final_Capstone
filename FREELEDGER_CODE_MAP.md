@@ -620,6 +620,9 @@ MilestoneStatus:
   2 Submitted
   3 Approved
   4 Rejected
+
+Backend MilestoneStatus:
+  pending, in_progress, submitted, approved, rejected, paid
 ```
 
 ### Functions Called by FreeLedger
@@ -702,7 +705,7 @@ ContractMilestone
 ├─ contract_id → Contract.id
 ├─ index
 ├─ description, amount, due_date
-├─ status: pending → submitted → approved / rejected → paid
+├─ status: pending → in_progress → submitted → approved / rejected → paid
 └─ deliverable_cid, submission_notes, submitted_at, approved_at
 
 Proposal

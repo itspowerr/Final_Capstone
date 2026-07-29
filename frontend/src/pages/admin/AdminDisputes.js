@@ -6,7 +6,7 @@ const LIMIT = 10;
 
 const STATUS_COLORS = {
   pending: '#f59e0b',
-  funded: '#3b82f6',
+  in_progress: '#3b82f6',
   submitted: '#8b5cf6',
   approved: '#10b981',
   rejected: '#ef4444',
@@ -14,7 +14,7 @@ const STATUS_COLORS = {
 
 const MILESTONE_STATUS_LABEL = {
   pending: 'Pending',
-  funded: 'Funded',
+  in_progress: 'In Progress',
   submitted: 'Submitted',
   approved: 'Approved',
   rejected: 'Rejected',

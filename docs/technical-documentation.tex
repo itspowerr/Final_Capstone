@@ -373,7 +373,7 @@ CREATE TABLE freeledger.contract_milestones (
     deliverable_cid VARCHAR(100),   -- IPFS CID of deliverable
     submission_notes TEXT,
     rejection_reason TEXT,
-    status          VARCHAR(20),    -- pending -> submitted -> approved/rejected
+    status          VARCHAR(20),    -- pending -> in_progress -> submitted -> approved / rejected -> paid
     submitted_at    TIMESTAMP,
     approved_at     TIMESTAMP,
     created_at      TIMESTAMP DEFAULT NOW(),
@@ -392,7 +392,7 @@ CREATE TABLE freeledger.contract_milestones (
 UserRole & client, freelancer, admin \\
 AuthMethod & email, wallet \\
 ContractStatus & draft, pending\_review, pending\_signatures, pending\_funding, active, delivered, revision\_requested, completed, cancelled, disputed \\
-MilestoneStatus & pending, submitted, approved, rejected, paid \\
+MilestoneStatus & pending, in\_progress, submitted, approved, rejected, paid \\
 DisputeStatus & open, under\_review, resolved \\
 DisputeDecision & refund, release \\
 \bottomrule

@@ -12,7 +12,7 @@ CREATE TYPE contract_status AS ENUM (
   'draft', 'pending_review', 'pending_signatures', 'pending_funding',
   'active', 'delivered', 'revision_requested', 'completed', 'cancelled', 'disputed'
 );
-CREATE TYPE milestone_status AS ENUM ('pending', 'submitted', 'approved', 'rejected', 'paid');
+CREATE TYPE milestone_status AS ENUM ('pending', 'in_progress', 'submitted', 'approved', 'rejected', 'paid');
 CREATE TYPE dispute_status AS ENUM ('open', 'under_review', 'resolved');
 CREATE TYPE dispute_decision AS ENUM ('refund', 'release');
 
