@@ -1,9 +1,10 @@
 /* ── Post Project Modal ─────────────────────────────────────────────────── */
 .modal-overlay {
-  position: fixed; inset: 0; z-index: 500;
+  position: fixed; inset: 0; z-index: 1000;
   background: rgba(15,23,42,.45); backdrop-filter: blur(4px);
   display: flex; align-items: center; justify-content: center;
   padding: 24px; opacity: 0; pointer-events: none;
+  overflow: hidden;
   transition: opacity .2s ease;
 }
 .modal-overlay.open { opacity: 1; pointer-events: all; }
