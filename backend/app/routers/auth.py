@@ -175,6 +175,15 @@ async def login(request: LoginRequest, db: AsyncSession = Depends(get_db)):
             detail={"code": "INVALID_CREDENTIALS", "message": "Invalid email or password "},
         )
 
+    if user.role.value != request.loginRole.lower():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ROLE_MISMATCH",
+                "message": f"This account is registered as a {user.role.value}, not a {request.loginRole.lower()}.",
+            },
+        )
+
     if user.totp_enabled and user.totp_secret:
         totp_token = create_temp_token(user.id)
         return TokenResponse(

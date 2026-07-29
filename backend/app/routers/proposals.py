@@ -205,6 +205,18 @@ async def accept_proposal(
 
     job_result = await db.execute(select(Job).where(Job.id == proposal.job_id))
     job = job_result.scalar_one_or_none()
+
+    from app.services.notification_service import create_notification
+    await create_notification(
+        db=db,
+        user_id=proposal.freelancer_id,
+        type="hired",
+        title="You're hired!",
+        message=f"You've been hired for \"{job.title}\". Let's get started.",
+        entity_type="contract",
+        entity_id=contract.id,
+    )
+
     hire_msg = Message(
         sender_id=current_user.id,
         receiver_id=proposal.freelancer_id,
