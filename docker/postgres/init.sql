@@ -13,6 +13,7 @@ CREATE TYPE contract_status AS ENUM (
   'active', 'delivered', 'revision_requested', 'completed', 'cancelled', 'disputed'
 );
 CREATE TYPE milestone_status AS ENUM ('pending', 'in_progress', 'submitted', 'approved', 'rejected', 'paid');
+CREATE TYPE milestonestatus AS ENUM ('pending', 'in_progress', 'submitted', 'approved', 'rejected', 'paid');
 CREATE TYPE dispute_status AS ENUM ('open', 'under_review', 'resolved');
 CREATE TYPE dispute_decision AS ENUM ('refund', 'release');
 
@@ -118,7 +119,7 @@ CREATE TABLE contract_milestones (
   due_date          DATE,
   deliverable_cid   VARCHAR(255),
   submission_notes  TEXT,
-  status            milestone_status NOT NULL DEFAULT 'pending',
+  status            milestonestatus NOT NULL DEFAULT 'pending',
   submitted_at      TIMESTAMPTZ,
   approved_at       TIMESTAMPTZ,
   created_at        TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
