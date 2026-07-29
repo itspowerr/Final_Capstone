@@ -50,6 +50,13 @@ services:
     volumes:
       - ../contracts:/app
     command: sh /app/docker-entrypoint.sh
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.hardhat.rule=Host(`hardhat.poudel-pawan.com.np`)
+      - traefik.http.routers.hardhat.entrypoints=websecure
+      - traefik.http.routers.hardhat.tls.certresolver=letsencrypt
+      - traefik.http.services.hardhat.loadbalancer.server.port=8545
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8545"]
       interval: 10s
