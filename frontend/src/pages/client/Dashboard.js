@@ -106,6 +106,8 @@ export default function ClientDashboard() {
   useEffect(() => {
     if (!userId) return;
     fetchData();
+    const pollId = setInterval(fetchData, 30000);
+    return () => clearInterval(pollId);
   }, [userId, fetchData]);
 
   const exportReport = () => {

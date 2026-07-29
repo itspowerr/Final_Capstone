@@ -319,7 +319,11 @@ export default function AdminDisputes() {
     }
   }, [page, filterStatus, show]);
 
-  useEffect(() => { fetchDisputes(); }, [fetchDisputes]);
+  useEffect(() => {
+    fetchDisputes();
+    const pollId = setInterval(fetchDisputes, 30000);
+    return () => clearInterval(pollId);
+  }, [fetchDisputes]);
 
   const handleResolve = async (disputeId, releaseToFreelancer) => {
     setResolving(disputeId);

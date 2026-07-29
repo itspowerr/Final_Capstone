@@ -224,6 +224,7 @@ export default function MyContracts() {
       setAllContracts(prev => prev.map(c =>
         c.id === contractId ? formatContract(res.data.contract) : c
       ));
+      await fetchContracts();
       showToast('Contract signature recorded ✅');
     } catch (err) {
       const m = err.response?.data?.detail?.message || err.message || 'Failed to sign';
@@ -254,6 +255,7 @@ export default function MyContracts() {
       setAllContracts(prev => prev.map(c2 =>
         c2.id === contractId ? formatContract(res.data.contract) : c2
       ));
+      await fetchContracts();
       showToast('Contract funded ✅');
     } catch (chainErr) {
       showToast('Funding failed: ' + (chainErr.message || chainErr), '❌');

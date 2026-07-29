@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/freelancer/Navbar';
 import api from '../../services/api';
@@ -33,57 +33,57 @@ export default function FreelancerDashboard() {
   const [pendingCount,    setPendingCount]    = useState(0);
 
   /* ── data fetch ── */
-  useEffect(() => {
-    let cancelled = false;
+  const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    try {
+      const [contractsRes, proposalsRes, completedRes, userRes] = await Promise.all([
+        api.get('/contracts', { params: { status: 'active' } }),
+        api.get('/proposals'),
+        api.get('/contracts', { params: { status: 'completed' } }),
+        api.get('/users/me').catch(() => null)
+      ]);
 
-    Promise.all([
-      api.get('/contracts', { params: { status: 'active' } }),
-      api.get('/proposals'),
-      api.get('/contracts', { params: { status: 'completed' } }),
-      api.get('/users/me').catch(() => null)
-    ])
-      .then(([contractsRes, proposalsRes, completedRes, userRes]) => {
-        if (cancelled) return;
+      const contracts  = (contractsRes.data?.contracts  || []);
+      const proposals  = (proposalsRes.data?.proposals  || []);
+      const completed  = (completedRes.data?.contracts  || []);
+      const earned     = completed.reduce((s, c) => s + (Number(c.total_amount) || 0), 0);
 
-        const contracts  = (contractsRes.data?.contracts  || []);
-        const proposals  = (proposalsRes.data?.proposals  || []);
-        const completed  = (completedRes.data?.contracts  || []);
-        const earned     = completed.reduce((s, c) => s + (Number(c.total_amount) || 0), 0);
+      setStats({ activeContracts: contracts.length, proposals: proposals.length, earned });
+      setActiveContracts(contracts.slice(0, 4));
+      setPendingCount(proposals.filter(p => p.status === 'pending').length);
 
-        setStats({ activeContracts: contracts.length, proposals: proposals.length, earned });
-        setActiveContracts(contracts.slice(0, 4));
-        setPendingCount(proposals.filter(p => p.status === 'pending').length);
+      setRecent(
+        proposals.slice(0, 5).map(p => ({
+          id:      p.id,
+          title:   p.job?.title || ('Proposal #' + p.id),
+          company: p.job?.client?.username || 'Client',
+          amount:  fmtCurrency(p.bid_amount),
+          status:  p.status || 'pending',
+        }))
+      );
 
-        setRecent(
-          proposals.slice(0, 5).map(p => ({
-            id:      p.id,
-            title:   p.job?.title || ('Proposal #' + p.id),
-            company: p.job?.client?.username || 'Client',
-            amount:  fmtCurrency(p.bid_amount),
-            status:  p.status || 'pending',
-          }))
-        );
-
-        if (userRes && userRes.data) {
-          setUser(userRes.data);
-          localStorage.setItem('user', JSON.stringify(userRes.data));
-        } else {
-          try {
-            const raw = localStorage.getItem('user');
-            if (raw) setUser(JSON.parse(raw));
-          } catch { /* ignore */ }
-        }
-      })
-      .catch(err => {
-        if (!cancelled)
-          setError(err.response?.data?.detail?.message || err.message || 'Failed to load dashboard');
-      })
-      .finally(() => { if (!cancelled) setLoading(false); });
-
-    return () => { cancelled = true; };
+      if (userRes && userRes.data) {
+        setUser(userRes.data);
+        localStorage.setItem('user', JSON.stringify(userRes.data));
+      } else {
+        try {
+          const raw = localStorage.getItem('user');
+          if (raw) setUser(JSON.parse(raw));
+        } catch { /* ignore */ }
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail?.message || err.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+    const pollId = setInterval(fetchData, 30000);
+    return () => clearInterval(pollId);
+  }, [fetchData]);
 
   const isAvailable = user.is_available !== false;
 

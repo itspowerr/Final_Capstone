@@ -175,6 +175,7 @@ export default function MyContracts() {
         const ms = c.milestones.map(m => (m.index === index ? { ...m, ...res.data } : m));
         return { ...c, milestones: ms };
       }));
+      await loadContracts();
       setSubmitFile(null);
       setSubmitNotes('');
       showToast('Deliverable submitted!', '📦');
@@ -193,6 +194,7 @@ export default function MyContracts() {
       setContracts(prev => prev.map(c =>
         c.id === contractId ? { ...c, ...updated, milestones: res.data.milestones || c.milestones } : c
       ));
+      await loadContracts();
       showToast('Contract signed ✅');
       setDetailId(null);
       setExpandedIdx(null);

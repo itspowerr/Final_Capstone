@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import api from '../../services/api';
 import { SkeletonStatCard, SkeletonCard } from '../../components/shared/Skeleton';
 
@@ -39,18 +39,22 @@ export default function Report() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await api.get('/admin/reports');
-        setData(data);
-      } catch {
-        setData(null);
-      } finally {
-        setLoading(false);
-      }
-    })();
+  const fetchReport = useCallback(async () => {
+    try {
+      const { data } = await api.get('/admin/reports');
+      setData(data);
+    } catch {
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchReport();
+    const pollId = setInterval(fetchReport, 30000);
+    return () => clearInterval(pollId);
+  }, [fetchReport]);
 
   if (loading) return (
     <div className="page-body">
