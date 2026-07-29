@@ -249,4 +249,25 @@ async def poll_events():
 
 
 def start_event_listener():
-    asyncio.create_task(poll_events())
+    """Start the event listener with retry logic"""
+    async def run_with_retry():
+        max_retries = 10
+        retry_delay = 3
+
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Starting event listener (attempt {attempt + 1}/{max_retries})")
+                await poll_events()
+                return
+            except Exception as e:
+                logger.error(f"Event listener error (attempt {attempt + 1}): {type(e).__name__}: {e}")
+                if attempt < max_retries - 1:
+                    logger.info(f"Retrying in {retry_delay} seconds...")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay = min(retry_delay * 1.5, 30)
+                else:
+                    logger.error("Event listener failed after all retries")
+                    raise
+
+    asyncio.create_task(run_with_retry())
+    logger.info("Event listener startup task created")
