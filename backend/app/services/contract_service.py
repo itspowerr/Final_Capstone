@@ -70,7 +70,7 @@ async def fund_contract(db: AsyncSession, contract_id: str, user_id: str) -> Con
         )
 
     contract.status = ContractStatus.active
-    for ms in contract.milestones:
+    for ms in contract.milestones_rel:
         ms.status = MilestoneStatus.in_progress
     await db.commit()
     await db.refresh(contract)

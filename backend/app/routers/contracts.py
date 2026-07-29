@@ -28,7 +28,7 @@ import logging
 
 logger = logging.getLogger("freeledger.contracts")
 from app.services.audit_service import log_transition
-from app.services.blockchain_service import create_contract_on_chain, to_wei
+from app.services.blockchain_service import create_contract_on_chain, get_contract_state, to_wei
 from app.services.contract_service import fund_contract as do_fund_contract, sign_contract as do_sign_contract
 from app.services.ipfs_service import upload_contract_terms
 
@@ -577,6 +577,45 @@ async def sign_contract(
         details=f"{current_user.role.value} signed",
     )
     await db.commit()
+
+    if contract.client_signed and contract.freelancer_signed:
+        needs_on_chain = False
+        if contract.on_chain_id is not None:
+            try:
+                await asyncio.to_thread(get_contract_state, int(contract.on_chain_id))
+            except Exception:
+                contract.on_chain_id = None
+                needs_on_chain = True
+        else:
+            needs_on_chain = True
+
+        if needs_on_chain:
+            freelancer = await db.get(User, contract.freelancer_id)
+            client = await db.get(User, contract.client_id)
+            ms_result = await db.execute(
+                select(ContractMilestone)
+                .where(ContractMilestone.contract_id == contract_id)
+                .order_by(ContractMilestone.index)
+            )
+            milestones = ms_result.scalars().all()
+            if freelancer and freelancer.wallet_address and milestones:
+                on_chain = await asyncio.to_thread(
+                    create_contract_on_chain,
+                    freelancer_address=freelancer.wallet_address,
+                    title=contract.title or "",
+                    terms_cid=contract.terms_cid,
+                    total_amount_wei=to_wei(float(contract.total_amount)),
+                    deadline=int(contract.deadline.timestamp()) if contract.deadline else 0,
+                    milestone_descs=[m.description for m in milestones],
+                    milestone_amounts=[to_wei(float(m.amount)) for m in milestones],
+                    client_address=client.wallet_address if client else None,
+                )
+                if on_chain.get("on_chain_id") is not None:
+                    contract.on_chain_id = int(on_chain["on_chain_id"])
+                contract.contract_address = on_chain.get("contract_address")
+                if contract.status == ContractStatus.pending_signatures:
+                    contract.status = ContractStatus.pending_funding
+                await db.commit()
 
     result = await db.execute(
         select(Contract).options(selectinload(Contract.dispute)).where(Contract.id == contract_id)
