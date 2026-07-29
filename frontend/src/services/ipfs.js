@@ -4,9 +4,7 @@ import config from '../config';
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('file', file);
-  const { data } = await api.post('/ipfs/upload', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const { data } = await api.post('/ipfs/upload', formData);
   return data;
 }
 

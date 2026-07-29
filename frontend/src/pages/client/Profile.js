@@ -115,9 +115,7 @@ export default function ClientProfile() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const { data } = await api.post('/ipfs/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await api.post('/ipfs/upload', formData);
       setAvatarCid(data.cid);
       await api.put('/users/me', { avatar_cid: data.cid });
       try {
