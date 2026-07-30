@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import api from '../../services/api';
 
 const LIMIT = 10;

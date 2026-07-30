@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DisputeStatus, DismissedInvitation, Job, MilestoneStatus, Notification, Proposal, User, UserRole
+from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DismissedInvitation, Job, MilestoneStatus, Notification, Proposal, User, UserRole
 from app.routers.auth import get_current_user, hash_password
 from app.routers.messages import Message
 from app.schemas import (

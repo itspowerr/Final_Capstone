@@ -22,7 +22,6 @@ from app.schemas import (
     ProposalResponse,
 )
 
-from app.config import settings
 from app.services import blockchain_service
 import logging
 

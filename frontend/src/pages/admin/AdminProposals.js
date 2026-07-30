@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import UserSearchSelect from '../../components/admin/UserSearchSelect';
 import { SkeletonTable } from '../../components/shared/Skeleton';

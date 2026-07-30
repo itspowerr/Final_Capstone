@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 from datetime import datetime, timezone
 
@@ -36,8 +35,8 @@ async def _update_heartbeat():
     if redis is not None:
         try:
             await redis.set("event_listener:heartbeat", iso)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.exception("Heartbeat update failed: %s", e)
 
 
 async def _get_last_block(redis) -> int:
@@ -208,8 +207,8 @@ async def poll_events():
                         fromBlock=from_block, toBlock=current_block,
                     )
                     all_events.append((event_name, events))
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.exception("Event polling error: %s", e)
 
             if any(events for _, events in all_events):
                 async with async_session_factory() as db:

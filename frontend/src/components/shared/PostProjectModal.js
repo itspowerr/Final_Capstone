@@ -1,18 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { parseEther } from 'ethers';
 import api from '../../services/api.js';
-import { getProvider, getSigner, getContract, ensureCorrectNetwork } from '../../services/web3.js';
-import { GIG_ESCROW_ABI } from '../../services/contractAbi.js';
-import config from '../../config';
+import { getProvider } from '../../services/web3.js';
 import '../../css/post-project-modal.css';
-
-const DEMO_FREELANCERS = [
-  { id: 'fl_1', name: 'Alex Rivera', role: 'UI/UX Designer', initials: 'AR', color: '#6366f1' },
-  { id: 'fl_2', name: 'Sarah Chen', role: 'Full Stack Dev', initials: 'SC', color: '#10b981' },
-  { id: 'fl_3', name: 'Jordan Smith', role: 'Marketing', initials: 'JS', color: '#f59e0b' },
-  { id: 'fl_4', name: 'Maya Patel', role: 'Graphic Designer', initials: 'MP', color: '#ef4444' },
-];
 
 const categories = ['Development', 'Design', 'Marketing', 'Writing', 'Smart Contracts', 'Data & Analytics'];
 const contractTypes = ['Fixed Price', 'Hourly', 'Milestone'];
@@ -26,23 +16,11 @@ export default function PostProjectModal({ isOpen, onClose }) {
     milestones: [{ ...emptyMilestone }],
   });
   const [freelancerSearch, setFreelancerSearch] = useState('');
-  const [showDropdown, setShowDropdown] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const [toast, setToast] = useState(null);
   const [postError, setPostError] = useState(null);
   const [posting, setPosting] = useState(false);
   const [walletStatus, setWalletStatus] = useState(null);
-  const dropdownRef = useRef(null);
-
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -60,17 +38,6 @@ export default function PostProjectModal({ isOpen, onClose }) {
       }
     })();
   }, [isOpen]);
-
-  const filteredFreelancers = DEMO_FREELANCERS.filter((f) =>
-    f.name.toLowerCase().includes(freelancerSearch.toLowerCase()) ||
-    f.role.toLowerCase().includes(freelancerSearch.toLowerCase())
-  );
-
-  const selectFreelancer = (f) => {
-    setForm({ ...form, freelancerId: f.id, freelancerName: f.name });
-    setFreelancerSearch(f.name);
-    setShowDropdown(false);
-  };
 
   const addMilestone = () => {
     setForm({ ...form, milestones: [...form.milestones, { ...emptyMilestone }] });
@@ -266,7 +233,7 @@ export default function PostProjectModal({ isOpen, onClose }) {
             <input className="form-input" placeholder="e.g. Solidity, React, Node.js" value={form.skills} onChange={(e) => setForm({ ...form, skills: e.target.value })} />
           </div>
 
-          <div className="form-group-relative" ref={dropdownRef}>
+          <div className="form-group">
             <label className="form-label">Freelancer <span className="form-label-muted">(enter user ID)</span></label>
             <input className="form-input" type="text" placeholder="e.g. usr_fcfeb358eb43" value={freelancerSearch} onChange={(e) => { setFreelancerSearch(e.target.value); setForm({ ...form, freelancerId: e.target.value, freelancerName: e.target.value }); }} />
           </div>

@@ -1,13 +1,14 @@
 import base64
 import io
+import logging
 import secrets
 import string
 
 import pyotp
 import qrcode
-import qrcode.image.svg
 
 
+logger = logging.getLogger("freeledger.totp")
 ISSUER = "FreeLedger"
 BACKUP_CODES_COUNT = 8
 BACKUP_CODE_LENGTH = 8
@@ -92,6 +93,6 @@ def verify_temp_token(token: str) -> str | None:
         payload = jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
         if payload.get("type") == "totp_pending":
             return payload.get("sub")
-    except Exception:
-        pass
+    except Exception as e:
+        logger.exception("Temp token verification failed: %s", e)
     return None

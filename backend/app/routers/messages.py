@@ -1,4 +1,3 @@
-import json
 import uuid
 from typing import Dict, Set
 
@@ -6,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import Base, async_session_factory, get_db
+from app.database import Base, get_db
 from app.routers.auth import get_current_user
 from app.models import DismissedInvitation, User, Contract, Dispute
 

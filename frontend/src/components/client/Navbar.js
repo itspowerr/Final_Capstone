@@ -73,7 +73,7 @@ export default function Navbar({ activePage }) {
         <div className="dash-nav-right">
           <NotificationBell />
           <button className="btn btn-primary btn-sm" onClick={() => setModalOpen(true)}>+ Post New Project</button>
-          <div className="settings-btn" onClick={() => console.log('[Nav] Settings')}>
+          <div className="settings-btn">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14" /></svg>
           </div>
           <AccountMenu user={user} roleLabel={user.role === 'Client' ? 'Client' : user.role} walletAddress={walletAddress} profilePath="/client/profile" onLogout={handleLogout} />

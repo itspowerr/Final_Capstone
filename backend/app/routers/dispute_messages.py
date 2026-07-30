@@ -1,14 +1,13 @@
-import json
 import uuid
 from typing import Dict, Set
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func, or_, select, delete
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text, func, select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import Base, async_session_factory, get_db
+from app.database import Base, get_db
 from app.routers.auth import get_current_user
-from app.models import Dispute, DisputeStatus, User
+from app.models import Dispute, User
 
 router = APIRouter(prefix="/dispute-messages", tags=["dispute-messages"])
 

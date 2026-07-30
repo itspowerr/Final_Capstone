@@ -388,10 +388,6 @@ export default function ClientDashboard() {
         </div>
       )}
 
-      <div className="toast" id="toast">
-        <span className="toast-icon">✅</span>
-        <span id="toast-msg">Done!</span>
-      </div>
     </>
   );
 }

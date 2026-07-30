@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { SkeletonThreadList, SkeletonChatArea } from '../../components/shared/Skeleton';
+import { SkeletonChatArea } from '../../components/shared/Skeleton';
 import api from '../../services/api';
 import config from '../../config';
 import { getIPFSGatewayUrl } from '../../services/ipfs';

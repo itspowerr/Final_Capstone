@@ -107,7 +107,6 @@ async def create_dispute(
         details=data.reason,
     )
     from app.services.notification_service import create_notification
-    from app.models import User as UserModel, AdminAccount
     admins = await db.execute(select(AdminAccount))
     for admin in admins.scalars().all():
         await create_notification(

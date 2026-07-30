@@ -71,7 +71,7 @@ export default function ExploreJobs() {
 
   const clearFilters = () => {
     setSearch('');
-    setFilters({ category: '', budget: '', type: '' });
+    setFilters({ category: '', budget: '' });
   };
 
   const checkBudget = (b, range) => {

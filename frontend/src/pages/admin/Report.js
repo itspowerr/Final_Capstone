@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import api from '../../services/api';
 import { SkeletonStatCard, SkeletonCard } from '../../components/shared/Skeleton';
 

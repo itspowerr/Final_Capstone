@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from secrets import token_hex, token_urlsafe
+from secrets import token_hex
 from collections import defaultdict
 import time
 
