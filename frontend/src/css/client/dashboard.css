@@ -279,7 +279,7 @@ h1, h2, h3, h4, .s-val, .cs-val, .metric-val {
   border-radius: 50%; pointer-events: none;
 }
 .hire-card .hc-icon { font-size: 32px; margin-bottom: 16px; position: relative; z-index: 1; }
-.hire-card h4 { font-size: 22px; font-weight: 800; margin-bottom: 10px; font-family: var(--landing-display); position: relative; z-index: 1; }
+.hire-card h4 { font-size: 22px; font-weight: 800; margin-bottom: 10px; font-family: var(--landing-display); position: relative; z-index: 1; color: #fff; }
 .hire-card p { font-size: 15px; color: rgba(255,255,255,.75); margin-bottom: 28px; line-height: 1.6; position: relative; z-index: 1; font-weight: 500; }
 .btn-hire {
   background: var(--landing-blue); color: #fff; font-size: 14px;
