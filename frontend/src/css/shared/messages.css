@@ -566,40 +566,6 @@
   top: 12px;
 }
 
-.msg-context-tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 16px;
-  padding: 4px;
-  background: var(--landing-mist, #f7f9fc);
-  border-radius: 10px;
-}
-
-.msg-context-tab {
-  flex: 1;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--landing-muted, #6b7280);
-  font-family: var(--landing-body, 'DM Sans', sans-serif);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-}
-
-.msg-context-tab.active {
-  background: var(--landing-white, #ffffff);
-  color: var(--landing-navy, #101828);
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-}
-
-.msg-context-tab:hover:not(.active) {
-  color: var(--landing-navy, #101828);
-}
-
 .msg-context-inner {
   flex: 1;
   overflow-y: auto;

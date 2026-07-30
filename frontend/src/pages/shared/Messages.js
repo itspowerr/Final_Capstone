@@ -360,12 +360,10 @@ export default function Messages({ NavbarComponent }) {
 
           <ContextPanel
             activeThread={activeThread}
-            jobCache={jobCache}
             avatarCache={avatarCache}
             collapsed={!contextPanelOpen}
             onToggle={handleToggleContextPanel}
             myRole={myRole}
-            messages={messages}
             myId={myId}
           />
         </div>
