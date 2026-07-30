@@ -18,6 +18,11 @@ try:
 except ImportError:
     get_redis = None
 
+try:
+    from redis.exceptions import RedisError
+except ImportError:
+    RedisError = Exception
+
 AUTH_PATHS = (
     "/api/auth/login",
     "/api/auth/register",
@@ -74,13 +79,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         key = f"{bucket}:{client_ip}"
         now = time.time()
 
-        pipe = redis.pipeline()
-        pipe.zremrangebyscore(key, 0, now - WINDOW)
-        pipe.zadd(key, {str(now): now})
-        pipe.zcard(key)
-        pipe.expire(key, WINDOW + 1)
-        pipe.zrange(key, 0, 0, withscores=True)
-        results = await pipe.execute()
+        try:
+            pipe = redis.pipeline()
+            pipe.zremrangebyscore(key, 0, now - WINDOW)
+            pipe.zadd(key, {str(now): now})
+            pipe.zcard(key)
+            pipe.expire(key, WINDOW + 1)
+            pipe.zrange(key, 0, 0, withscores=True)
+            results = await pipe.execute()
+        except RedisError:
+            # Redis is unreachable/flaky (e.g. tunnel hiccup) — fail open rather
+            # than 500ing every request in the app.
+            return await call_next(request)
 
         count = results[2]
         oldest_entries = results[4]
