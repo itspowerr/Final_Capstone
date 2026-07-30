@@ -9,7 +9,7 @@ import { getIPFSGatewayUrl } from '../../services/ipfs';
 import TOTPSettings from '../../components/shared/TOTPSettings';
 import '../../css/client/profile.css';
 
-const quickSkills = ['React', 'Node.js', 'Solidity', 'Web3.js', 'Figma', 'Python', 'TypeScript', 'UI/UX', 'Marketing', 'Writing'];
+
 
 export default function ClientProfile() {
   const { walletAddress, user, setUser, connectWallet, disconnectWallet } = useApp();
@@ -20,15 +20,12 @@ export default function ClientProfile() {
     name: '',
     email: '',
     bio: '',
-    skills: [],
-    hourlyRate: '',
     github: '',
     linkedin: '',
     portfolio: '',
     emailNotifications: true,
     twoFactor: false,
   });
-  const [skillInput, setSkillInput] = useState('');
   const [toast, setToast] = useState(null);
   const [saving, setSaving] = useState(false);
   const [avatarCid, setAvatarCid] = useState('');
@@ -42,8 +39,6 @@ export default function ClientProfile() {
           name: data.username || '',
           email: data.email || '',
           bio: data.bio || '',
-          skills: data.skills || [],
-          hourlyRate: data.hourly_rate || '',
           github: data.github_url || '',
           linkedin: data.linkedin_url || '',
           portfolio: data.portfolio_url || '',
@@ -83,25 +78,6 @@ export default function ClientProfile() {
   const showToast = (msg, icon) => {
     setToast({ msg, icon: icon || '✅' });
     setTimeout(() => setToast(null), 2500);
-  };
-
-  const addSkill = () => {
-    const val = skillInput.trim();
-    if (!val) return;
-    if (!form.skills.map(s => s.toLowerCase()).includes(val.toLowerCase())) {
-      setForm({ ...form, skills: [...form.skills, val] });
-    }
-    setSkillInput('');
-  };
-
-  const addSkillQuick = (skill) => {
-    if (!form.skills.map(s => s.toLowerCase()).includes(skill.toLowerCase())) {
-      setForm({ ...form, skills: [...form.skills, skill] });
-    }
-  };
-
-  const removeSkill = (skill) => {
-    setForm({ ...form, skills: form.skills.filter(s => s !== skill) });
   };
 
   const handleAvatarUpload = async (e) => {
@@ -144,8 +120,6 @@ export default function ClientProfile() {
         username: form.name || null,
         email: form.email || null,
         bio: form.bio || null,
-        skills: form.skills,
-        hourly_rate: form.hourlyRate ? parseFloat(form.hourlyRate) : 0,
         github_url: form.github || null,
         linkedin_url: form.linkedin || null,
         portfolio_url: form.portfolio || null,
@@ -237,7 +211,7 @@ export default function ClientProfile() {
               <div className="profile-stats">
                 <div className="pstat"><div className="val">{stats.contracts}</div><div className="lbl">Contracts</div></div>
                 <div className="pstat"><div className="val">{stats.spent.toLocaleString()} ETH</div><div className="lbl">Spent</div></div>
-                <div className="pstat"><div className="val">{form.skills.length}</div><div className="lbl">Skills</div></div>
+                <div className="pstat"><div className="val">0</div><div className="lbl">Skills</div></div>
                 <div className="pstat"><div className="val">{stats.rating}</div><div className="lbl">Rating</div></div>
               </div>
             </div>
@@ -261,30 +235,6 @@ export default function ClientProfile() {
               <div className="form-group">
                 <label className="form-label">Bio</label>
                 <textarea className="form-input" rows={4} placeholder="Describe your background, what you're looking for, and the types of projects you want to fund..." style={{ resize: 'vertical' }} value={form.bio} onChange={e => setForm({ ...form, bio: e.target.value })}></textarea>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Hourly Rate Budget ($)</label>
-                <input className="form-input" type="number" placeholder="e.g. 50" value={form.hourlyRate} onChange={e => setForm({ ...form, hourlyRate: e.target.value })} />
-              </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
-                <label className="form-label">Skills</label>
-                <div className="skills-list">
-                  {form.skills.length === 0 ? (
-                    <span style={{ fontSize: 13, color: 'var(--text-3)' }}>No skills added yet.</span>
-                  ) : form.skills.map(s => (
-                    <span key={s} className="skill-pill">{s}<button onClick={() => removeSkill(s)} title="Remove">×</button></span>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                  <input className="form-input" placeholder="Add a skill (e.g. Solidity, React…)" value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { addSkill(); e.preventDefault(); } }} />
-                  <button className="btn btn-primary btn-sm" onClick={addSkill}>+ Add</button>
-                </div>
-                <div style={{ marginTop: 10, lineHeight: 2 }}>
-                  <span style={{ fontSize: 12, color: 'var(--text-3)' }}>Quick add: </span>
-                  {quickSkills.map(s => (
-                    <button key={s} className="quick-skill-btn" onClick={() => addSkillQuick(s)}>{s}</button>
-                  ))}
-                </div>
               </div>
             </div>
 
