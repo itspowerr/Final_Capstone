@@ -83,7 +83,7 @@ export default function ChatArea({
         <div className="msg-chat-header-info">
           <h3>{avatarCache[activeThread.partnerId]?.name || activeThread.partnerId}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span className="msg-chat-role-badge">
+            <span className={`msg-chat-role-badge ${myRole === 'client' ? 'is-freelancer' : 'is-client'}`}>
               {myRole === 'client' ? 'Freelancer' : 'Client'}
             </span>
             {(() => {

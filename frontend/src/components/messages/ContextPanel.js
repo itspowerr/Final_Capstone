@@ -47,7 +47,7 @@ export default function ContextPanel({ activeThread, avatarCache, collapsed, onT
       {!collapsed && (
         <div className="msg-context-inner">
           <div className="msg-context-profile">
-            <div style={{
+            <div className="msg-context-profile-avatar" style={{
               width: 80, height: 80, borderRadius: '50%', margin: '0 auto 16px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 28, fontWeight: 700, color: '#fff', background: avatarColor, overflow: 'hidden',
@@ -60,7 +60,7 @@ export default function ContextPanel({ activeThread, avatarCache, collapsed, onT
             <div className="msg-context-profile-name">
               {avatarCache[activeThread.partnerId]?.name || activeThread.partnerId}
             </div>
-            <span className="msg-chat-role-badge" style={{ margin: '0 auto' }}>
+            <span className={`msg-chat-role-badge ${myRole === 'client' ? 'is-freelancer' : 'is-client'}`} style={{ margin: '0 auto' }}>
               {myRole === 'client' ? 'Freelancer' : 'Client'}
             </span>
           </div>
