@@ -189,6 +189,9 @@ async def admin_delete_user(
     await db.execute(delete(DismissedInvitation).where(DismissedInvitation.user_id == user_id))
     await db.execute(delete(Proposal).where(Proposal.freelancer_id == user_id))
 
+    user_jobs = select(Job.id).where(Job.client_id == user_id)
+    await db.execute(delete(Proposal).where(Proposal.job_id.in_(user_jobs)))
+
     user_contracts = select(Contract.id).where(
         or_(Contract.client_id == user_id, Contract.freelancer_id == user_id)
     )
