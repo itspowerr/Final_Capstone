@@ -78,7 +78,7 @@ export default function MyContracts() {
     setLoading(true);
     setError(null);
     loadContracts().finally(() => { if (!cancelled) setLoading(false); });
-    pollId = setInterval(() => { loadContracts(); }, 30000);
+    pollId = setInterval(() => { loadContracts(); }, 10000);
     return () => { cancelled = true; clearInterval(pollId); };
   }, [loadContracts]);
 
@@ -175,12 +175,12 @@ export default function MyContracts() {
         const ms = c.milestones.map(m => (m.index === index ? { ...m, ...res.data } : m));
         return { ...c, milestones: ms };
       }));
-      await loadContracts();
       setSubmitFile(null);
       setSubmitNotes('');
       showToast('Deliverable submitted!', '📦');
     } catch (err) {
       showToast(err.response?.data?.detail?.message || err.message || 'Failed to submit', '⚠️');
+      await loadContracts();
     } finally {
       setSubmitting(false);
     }
@@ -194,12 +194,12 @@ export default function MyContracts() {
       setContracts(prev => prev.map(c =>
         c.id === contractId ? { ...c, ...updated, milestones: res.data.milestones || c.milestones } : c
       ));
-      await loadContracts();
       showToast('Contract signed ✅');
       setDetailId(null);
       setExpandedIdx(null);
     } catch (err) {
       showToast(err.response?.data?.detail?.message || err.message || 'Failed to sign', '⚠️');
+      await loadContracts();
     } finally {
       setSubmitting(false);
     }
@@ -207,14 +207,17 @@ export default function MyContracts() {
 
   const raiseDispute = async (contractId, reason) => {
     setActionLoading(true);
+    setContracts(prev => prev.map(c =>
+      c.id === contractId ? { ...c, status: 'disputed' } : c
+    ));
     try {
       await api.post(`/contracts/${contractId}/disputes`, { reason });
       showToast('Dispute raised. Admin will review.');
       setDisputeModal(null);
-      await loadContracts();
       setDetailId(null);
     } catch (err) {
       showToast(err.response?.data?.detail?.message || 'Failed to raise dispute', '❌');
+      await loadContracts();
     } finally {
       setActionLoading(false);
     }

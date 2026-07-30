@@ -34,16 +34,22 @@ export default function NotificationBell() {
 
   const markRead = async (id) => {
     try {
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
       await api.post(`/notifications/${id}/read`);
+    } catch {
       await fetchNotifications();
-    } catch {}
+    }
   };
 
   const markAllRead = async () => {
     try {
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
       await api.post('/notifications/read-all');
+    } catch {
       await fetchNotifications();
-    } catch {}
+    }
   };
 
   const typeIcon = (type) => {

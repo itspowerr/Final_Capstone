@@ -321,7 +321,7 @@ export default function AdminDisputes() {
 
   useEffect(() => {
     fetchDisputes();
-    const pollId = setInterval(fetchDisputes, 30000);
+    const pollId = setInterval(fetchDisputes, 10000);
     return () => clearInterval(pollId);
   }, [fetchDisputes]);
 

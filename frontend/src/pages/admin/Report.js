@@ -52,7 +52,7 @@ export default function Report() {
 
   useEffect(() => {
     fetchReport();
-    const pollId = setInterval(fetchReport, 30000);
+    const pollId = setInterval(fetchReport, 10000);
     return () => clearInterval(pollId);
   }, [fetchReport]);
 

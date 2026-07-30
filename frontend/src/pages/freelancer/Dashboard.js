@@ -81,7 +81,7 @@ export default function FreelancerDashboard() {
 
   useEffect(() => {
     fetchData();
-    const pollId = setInterval(fetchData, 30000);
+    const pollId = setInterval(fetchData, 10000);
     return () => clearInterval(pollId);
   }, [fetchData]);
 

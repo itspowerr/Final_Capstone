@@ -151,7 +151,7 @@ export default function MyContracts() {
   useEffect(() => { fetchContracts(); }, [fetchContracts]);
 
   useEffect(() => {
-    const pollId = setInterval(() => { fetchContracts(); }, 30000);
+    const pollId = setInterval(() => { fetchContracts(); }, 10000);
     return () => clearInterval(pollId);
   }, [fetchContracts]);
 
@@ -180,11 +180,11 @@ export default function MyContracts() {
     try {
       await action();
       showToast(msg);
-      await fetchContracts();
       setModalContract(null);
     } catch (err) {
       const m = err.response?.data?.detail?.message || err.message || 'Action failed';
       showToast(m, '❌');
+      await fetchContracts();
     } finally {
       setActionLoading(false);
     }
@@ -204,6 +204,12 @@ export default function MyContracts() {
         return;
       }
     }
+    setAllContracts(prev => prev.map(c => {
+      if (c.id !== contractId) return c;
+      const ms = c.milestones.map(m => m.index === index ? { ...m, backend_status: 'approved', status: 'done' } : m);
+      const doneMs = ms.filter(m => m.status === 'done').length;
+      return { ...c, milestones: ms, doneMs, progress: ms.length ? Math.round((doneMs / ms.length) * 100) : 0 };
+    }));
     await doAction(
       () => api.post(`/contracts/${contractId}/milestones/${index}/approve`),
       'Milestone approved ✅',
@@ -211,6 +217,11 @@ export default function MyContracts() {
   };
 
   const rejectMilestone = async (contractId, index, reason) => {
+    setAllContracts(prev => prev.map(c => {
+      if (c.id !== contractId) return c;
+      const ms = c.milestones.map(m => m.index === index ? { ...m, backend_status: 'rejected', status: 'pending' } : m);
+      return { ...c, milestones: ms };
+    }));
     await doAction(
       () => api.post(`/contracts/${contractId}/milestones/${index}/reject`, { reason }),
       'Milestone rejected. Freelancer notified.',
@@ -224,11 +235,11 @@ export default function MyContracts() {
       setAllContracts(prev => prev.map(c =>
         c.id === contractId ? formatContract(res.data.contract) : c
       ));
-      await fetchContracts();
       showToast('Contract signature recorded ✅');
     } catch (err) {
       const m = err.response?.data?.detail?.message || err.message || 'Failed to sign';
       showToast(m, '❌');
+      await fetchContracts();
     } finally {
       setActionLoading(false);
     }
@@ -255,10 +266,10 @@ export default function MyContracts() {
       setAllContracts(prev => prev.map(c2 =>
         c2.id === contractId ? formatContract(res.data.contract) : c2
       ));
-      await fetchContracts();
       showToast('Contract funded ✅');
     } catch (chainErr) {
       showToast('Funding failed: ' + (chainErr.message || chainErr), '❌');
+      await fetchContracts();
     } finally {
       setActionLoading(false);
     }
@@ -273,16 +284,19 @@ export default function MyContracts() {
       ));
       setModalContract(null);
       showToast('Freelancer hired ✅');
-      await fetchContracts();
     } catch (err) {
       const m = err.response?.data?.detail?.message || err.message || 'Failed to hire';
       showToast(m, '❌');
+      await fetchContracts();
     } finally {
       setActionLoading(false);
     }
   };
 
   const raiseDispute = async (contractId, reason) => {
+    setAllContracts(prev => prev.map(c =>
+      c.id === contractId ? { ...c, status: 'disputed' } : c
+    ));
     await doAction(
       () => api.post(`/contracts/${contractId}/disputes`, { reason }),
       'Dispute raised. Admin will review.',
