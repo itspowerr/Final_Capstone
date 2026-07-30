@@ -601,7 +601,7 @@ body {
 
 .landing-safety > * { position: relative; z-index: 1; }
 .landing-safety .landing-section-label { color: #9fbbff; }
-.landing-safety h2 { margin-bottom: 17px; font-size: clamp(34px, 4vw, 48px); font-weight: 800; line-height: 1.12; }
+.landing-safety h2 { margin-bottom: 17px; font-size: clamp(34px, 4vw, 48px); font-weight: 800; line-height: 1.12; color: #fff; }
 .landing-safety p { margin: 0; color: #aab5c5; font-size: 16px; line-height: 1.7; }
 
 .landing-safety-list {
