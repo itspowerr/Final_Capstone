@@ -4,8 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_db
-from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DisputeStatus, Job, MilestoneStatus, Proposal, User, UserRole
+from app.models import AdminAccount, AuditLog, Contract, ContractMilestone, ContractStatus, Dispute, DisputeStatus, DismissedInvitation, Job, MilestoneStatus, Notification, Proposal, User, UserRole
 from app.routers.auth import get_current_user, hash_password
+from app.routers.messages import Message
 from app.schemas import (
     AdminContractCreate,
     AdminJobCreate,
@@ -181,6 +182,21 @@ async def admin_delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    # Delete related records before the user (FK-safe order)
+    await db.execute(delete(Notification).where(Notification.user_id == user_id))
+    await db.execute(delete(Message).where(or_(Message.sender_id == user_id, Message.receiver_id == user_id)))
+    await db.execute(delete(AdminAccount).where(AdminAccount.user_id == user_id))
+    await db.execute(delete(DismissedInvitation).where(DismissedInvitation.user_id == user_id))
+    await db.execute(delete(Proposal).where(Proposal.freelancer_id == user_id))
+
+    user_contracts = select(Contract.id).where(
+        or_(Contract.client_id == user_id, Contract.freelancer_id == user_id)
+    )
+    await db.execute(delete(ContractMilestone).where(ContractMilestone.contract_id.in_(user_contracts)))
+    await db.execute(delete(Dispute).where(Dispute.contract_id.in_(user_contracts)))
+    await db.execute(delete(Contract).where(Contract.id.in_(user_contracts)))
+    await db.execute(delete(Job).where(Job.client_id == user_id))
+
     await db.execute(delete(User).where(User.id == user_id))
     await db.commit()
 
@@ -287,6 +303,19 @@ async def admin_delete_job(
     job = result.scalar_one_or_none()
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
+
+    # Delete related records before the job
+    await db.execute(delete(Proposal).where(Proposal.job_id == job_id))
+    await db.execute(delete(DismissedInvitation).where(DismissedInvitation.job_id == job_id))
+
+    job_contracts = select(Contract.id).where(Contract.job_id == job_id)
+    await db.execute(delete(ContractMilestone).where(ContractMilestone.contract_id.in_(job_contracts)))
+    await db.execute(delete(Dispute).where(Dispute.contract_id.in_(job_contracts)))
+    await db.execute(delete(Contract).where(Contract.job_id == job_id))
+
+    await db.execute(delete(Notification).where(
+        Notification.entity_type == "job", Notification.entity_id == job_id
+    ))
 
     await db.execute(delete(Job).where(Job.id == job_id))
     await db.commit()
@@ -534,6 +563,14 @@ async def admin_delete_contract(
     contract = result.scalar_one_or_none()
     if not contract:
         raise HTTPException(status_code=404, detail="Contract not found")
+
+    # Delete related records before the contract
+    await db.execute(delete(ContractMilestone).where(ContractMilestone.contract_id == contract_id))
+    await db.execute(delete(Dispute).where(Dispute.contract_id == contract_id))
+    await db.execute(delete(Proposal).where(Proposal.contract_id == contract_id))
+    await db.execute(delete(Notification).where(
+        Notification.entity_type == "contract", Notification.entity_id == contract_id
+    ))
 
     await db.execute(delete(Contract).where(Contract.id == contract_id))
     await db.commit()
