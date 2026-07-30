@@ -11,6 +11,7 @@ export default function AuditLogs() {
   const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
   const [actorSearch, setActorSearch] = useState('');
+  const [copiedActorId, setCopiedActorId] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const fetchLogs = useCallback(async () => {
@@ -29,6 +30,12 @@ export default function AuditLogs() {
       setLoading(false);
     }
   }, [page, entityType, action, actorSearch]);
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    setCopiedActorId(text);
+    setTimeout(() => setCopiedActorId(null), 1500);
+  };
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
@@ -104,7 +111,17 @@ export default function AuditLogs() {
                   <td><span className="s-badge">{log.entity_type}</span></td>
                   <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{log.entity_id}</td>
                   <td><strong>{log.action}</strong></td>
-                  <td style={{ fontFamily: 'monospace', fontSize: 11 }}>{log.actor_id || '-'}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 11 }}>
+                    {log.actor_id ? (
+                      <span
+                        onClick={() => copyToClipboard(log.actor_id)}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to copy"
+                      >
+                        {copiedActorId === log.actor_id ? 'Copied!' : log.actor_id}
+                      </span>
+                    ) : '-'}
+                  </td>
                   <td>{log.actor_role || '-'}</td>
                   <td>{log.from_status || '-'}</td>
                   <td>{log.to_status || '-'}</td>
